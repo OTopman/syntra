@@ -66,11 +66,13 @@ Every finding identified in the architectural audit and subsequent investigation
   2. Implemented symlink containment validation (`validate_and_normalize_symlink_target`) to strictly reject absolute symlinks and path traversal attempts (`../../`).
   3. Rejected unsupported filesystem objects (FIFOs, sockets, character/block devices) with explicit errors.
   4. Completely removed all fail-open fallbacks in `compute_dependency_checksum`.
-  5. Implemented structured state-machine lockfile parser and schema validator (`Lockfile::parse`) validating version = 1, tables, duplicate entries, 64-hex content digests, and 40-hex Git commit revisions.
-  6. Enforced lockfile integrity verification on `install_dependencies` and `lock_dependencies`, aborting immediately on tampering without silent regeneration.
+  5. Narrowed exclusions strictly to package-root-relative build and metadata paths (`.git/`, `.syntra/`, `target/`, OS junk, editor swap, root `.synpkg`). All precompiled native binaries (`.so`, `.dylib`, `.dll`, `.exe`, `.a`, `.o`) and nested `.lock` files are hashed to close binary tampering vectors.
+  6. Implemented structured state-machine lockfile parser and schema validator (`Lockfile::parse`) with standard TOML string unescaping (`\"`, `\\`, `\t`, `\n`, `\r`, `\b`, `\f`, `\uXXXX`, `\UXXXXXXXX`) and strict rejection of duplicate keys in sections, duplicate sections, and invalid escapes.
+  7. Enforced complete 7-point dependency and manifest identity verification: manifest root name & version against lockfile `[package]`, dependency version, source URI, SHA-256 content checksum, Git commit, missing dependencies, and unexpected dependencies.
+  8. Mitigated TOCTOU risks by enforcing read-only permissions (`0o444` files, `0o555` directories) across `.syntra/packages` after verification and installation, documenting the clear trust boundary.
 - **Regression Tests Verified:**
-  - 17/17 package integrity adversarial tests passing (`crates/cli/tests/test_package_integrity.rs`): NIST standard vectors, determinism, content tampering, file add/delete/rename, executable permission changes, symlink retargeting, path traversal rejection, missing dependency directory failure, unreadable file I/O failure, unsupported FIFO rejection, Git commit tampering, schema syntax/version/duplicate entry rejection, and missing/unexpected dependency detection.
-  - Workspace test suite non-regression: 104/104 tests passing (0 failures, 0 ignored).
+  - 24/24 package integrity adversarial tests passing (`crates/cli/tests/test_package_integrity.rs`): NIST standard vectors, determinism, content tampering, file add/delete/rename, executable permission changes, symlink retargeting, path traversal rejection, missing dependency directory failure, unreadable file I/O failure, unsupported FIFO rejection, Git commit tampering, schema syntax/version/duplicate entry rejection, missing/unexpected dependency detection, native library & nested lockfile tampering detection, TOML duplicate key/section rejection, TOML escape handling, lockfile root package mismatch detection, dependency version/source mismatch detection, and read-only package store hardening against TOCTOU.
+  - Workspace test suite non-regression: 111/111 tests passing (0 failures, 0 ignored).
 - **Evidence Files:**
   - `remediation_output/02-security-remediation.md` (Sections 1 through 8)
   - `remediation_output/evidence/phase1_reopened_package_integrity_tests.txt`

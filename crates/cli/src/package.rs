@@ -37,42 +37,50 @@ pub struct CanonicalEntry {
 }
 
 #[cfg(unix)]
-fn is_executable(metadata: &fs::Metadata) -> bool {
+pub fn is_executable(metadata: &fs::Metadata) -> bool {
     use std::os::unix::fs::PermissionsExt;
     metadata.permissions().mode() & 0o111 != 0
 }
 
 #[cfg(not(unix))]
-fn is_executable(_metadata: &fs::Metadata) -> bool {
+pub fn is_executable(_metadata: &fs::Metadata) -> bool {
     false
 }
 
-fn should_exclude(file_name: &str) -> bool {
-    if file_name == ".git"
-        || file_name == ".syntra"
-        || file_name == "target"
-        || file_name == ".DS_Store"
-        || file_name.starts_with("._")
+/// Evaluates narrow, package-root-relative exclusions.
+/// Files are never excluded merely by extension (.so, .dylib, .dll, .a, .o, .lock, .exe are all included).
+/// Only top-level VCS, build, and package cache directories, along with OS metadata and editor swap files, are excluded.
+pub fn should_exclude(rel_path_str: &str, file_name: &str) -> bool {
+    // 1. Root-relative toolchain, build, and VCS directories
+    if rel_path_str == ".git"
+        || rel_path_str.starts_with(".git/")
+        || rel_path_str == ".syntra"
+        || rel_path_str.starts_with(".syntra/")
+        || rel_path_str == "target"
+        || rel_path_str.starts_with("target/")
     {
         return true;
     }
-    if file_name.ends_with(".synpkg")
-        || file_name.ends_with(".lock")
-        || file_name.ends_with(".o")
-        || file_name.ends_with(".dylib")
-        || file_name.ends_with(".so")
-        || file_name.ends_with(".a")
-        || file_name.ends_with(".dll")
-        || file_name.ends_with(".exe")
-        || file_name.ends_with(".swp")
-        || file_name.ends_with('~')
-    {
+
+    // 2. OS metadata files anywhere in tree
+    if file_name == ".DS_Store" || file_name == "Thumbs.db" || file_name.starts_with("._") {
         return true;
     }
+
+    // 3. Editor swap and backup files anywhere in tree
+    if file_name.ends_with(".swp") || file_name.ends_with('~') {
+        return true;
+    }
+
+    // 4. Standalone package archive at root (e.g. foo-0.1.0.synpkg)
+    if rel_path_str.ends_with(".synpkg") && !rel_path_str.contains('/') {
+        return true;
+    }
+
     false
 }
 
-fn validate_and_normalize_symlink_target(
+pub fn validate_and_normalize_symlink_target(
     root_dir: &Path,
     symlink_path: &Path,
     target: &Path,
@@ -141,18 +149,16 @@ fn collect_canonical_entries(
 ) -> Result<(), String> {
     let read_dir = fs::read_dir(current_dir).map_err(|e| {
         format!(
-            "Failed to read directory '{}' during tree hashing: {}",
-            current_dir.display(),
-            e
+            "Failed to read directory '{}' during tree hashing: {e}",
+            current_dir.display()
         )
     })?;
 
     for entry_res in read_dir {
         let entry = entry_res.map_err(|e| {
             format!(
-                "Failed to read directory entry in '{}' during tree hashing: {}",
-                current_dir.display(),
-                e
+                "Failed to read directory entry in '{}' during tree hashing: {e}",
+                current_dir.display()
             )
         })?;
 
@@ -162,22 +168,11 @@ fn collect_canonical_entries(
             .map(|n| n.to_string_lossy().to_string())
             .unwrap_or_default();
 
-        if should_exclude(&file_name) {
-            continue;
-        }
-
-        let sym_meta = fs::symlink_metadata(&path).map_err(|e| {
-            format!(
-                "Failed to read metadata for '{}' during tree hashing: {}",
-                path.display(),
-                e
-            )
-        })?;
-
         let rel_path = path
             .strip_prefix(root_dir)
-            .map_err(|e| format!("Failed to strip prefix for '{}': {}", path.display(), e))?;
+            .map_err(|e| format!("Failed to strip prefix for '{}': {e}", path.display()))?;
 
+        // Normalize relative path components to UTF-8 with forward slashes
         let mut components = Vec::new();
         for comp in rel_path.components() {
             match comp {
@@ -201,15 +196,25 @@ fn collect_canonical_entries(
         }
         let normalized_rel = components.join("/");
 
+        if should_exclude(&normalized_rel, &file_name) {
+            continue;
+        }
+
+        let sym_meta = fs::symlink_metadata(&path).map_err(|e| {
+            format!(
+                "Failed to read metadata for '{}' during tree hashing: {e}",
+                path.display()
+            )
+        })?;
+
         let ft = sym_meta.file_type();
         if ft.is_dir() {
             collect_canonical_entries(&path, root_dir, list)?;
         } else if ft.is_symlink() {
             let target = fs::read_link(&path).map_err(|e| {
                 format!(
-                    "Failed to read symlink target for '{}': {}",
-                    path.display(),
-                    e
+                    "Failed to read symlink target for '{}': {e}",
+                    path.display()
                 )
             })?;
 
@@ -227,9 +232,8 @@ fn collect_canonical_entries(
             let is_exec = is_executable(&sym_meta);
             let content = fs::read(&path).map_err(|e| {
                 format!(
-                    "Failed to read file '{}' during tree hashing: {}",
-                    path.display(),
-                    e
+                    "Failed to read file '{}' during tree hashing: {e}",
+                    path.display()
                 )
             })?;
 
@@ -260,7 +264,7 @@ pub fn hash_directory_tree_sha256(dir: &Path) -> Result<String, String> {
     }
     if dir.is_file() {
         let content =
-            fs::read(dir).map_err(|e| format!("Failed to read file '{}': {}", dir.display(), e))?;
+            fs::read(dir).map_err(|e| format!("Failed to read file '{}': {e}", dir.display()))?;
         return Ok(hash_bytes_sha256(&content));
     }
 
@@ -306,6 +310,137 @@ pub fn hash_directory_tree_sha256(dir: &Path) -> Result<String, String> {
     Ok(to_hex(&hasher.finalize()))
 }
 
+/// Hardens an installed package tree by setting read-only permissions on all files and directories,
+/// mitigating Time-of-Check / Time-of-Use (TOCTOU) mutations between verification and compilation.
+pub fn protect_package_store_readonly(dir: &Path) -> Result<(), String> {
+    if !dir.exists() {
+        return Ok(());
+    }
+
+    let entries = fs::read_dir(dir).map_err(|e| {
+        format!(
+            "Failed to read directory '{}' during permission hardening: {e}",
+            dir.display()
+        )
+    })?;
+
+    for entry_res in entries {
+        let entry = entry_res
+            .map_err(|e| format!("Directory traversal error during permission hardening: {e}"))?;
+        let p = entry.path();
+        let sym_meta = fs::symlink_metadata(&p)
+            .map_err(|e| format!("Metadata read error during permission hardening: {e}"))?;
+
+        if sym_meta.is_dir() {
+            protect_package_store_readonly(&p)?;
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let _ = fs::set_permissions(&p, fs::Permissions::from_mode(0o555));
+            }
+        } else if sym_meta.is_file() {
+            let mut perms = sym_meta.permissions();
+            perms.set_readonly(true);
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let mode = if is_executable(&sym_meta) {
+                    0o555
+                } else {
+                    0o444
+                };
+                let _ = fs::set_permissions(&p, fs::Permissions::from_mode(mode));
+            }
+            #[cfg(not(unix))]
+            {
+                let _ = fs::set_permissions(&p, perms);
+            }
+        }
+    }
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = fs::set_permissions(dir, fs::Permissions::from_mode(0o555));
+    }
+
+    Ok(())
+}
+
+/// Parses and unescapes a TOML string literal according to standard TOML string escaping rules.
+pub fn parse_toml_string(raw: &str, line_num: usize) -> Result<String, String> {
+    let trimmed = raw.trim();
+    if !trimmed.starts_with('"') || !trimmed.ends_with('"') || trimmed.len() < 2 {
+        return Err(format!(
+            "Line {line_num}: Expected string literal enclosed in double quotes, found '{trimmed}'"
+        ));
+    }
+    let inner = &trimmed[1..trimmed.len() - 1];
+    let mut out = String::with_capacity(inner.len());
+    let mut chars = inner.chars().peekable();
+
+    while let Some(c) = chars.next() {
+        if c == '\\' {
+            let esc = chars.next().ok_or_else(|| {
+                format!("Line {line_num}: Incomplete escape sequence in string literal")
+            })?;
+            match esc {
+                '"' => out.push('"'),
+                '\\' => out.push('\\'),
+                'b' => out.push('\x08'),
+                'f' => out.push('\x0C'),
+                'n' => out.push('\n'),
+                'r' => out.push('\r'),
+                't' => out.push('\t'),
+                'u' => {
+                    let mut hex = String::with_capacity(4);
+                    for _ in 0..4 {
+                        let h = chars.next().ok_or_else(|| {
+                            format!("Line {line_num}: Incomplete \\u unicode escape")
+                        })?;
+                        hex.push(h);
+                    }
+                    let code = u32::from_str_radix(&hex, 16).map_err(|_| {
+                        format!("Line {line_num}: Invalid \\u unicode hex sequence '{hex}'")
+                    })?;
+                    let ch = char::from_u32(code).ok_or_else(|| {
+                        format!("Line {line_num}: Invalid unicode codepoint 'U+{code:04X}'")
+                    })?;
+                    out.push(ch);
+                }
+                'U' => {
+                    let mut hex = String::with_capacity(8);
+                    for _ in 0..8 {
+                        let h = chars.next().ok_or_else(|| {
+                            format!("Line {line_num}: Incomplete \\U unicode escape")
+                        })?;
+                        hex.push(h);
+                    }
+                    let code = u32::from_str_radix(&hex, 16).map_err(|_| {
+                        format!("Line {line_num}: Invalid \\U unicode hex sequence '{hex}'")
+                    })?;
+                    let ch = char::from_u32(code).ok_or_else(|| {
+                        format!("Line {line_num}: Invalid unicode codepoint 'U+{code:08X}'")
+                    })?;
+                    out.push(ch);
+                }
+                other => {
+                    return Err(format!(
+                        "Line {line_num}: Invalid TOML escape sequence '\\{other}'"
+                    ));
+                }
+            }
+        } else if c.is_control() && c != '\t' {
+            return Err(format!(
+                "Line {line_num}: Unescaped control character in string literal"
+            ));
+        } else {
+            out.push(c);
+        }
+    }
+    Ok(out)
+}
+
 /// Structured representation of a package recorded in the lockfile
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LockPackageEntry {
@@ -323,6 +458,7 @@ struct LockPackageEntryBuilder {
     source: Option<String>,
     commit: Option<String>,
     checksum: Option<String>,
+    seen_keys: HashSet<String>,
 }
 
 impl LockPackageEntryBuilder {
@@ -406,6 +542,9 @@ impl Lockfile {
         let mut current_section = Section::TopLevel;
         let mut current_pkg: Option<LockPackageEntryBuilder> = None;
         let mut seen_packages = HashSet::new();
+        let mut seen_top_level_keys = HashSet::new();
+        let mut package_section_seen = false;
+        let mut package_seen_keys = HashSet::new();
 
         for (line_idx, line) in input.lines().enumerate() {
             let line_num = line_idx + 1;
@@ -415,6 +554,13 @@ impl Lockfile {
             }
 
             if trimmed == "[package]" {
+                if package_section_seen {
+                    return Err(format!(
+                        "Line {line_num}: Duplicate [package] section in lockfile"
+                    ));
+                }
+                package_section_seen = true;
+
                 if let Some(builder) = current_pkg.take() {
                     let entry = builder.build(line_num)?;
                     if !seen_packages.insert(entry.name.clone()) {
@@ -452,16 +598,16 @@ impl Lockfile {
             })?;
             let key = key.trim();
             let val = val.trim();
-            let val_unquoted = if val.starts_with('"') && val.ends_with('"') && val.len() >= 2 {
-                &val[1..val.len() - 1]
-            } else {
-                val
-            };
 
             match current_section {
                 Section::TopLevel => {
+                    if !seen_top_level_keys.insert(key.to_string()) {
+                        return Err(format!(
+                            "Line {line_num}: Duplicate top-level key '{key}' in lockfile"
+                        ));
+                    }
                     if key == "version" {
-                        let v = val_unquoted.parse::<u32>().map_err(|_| {
+                        let v = val.parse::<u32>().map_err(|_| {
                             format!("Line {line_num}: Invalid schema version '{val}'")
                         })?;
                         if v != 1 {
@@ -476,27 +622,41 @@ impl Lockfile {
                         ));
                     }
                 }
-                Section::Package => match key {
-                    "name" => root_name = Some(val_unquoted.to_string()),
-                    "version" => root_version = Some(val_unquoted.to_string()),
-                    _ => {
+                Section::Package => {
+                    if !package_seen_keys.insert(key.to_string()) {
                         return Err(format!(
-                            "Line {line_num}: Unknown key '{key}' in [package] section"
-                        ))
+                            "Line {line_num}: Duplicate key '{key}' in [package] section"
+                        ));
                     }
-                },
+                    let parsed_val = parse_toml_string(val, line_num)?;
+                    match key {
+                        "name" => root_name = Some(parsed_val),
+                        "version" => root_version = Some(parsed_val),
+                        _ => {
+                            return Err(format!(
+                                "Line {line_num}: Unknown key '{key}' in [package] section"
+                            ))
+                        }
+                    }
+                }
                 Section::Packages => {
                     let builder = current_pkg.as_mut().ok_or_else(|| {
                         format!(
                             "Line {line_num}: Key '{key}' found outside of [[packages]] section"
                         )
                     })?;
+                    if !builder.seen_keys.insert(key.to_string()) {
+                        return Err(format!(
+                            "Line {line_num}: Duplicate key '{key}' in [[packages]] block"
+                        ));
+                    }
+                    let parsed_val = parse_toml_string(val, line_num)?;
                     match key {
-                        "name" => builder.name = Some(val_unquoted.to_string()),
-                        "version" => builder.version = Some(val_unquoted.to_string()),
-                        "source" => builder.source = Some(val_unquoted.to_string()),
-                        "commit" => builder.commit = Some(val_unquoted.to_string()),
-                        "checksum" => builder.checksum = Some(val_unquoted.to_string()),
+                        "name" => builder.name = Some(parsed_val),
+                        "version" => builder.version = Some(parsed_val),
+                        "source" => builder.source = Some(parsed_val),
+                        "commit" => builder.commit = Some(parsed_val),
+                        "checksum" => builder.checksum = Some(parsed_val),
                         _ => {
                             return Err(format!(
                                 "Line {line_num}: Unknown key '{key}' in [[packages]] section"
@@ -725,9 +885,9 @@ pub fn generate_lock_content(
     Ok((lockfile.to_canonical_string(), count))
 }
 
-/// Verifies that dependencies in the workspace match the checksums recorded in the lockfile.
-/// Returns Ok(()) on verification success, or Err(mismatches) if any dependency was modified,
-/// tampered with, or if schema validation fails.
+/// Verifies that dependencies in the workspace match the complete recorded dependency identity
+/// (Root name & version, dependency name, version, source URI, Git revision, and canonical SHA-256 content checksum).
+/// Returns Ok(()) on verification success, or Err(mismatches) if any discrepancy is detected.
 pub fn verify_locked_dependencies(
     manifest_dir: &Path,
     manifest: &syntra_frontend::PackageManifest,
@@ -741,6 +901,20 @@ pub fn verify_locked_dependencies(
             return Err(vec![format!("Lockfile schema validation failed: {e}")]);
         }
     };
+
+    // 0. Verify root package identity matches manifest
+    if lockfile.package.name != manifest.name {
+        mismatches.push(format!(
+            "Lockfile root package name mismatch: lockfile records '{}', but manifest requires '{}'",
+            lockfile.package.name, manifest.name
+        ));
+    }
+    if lockfile.package.version != manifest.version {
+        mismatches.push(format!(
+            "Lockfile root package version mismatch: lockfile records '{}', but manifest requires '{}'",
+            lockfile.package.version, manifest.version
+        ));
+    }
 
     let mut locked_map: HashMap<String, LockPackageEntry> = HashMap::new();
     for pkg in lockfile.packages {
@@ -771,7 +945,7 @@ pub fn verify_locked_dependencies(
         }
     }
 
-    // 3. Verify each declared dependency's content and Git revision
+    // 3. Verify each declared dependency's complete identity and content checksum
     for dep in &manifest.dependencies {
         let locked_entry = match locked_map.get(&dep.name) {
             Some(e) => e,
@@ -786,6 +960,23 @@ pub fn verify_locked_dependencies(
             }
         };
 
+        // 3a. Verify dependency version
+        if locked_entry.version != actual_entry.version {
+            mismatches.push(format!(
+                "Dependency '{}' version mismatch: lockfile recorded '{}', but resolved dependency version is '{}'",
+                dep.name, locked_entry.version, actual_entry.version
+            ));
+        }
+
+        // 3b. Verify dependency source
+        if locked_entry.source != actual_entry.source {
+            mismatches.push(format!(
+                "Dependency '{}' source mismatch: lockfile recorded '{}', but resolved dependency source is '{}'",
+                dep.name, locked_entry.source, actual_entry.source
+            ));
+        }
+
+        // 3c. Verify content checksum
         if locked_entry.checksum != actual_entry.checksum {
             mismatches.push(format!(
                 "Tampering or modification detected for dependency '{}': expected lockfile checksum '{}', but computed actual content checksum '{}'",
@@ -793,6 +984,7 @@ pub fn verify_locked_dependencies(
             ));
         }
 
+        // 3d. Verify Git commit (for Git dependencies)
         if dep.git.is_some() {
             match (&locked_entry.commit, &actual_entry.commit) {
                 (Some(expected_commit), Some(actual_commit)) => {
@@ -835,9 +1027,8 @@ pub fn lock_dependencies(check: bool) {
         Ok(c) => c,
         Err(e) => {
             eprintln!(
-                "❌ Failed to read manifest {}: {}",
-                manifest_path.display(),
-                e
+                "❌ Failed to read manifest {}: {e}",
+                manifest_path.display()
             );
             exit(1);
         }
@@ -940,9 +1131,8 @@ pub fn pack_project(out: Option<PathBuf>, vendor: bool) {
         Ok(c) => c,
         Err(e) => {
             eprintln!(
-                "❌ Failed to read manifest {}: {}",
-                manifest_path.display(),
-                e
+                "❌ Failed to read manifest {}: {e}",
+                manifest_path.display()
             );
             exit(1);
         }
@@ -1061,18 +1251,13 @@ pub fn pack_project(out: Option<PathBuf>, vendor: bool) {
 
 fn collect_files_recursive(dir: &Path, list: &mut Vec<PathBuf>) -> Result<(), String> {
     let entries = fs::read_dir(dir)
-        .map_err(|e| format!("Failed to read directory '{}': {}", dir.display(), e))?;
+        .map_err(|e| format!("Failed to read directory '{}': {e}", dir.display()))?;
     for entry in entries {
-        let entry = entry.map_err(|e| {
-            format!(
-                "Failed to read directory entry in '{}': {}",
-                dir.display(),
-                e
-            )
-        })?;
+        let entry = entry
+            .map_err(|e| format!("Failed to read directory entry in '{}': {e}", dir.display()))?;
         let p = entry.path();
         let sym_meta = fs::symlink_metadata(&p)
-            .map_err(|e| format!("Failed to read metadata for '{}': {}", p.display(), e))?;
+            .map_err(|e| format!("Failed to read metadata for '{}': {e}", p.display()))?;
         if sym_meta.is_dir() {
             collect_files_recursive(&p, list)?;
         } else if sym_meta.is_file() || sym_meta.is_symlink() {

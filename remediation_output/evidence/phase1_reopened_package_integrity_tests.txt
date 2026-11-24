@@ -1,22 +1,32 @@
+   Compiling syntra_cli v0.1.0 (/Users/Topman/Documents/Projects/aether/crates/cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.46s
+     Running tests/test_package_integrity.rs (target/debug/deps/test_package_integrity-13d0909d85bfc817)
 
-running 17 tests
-test test_lockfile_schema_validation_rejects_unsupported_version ... ok
-test test_lockfile_schema_validation_rejects_malformed_syntax ... ok
-test test_lockfile_schema_validation_rejects_duplicate_entries ... ok
+running 24 tests
+test test_lockfile_parser_rejects_duplicate_keys_in_package_entry ... ok
+test test_lockfile_parser_rejects_duplicate_root_keys_and_sections ... ok
 test test_git_dependency_missing_commit_detected ... ok
-test test_sha256_known_vectors ... ok
+test test_lockfile_parser_unescapes_toml_string_literals ... ok
+test test_lockfile_root_package_identity_mismatch_detected ... ok
+test test_lockfile_schema_validation_rejects_duplicate_entries ... ok
+test test_lockfile_schema_validation_rejects_malformed_syntax ... ok
+test test_lockfile_schema_validation_rejects_unsupported_version ... ok
 test test_missing_package_directory_fails_explicitly ... ok
-test test_lockfile_missing_and_unexpected_dependencies_detected ... ok
+test test_sha256_known_vectors ... ok
 test test_directory_tree_hash_determinism ... ok
+test test_lockfile_missing_and_unexpected_dependencies_detected ... ok
+test test_dependency_version_and_source_mismatch_detected ... ok
 test test_path_traversal_symlink_rejected ... ok
-test test_tampering_executable_permission_detected ... ok
-test test_tampering_file_content_detected ... ok
+test test_package_store_readonly_hardening_mitigates_toctou ... ok
 test test_tampering_add_or_delete_file_detected ... ok
-test test_unreadable_file_fails_explicitly ... ok
 test test_symlink_target_tampering_and_valid_handling ... ok
+test test_tampering_executable_permission_detected ... ok
+test test_unreadable_file_fails_explicitly ... ok
+test test_tampering_file_content_detected ... ok
 test test_tampering_rename_file_detected ... ok
+test test_tampering_native_library_and_lockfile_detected ... ok
 test test_unsupported_fifo_fails_explicitly ... ok
 test test_git_dependency_altered_commit_detected ... ok
 
-test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.26s
 

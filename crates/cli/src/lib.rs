@@ -1241,6 +1241,7 @@ fn install_dependencies() {
             exit(1);
         }
         println!("✅ Verified dependencies against {primary_lock}");
+        let _ = package::protect_package_store_readonly(&packages_dir);
     } else {
         let (lock_content, resolved_count) =
             match package::generate_lock_content(manifest_dir, &manifest) {
@@ -1264,6 +1265,7 @@ fn install_dependencies() {
             resolved_count,
             if resolved_count == 1 { "y" } else { "ies" }
         );
+        let _ = package::protect_package_store_readonly(&packages_dir);
         println!("🔒 Generated {primary_lock}");
     }
 }

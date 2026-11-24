@@ -705,3 +705,299 @@ checksum = "{tree_hash}"
 
     let _ = fs::remove_dir_all(&tmp);
 }
+
+#[test]
+fn test_tampering_native_library_and_lockfile_detected() {
+    let tmp = std::env::temp_dir().join(format!("syntra_test_native_libs_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+
+    let dep_dir = tmp.join("deps").join("c_interop");
+    fs::create_dir_all(dep_dir.join("lib")).unwrap();
+
+    // Include native dynamic library, static library, and lockfile
+    let dylib_path = dep_dir.join("lib").join("libnative.dylib");
+    let static_path = dep_dir.join("lib").join("libstatic.a");
+    let internal_lock = dep_dir.join("Cargo.lock");
+
+    fs::write(&dylib_path, [0xCA, 0xFE, 0xBA, 0xBE]).unwrap();
+    fs::write(&static_path, [0x21, 0x3C, 0x61, 0x72]).unwrap();
+    fs::write(&internal_lock, "version = 1\n").unwrap();
+
+    let manifest = PackageManifest {
+        name: "test_native".to_string(),
+        version: "0.1.0".to_string(),
+        edition: "2026".to_string(),
+        dependencies: vec![PackageDependency {
+            name: "c_interop".to_string(),
+            version: Some("1.0.0".to_string()),
+            path: Some("deps/c_interop".to_string()),
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+
+    let (lock_content, _) = generate_lock_content(&tmp, &manifest).expect("Lock generation failed");
+    assert!(verify_locked_dependencies(&tmp, &manifest, &lock_content).is_ok());
+
+    // 1. Tamper with native .dylib
+    fs::write(&dylib_path, [0xDE, 0xAD, 0xBE, 0xEF]).unwrap();
+    let verify_dylib = verify_locked_dependencies(&tmp, &manifest, &lock_content);
+    assert!(
+        verify_dylib.is_err(),
+        "Altering native shared library in dependency MUST alter checksum and be rejected"
+    );
+
+    // Restore .dylib and tamper with internal .lock file
+    fs::write(&dylib_path, [0xCA, 0xFE, 0xBA, 0xBE]).unwrap();
+    fs::write(&internal_lock, "version = 2\n").unwrap();
+    let verify_lock = verify_locked_dependencies(&tmp, &manifest, &lock_content);
+    assert!(
+        verify_lock.is_err(),
+        "Altering lockfile in dependency MUST alter checksum and be rejected"
+    );
+
+    let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+fn test_lockfile_parser_rejects_duplicate_keys_in_package_entry() {
+    let duplicate_key_toml = r#"
+version = 1
+[package]
+name = "test_dup_key"
+version = "0.1.0"
+
+[[packages]]
+name = "foo"
+name = "bar"
+version = "1.0.0"
+source = "path:deps/foo"
+checksum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+"#;
+
+    let res = Lockfile::parse(duplicate_key_toml);
+    assert!(
+        res.is_err(),
+        "Duplicate key within [[packages]] block MUST be rejected"
+    );
+    assert!(res
+        .unwrap_err()
+        .contains("Duplicate key 'name' in [[packages]] block"));
+}
+
+#[test]
+fn test_lockfile_parser_rejects_duplicate_root_keys_and_sections() {
+    let duplicate_section_toml = r#"
+version = 1
+[package]
+name = "test_dup_sec"
+version = "0.1.0"
+
+[package]
+name = "test_dup_sec_2"
+version = "0.1.0"
+"#;
+
+    let res = Lockfile::parse(duplicate_section_toml);
+    assert!(res.is_err(), "Duplicate [package] section MUST be rejected");
+    assert!(res.unwrap_err().contains("Duplicate [package] section"));
+
+    let duplicate_root_key_toml = r#"
+version = 1
+version = 1
+[package]
+name = "test_dup_sec"
+version = "0.1.0"
+"#;
+
+    let res_key = Lockfile::parse(duplicate_root_key_toml);
+    assert!(res_key.is_err(), "Duplicate top-level key MUST be rejected");
+    assert!(res_key
+        .unwrap_err()
+        .contains("Duplicate top-level key 'version'"));
+}
+
+#[test]
+fn test_lockfile_parser_unescapes_toml_string_literals() {
+    let toml_with_escapes = r#"
+version = 1
+[package]
+name = "test\"app"
+version = "0.1.0\tbuild"
+
+[[packages]]
+name = "lib\u0041"
+version = "1.0.0"
+source = "path:deps/lib\\foo"
+checksum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+"#;
+
+    let lockfile = Lockfile::parse(toml_with_escapes).expect("Failed to parse valid TOML escapes");
+    assert_eq!(lockfile.package.name, "test\"app");
+    assert_eq!(lockfile.package.version, "0.1.0\tbuild");
+    assert_eq!(lockfile.packages[0].name, "libA");
+    assert_eq!(lockfile.packages[0].source, "path:deps/lib\\foo");
+
+    // Invalid escape sequence must be rejected
+    let invalid_escape = r#"
+version = 1
+[package]
+name = "test\qapp"
+version = "0.1.0"
+"#;
+    let res_invalid = Lockfile::parse(invalid_escape);
+    assert!(
+        res_invalid.is_err(),
+        "Invalid TOML escape sequence MUST be rejected"
+    );
+    assert!(res_invalid
+        .unwrap_err()
+        .contains("Invalid TOML escape sequence"));
+}
+
+#[test]
+fn test_lockfile_root_package_identity_mismatch_detected() {
+    let tmp = std::env::temp_dir().join(format!("syntra_test_root_id_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+
+    let manifest = PackageManifest {
+        name: "actual_app".to_string(),
+        version: "1.0.0".to_string(),
+        edition: "2026".to_string(),
+        dependencies: vec![],
+        ..Default::default()
+    };
+
+    let lock_wrong_name = r#"
+version = 1
+[package]
+name = "forged_app"
+version = "1.0.0"
+"#;
+
+    let res_name = verify_locked_dependencies(&tmp, &manifest, lock_wrong_name);
+    assert!(
+        res_name.is_err(),
+        "Root package name mismatch MUST be detected"
+    );
+    assert!(res_name
+        .unwrap_err()
+        .iter()
+        .any(|e| e.contains("root package name mismatch")));
+
+    let lock_wrong_version = r#"
+version = 1
+[package]
+name = "actual_app"
+version = "2.0.0"
+"#;
+
+    let res_ver = verify_locked_dependencies(&tmp, &manifest, lock_wrong_version);
+    assert!(
+        res_ver.is_err(),
+        "Root package version mismatch MUST be detected"
+    );
+    assert!(res_ver
+        .unwrap_err()
+        .iter()
+        .any(|e| e.contains("root package version mismatch")));
+
+    let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+fn test_dependency_version_and_source_mismatch_detected() {
+    let tmp = std::env::temp_dir().join(format!("syntra_test_dep_id_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+
+    let dep_dir = tmp.join("deps").join("my_lib");
+    fs::create_dir_all(dep_dir.join("src")).unwrap();
+    fs::write(
+        dep_dir.join("src").join("lib.syn"),
+        "func my_lib(): void {}",
+    )
+    .unwrap();
+
+    let manifest = PackageManifest {
+        name: "app".to_string(),
+        version: "0.1.0".to_string(),
+        edition: "2026".to_string(),
+        dependencies: vec![PackageDependency {
+            name: "my_lib".to_string(),
+            version: Some("1.0.0".to_string()),
+            path: Some("deps/my_lib".to_string()),
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+
+    let (lock_content, _) = generate_lock_content(&tmp, &manifest).expect("Lock generation failed");
+    assert!(verify_locked_dependencies(&tmp, &manifest, &lock_content).is_ok());
+
+    // 1. Mismatch in version
+    let lock_tampered_ver = lock_content.replace("version = \"1.0.0\"", "version = \"2.0.0\"");
+    let res_ver = verify_locked_dependencies(&tmp, &manifest, &lock_tampered_ver);
+    assert!(
+        res_ver.is_err(),
+        "Dependency version mismatch MUST be detected"
+    );
+    assert!(res_ver
+        .unwrap_err()
+        .iter()
+        .any(|e| e.contains("version mismatch")));
+
+    // 2. Mismatch in source location
+    let lock_tampered_source = lock_content.replace(
+        "source = \"path:deps/my_lib\"",
+        "source = \"path:deps/other_lib\"",
+    );
+    let res_source = verify_locked_dependencies(&tmp, &manifest, &lock_tampered_source);
+    assert!(
+        res_source.is_err(),
+        "Dependency source mismatch MUST be detected"
+    );
+    assert!(res_source
+        .unwrap_err()
+        .iter()
+        .any(|e| e.contains("source mismatch")));
+
+    let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+#[cfg(unix)]
+fn test_package_store_readonly_hardening_mitigates_toctou() {
+    let tmp = std::env::temp_dir().join(format!("syntra_test_toctou_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+
+    let pkg_store = tmp.join(".syntra").join("packages").join("sample_pkg");
+    fs::create_dir_all(pkg_store.join("src")).unwrap();
+    let src_file = pkg_store.join("src").join("main.syn");
+    fs::write(&src_file, "func main(): int { return 0; }").unwrap();
+
+    // Call hardening helper
+    syntra_cli::package::protect_package_store_readonly(&pkg_store)
+        .expect("Hardening package store failed");
+
+    // Verify file is read-only (0444 on Unix)
+    let meta = fs::metadata(&src_file).unwrap();
+    use std::os::unix::fs::PermissionsExt;
+    let mode = meta.permissions().mode() & 0o777;
+    assert_eq!(
+        mode, 0o444,
+        "Installed package file must have read-only permissions (0444)"
+    );
+
+    let dir_meta = fs::metadata(pkg_store.join("src")).unwrap();
+    let dir_mode = dir_meta.permissions().mode() & 0o777;
+    assert_eq!(
+        dir_mode, 0o555,
+        "Installed package directory must be read+execute only (0555)"
+    );
+
+    // Restore permissions so cleanup succeeds
+    let _ = fs::set_permissions(&src_file, fs::Permissions::from_mode(0o644));
+    let _ = fs::set_permissions(pkg_store.join("src"), fs::Permissions::from_mode(0o755));
+    let _ = fs::set_permissions(&pkg_store, fs::Permissions::from_mode(0o755));
+    let _ = fs::remove_dir_all(&tmp);
+}
