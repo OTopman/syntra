@@ -1,0 +1,723 @@
+// Syntra Standard Library: HTTP Client & Server Subsystem
+// Provides HttpRequest, HttpResponse, HttpServer, and HttpClient
+// Supports HTTP methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
+
+/// Represents an incoming or outgoing HTTP/1.1 request message.
+///
+/// Encapsulates the HTTP verb (method), request target URI path, HTTP version,
+/// key-value header mappings, and payload body.
+///
+/// ```syntra
+/// let req = new HttpRequest();
+/// req.method = "POST";
+/// req.path = "/api/v1/users";
+/// req.headers.set("Content-Type", "application/json");
+/// req.body = "{\"name\":\"Alex\"}";
+/// ```
+///
+/// @since v0.1.0
+class HttpRequest {
+    /// The HTTP verb string (e.g. `"GET"`, `"POST"`, `"PUT"`, `"DELETE"`, `"PATCH"`, `"OPTIONS"`).
+    public string method;
+
+    /// The target URI resource path (e.g. `"/index.html"` or `"/api/data"`).
+    public string path;
+
+    /// The HTTP protocol version string (conventionally `"HTTP/1.1"`).
+    public string version;
+
+    /// Case-insensitive key-value map of HTTP headers.
+    public Map<string, string> headers;
+
+    /// UTF-8 encoded request payload body.
+    public string body;
+
+    /// Retrieves the value of an HTTP header by name.
+    ///
+    /// Returns an empty string `""` if the header is not present.
+    ///
+    /// @param name The case-insensitive header key (e.g. `"Content-Type"`).
+    /// @return The header string value or `""` if missing.
+    /// @since v0.1.0
+    public func getHeader(string name): string {
+        if (this.headers.has(name)) {
+            return this.headers.get(name);
+        }
+        return "";
+    }
+
+    /// Sets or clears the HTTP `Connection` keep-alive header.
+    ///
+    /// @param enable `true` sets `Connection: keep-alive`; `false` sets `Connection: close`.
+    /// @return void
+    /// @since v0.1.0
+    public func setKeepAlive(bool enable): void {
+        if (enable) {
+            this.headers.set("Connection", "keep-alive");
+        } else {
+            this.headers.set("Connection", "close");
+        }
+    }
+
+    /// Returns `true` if this request method is `"GET"`.
+    ///
+    /// @return `true` for GET requests.
+    /// @since v0.1.0
+    public func isGet(): bool {
+        return this.method == "GET";
+    }
+
+    /// Returns `true` if this request method is `"POST"`.
+    ///
+    /// @return `true` for POST requests.
+    /// @since v0.1.0
+    public func isPost(): bool {
+        return this.method == "POST";
+    }
+
+    /// Returns `true` if this request method is `"PUT"`.
+    ///
+    /// @return `true` for PUT requests.
+    /// @since v0.1.0
+    public func isPut(): bool {
+        return this.method == "PUT";
+    }
+
+    /// Returns `true` if this request method is `"PATCH"`.
+    ///
+    /// @return `true` for PATCH requests.
+    /// @since v0.1.0
+    public func isPatch(): bool {
+        return this.method == "PATCH";
+    }
+
+    /// Returns `true` if this request method is `"DELETE"`.
+    ///
+    /// @return `true` for DELETE requests.
+    /// @since v0.1.0
+    public func isDelete(): bool {
+        return this.method == "DELETE";
+    }
+
+    /// Returns `true` if this request method is `"OPTIONS"`.
+    ///
+    /// @return `true` for OPTIONS requests.
+    /// @since v0.1.0
+    public func isOptions(): bool {
+        return this.method == "OPTIONS";
+    }
+
+    /// Checks whether the connection should remain open for subsequent requests.
+    ///
+    /// Inspects the `Connection` header and HTTP version rules.
+    ///
+    /// @return `true` if connection is persistent; `false` if connection must be closed.
+    /// @since v0.1.0
+    public func isKeepAlive(): bool {
+        string conn = this.getHeader("Connection").toLower();
+        if (conn == "close") {
+            return false;
+        }
+        if (conn == "keep-alive") {
+            return true;
+        }
+        return this.version == "HTTP/1.1";
+    }
+
+    /// Parses a raw wire-format HTTP request string into a structured `HttpRequest` instance.
+    ///
+    /// Deconstructs request line, headers, and body according to RFC 7230.
+    ///
+    /// ```syntra
+    /// let raw = "GET /index.html HTTP/1.1\r\nHost: localhost\r\n\r\n";
+    /// let req = HttpRequest.parse(raw);
+    /// System.println("Parsed path: " + req.path);
+    /// ```
+    ///
+    /// @param raw Raw HTTP wire request text.
+    /// @return Structured `HttpRequest` object.
+    /// @since v0.1.0
+    public static func parse(string raw): HttpRequest {
+        HttpRequest req = new HttpRequest();
+        req.headers = new Map<string, string>();
+        req.method = "GET";
+        req.path = "/";
+        req.version = "HTTP/1.1";
+        req.body = "";
+
+        if (raw.length() == 0) {
+            return req;
+        }
+
+        int firstNewline = raw.indexOf("\n");
+        if (firstNewline < 0) {
+            firstNewline = raw.length();
+        }
+
+        // Fast Request Line parsing: GET /path HTTP/1.1
+        string requestLine = raw.slice(0, firstNewline).trim();
+        int sp1 = requestLine.indexOf(" ");
+        if (sp1 > 0) {
+            req.method = requestLine.slice(0, sp1).toUpper();
+            string rem = requestLine.slice(sp1 + 1, requestLine.length()).trim();
+            int sp2 = rem.indexOf(" ");
+            if (sp2 > 0) {
+                req.path = rem.slice(0, sp2);
+                req.version = rem.slice(sp2 + 1, rem.length()).trim();
+            } else {
+                req.path = rem;
+            }
+        }
+
+        // Separate Headers and Body via standard HTTP delimiters (\r\n\r\n or \n\n)
+        int bodySep = raw.indexOf("\r\n\r\n");
+        int headerEnd = bodySep;
+        int bodyStart = 0;
+        if (bodySep >= 0) {
+            bodyStart = bodySep + 4;
+        } else {
+            int bodySepLf = raw.indexOf("\n\n");
+            if (bodySepLf >= 0) {
+                headerEnd = bodySepLf;
+                bodyStart = bodySepLf + 2;
+            } else {
+                headerEnd = raw.length();
+                bodyStart = raw.length();
+            }
+        }
+
+        string headerSection = raw.slice(firstNewline + 1, headerEnd);
+        string[] headerLines = headerSection.split("\n");
+        int i = 0;
+        while (i < headerLines.length()) {
+            string line = headerLines[i].trim();
+            if (line.length() > 0) {
+                int colon = line.indexOf(":");
+                if (colon > 0) {
+                    string hKey = line.slice(0, colon).trim();
+                    string hVal = line.slice(colon + 1, line.length()).trim();
+                    req.headers.set(hKey, hVal);
+                }
+            }
+            i = i + 1;
+        }
+
+        if (bodyStart < raw.length()) {
+            req.body = raw.slice(bodyStart, raw.length());
+        }
+
+        return req;
+    }
+}
+
+/// Represents an HTTP response message sent by an HTTP server or returned by a client.
+///
+/// ```syntra
+/// let res = HttpResponse.ok("Hello, World!", "text/plain");
+/// client.write(res.toHttpString());
+/// ```
+///
+/// @since v0.1.0
+class HttpResponse {
+    /// 3-digit HTTP status code (e.g. 200, 201, 400, 404, 500).
+    public int statusCode;
+
+    /// Canonical HTTP status phrase (e.g. `"OK"`, `"Not Found"`).
+    public string statusText;
+
+    /// Key-value map of response headers.
+    public Map<string, string> headers;
+
+    /// Response payload body text.
+    public string body;
+
+    /// Retrieves an HTTP response header by name.
+    ///
+    /// @param name Header key string.
+    /// @return Header value or `""` if not set.
+    /// @since v0.1.0
+    public func getHeader(string name): string {
+        if (this.headers.has(name)) {
+            return this.headers.get(name);
+        }
+        return "";
+    }
+
+    /// Sets an HTTP response header by name and value.
+    ///
+    /// @param name Header key string.
+    /// @param val Header value string.
+    /// @return void
+    /// @since v0.1.0
+    public func setHeader(string name, string val): void {
+        this.headers.set(name, val);
+    }
+
+    /// Sets or clears the `Connection` header on the response.
+    ///
+    /// @param enable `true` for `"keep-alive"`, `false` for `"close"`.
+    /// @return void
+    /// @since v0.1.0
+    public func setKeepAlive(bool enable): void {
+        if (enable) {
+            this.headers.set("Connection", "keep-alive");
+        } else {
+            this.headers.set("Connection", "close");
+        }
+    }
+
+    /// Serializes this `HttpResponse` into standard RFC 7230 wire format.
+    ///
+    /// ```syntra
+    /// let rawHttp = res.toHttpString();
+    /// stream.write(rawHttp);
+    /// ```
+    ///
+    /// @return Formatted wire string (`HTTP/1.1 200 OK\r\n...`).
+    /// @since v0.1.0
+    public func toHttpString(): string {
+        string res = "HTTP/1.1 " + this.statusCode + " " + this.statusText + "\r\n";
+        string[] keys = this.headers.keys();
+        int i = 0;
+        while (i < keys.length()) {
+            string k = keys[i];
+            string v = this.headers.get(k);
+            res = res + k + ": " + v + "\r\n";
+            i = i + 1;
+        }
+        res = res + "\r\n" + this.body;
+        return res;
+    }
+
+    /// Constructs an `HTTP 200 OK` response with the specified body content.
+    ///
+    /// @param content Response payload string.
+    /// @param contentType MIME type (e.g. `"text/html"` or `"application/json"`).
+    /// @return Initialized `HttpResponse` instance.
+    /// @since v0.1.0
+    public static func ok(string content, string contentType): HttpResponse {
+        HttpResponse res = new HttpResponse();
+        res.statusCode = 200;
+        res.statusText = "OK";
+        res.headers = new Map<string, string>();
+        res.headers.set("Content-Type", contentType);
+        res.headers.set("Content-Length", "" + content.length());
+        res.headers.set("Connection", "keep-alive");
+        res.body = content;
+        return res;
+    }
+
+    /// Constructs an `HTTP 201 Created` response.
+    ///
+    /// @param content Response payload string.
+    /// @param contentType MIME type.
+    /// @return Initialized `HttpResponse` instance.
+    /// @since v0.1.0
+    public static func created(string content, string contentType): HttpResponse {
+        HttpResponse res = new HttpResponse();
+        res.statusCode = 201;
+        res.statusText = "Created";
+        res.headers = new Map<string, string>();
+        res.headers.set("Content-Type", contentType);
+        res.headers.set("Content-Length", "" + content.length());
+        res.headers.set("Connection", "keep-alive");
+        res.body = content;
+        return res;
+    }
+
+    /// Constructs an `HTTP 204 No Content` response with an empty body.
+    ///
+    /// @return Initialized `HttpResponse` instance.
+    /// @since v0.1.0
+    public static func noContent(): HttpResponse {
+        HttpResponse res = new HttpResponse();
+        res.statusCode = 204;
+        res.statusText = "No Content";
+        res.headers = new Map<string, string>();
+        res.headers.set("Connection", "keep-alive");
+        res.body = "";
+        return res;
+    }
+
+    /// Constructs an `HTTP 200 OK` response with `text/plain` MIME type.
+    ///
+    /// @param content Plain text message.
+    /// @return `HttpResponse` with `Content-Type: text/plain`.
+    /// @since v0.1.0
+    public static func text(string content): HttpResponse {
+        return HttpResponse.ok(content, "text/plain");
+    }
+
+    /// Constructs an `HTTP 200 OK` response with `application/json` MIME type.
+    ///
+    /// @param jsonContent Serialized JSON payload string.
+    /// @return `HttpResponse` with `Content-Type: application/json`.
+    /// @since v0.1.0
+    public static func json(string jsonContent): HttpResponse {
+        return HttpResponse.ok(jsonContent, "application/json");
+    }
+
+    /// Constructs an `HTTP 400 Bad Request` error response.
+    ///
+    /// @param message Descriptive error message.
+    /// @return Initialized error `HttpResponse`.
+    /// @since v0.1.0
+    public static func badRequest(string message): HttpResponse {
+        HttpResponse res = new HttpResponse();
+        res.statusCode = 400;
+        res.statusText = "Bad Request";
+        res.headers = new Map<string, string>();
+        res.headers.set("Content-Type", "text/plain");
+        res.headers.set("Content-Length", "" + message.length());
+        res.headers.set("Connection", "close");
+        res.body = message;
+        return res;
+    }
+
+    /// Constructs an `HTTP 404 Not Found` error response.
+    ///
+    /// @param message Resource not found message.
+    /// @return Initialized error `HttpResponse`.
+    /// @since v0.1.0
+    public static func notFound(string message): HttpResponse {
+        HttpResponse res = new HttpResponse();
+        res.statusCode = 404;
+        res.statusText = "Not Found";
+        res.headers = new Map<string, string>();
+        res.headers.set("Content-Type", "text/plain");
+        res.headers.set("Content-Length", "" + message.length());
+        res.headers.set("Connection", "close");
+        res.body = message;
+        return res;
+    }
+
+    /// Constructs an `HTTP 405 Method Not Allowed` response with the `Allow` header.
+    ///
+    /// @param allowedMethods Comma-separated allowed methods (e.g. `"GET, POST"`).
+    /// @return Initialized error `HttpResponse`.
+    /// @since v0.1.0
+    public static func methodNotAllowed(string allowedMethods): HttpResponse {
+        HttpResponse res = new HttpResponse();
+        res.statusCode = 405;
+        res.statusText = "Method Not Allowed";
+        res.headers = new Map<string, string>();
+        res.headers.set("Allow", allowedMethods);
+        res.headers.set("Connection", "close");
+        res.body = "Method Not Allowed";
+        return res;
+    }
+
+    /// Constructs an `HTTP 500 Internal Server Error` response.
+    ///
+    /// @param message Internal error description.
+    /// @return Initialized error `HttpResponse`.
+    /// @since v0.1.0
+    public static func internalServerError(string message): HttpResponse {
+        HttpResponse res = new HttpResponse();
+        res.statusCode = 500;
+        res.statusText = "Internal Server Error";
+        res.headers = new Map<string, string>();
+        res.headers.set("Content-Type", "text/plain");
+        res.headers.set("Content-Length", "" + message.length());
+        res.headers.set("Connection", "close");
+        res.body = message;
+        return res;
+    }
+
+    /// Parses raw HTTP wire response text into a structured `HttpResponse`.
+    ///
+    /// @param raw Raw HTTP wire response text.
+    /// @return Structured `HttpResponse` instance.
+    /// @since v0.1.0
+    public static func parse(string raw): HttpResponse {
+        HttpResponse res = new HttpResponse();
+        res.headers = new Map<string, string>();
+        res.statusCode = 200;
+        res.statusText = "OK";
+        res.body = "";
+
+        if (raw.length() == 0) {
+            return res;
+        }
+
+        string[] lines = raw.split("\n");
+        if (lines.length() == 0) {
+            return res;
+        }
+
+        // Parse Status Line: HTTP/1.1 200 OK
+        string statusLine = lines[0].trim();
+        string[] parts = statusLine.split(" ");
+        if (parts.length() >= 2) {
+            res.statusCode = parts[1].toInt();
+        }
+        int firstSpace = statusLine.indexOf(" ");
+        if (firstSpace > 0) {
+            string rest = statusLine.slice(firstSpace + 1, statusLine.length()).trim();
+            int secondSpace = rest.indexOf(" ");
+            if (secondSpace > 0) {
+                res.statusText = rest.slice(secondSpace + 1, rest.length()).trim();
+            } else {
+                res.statusText = rest;
+            }
+        } else {
+            res.statusText = "OK";
+        }
+
+        bool inBody = false;
+        string bodyAcc = "";
+        int i = 1;
+        while (i < lines.length()) {
+            string line = lines[i];
+            string trimmed = line.trim();
+            if (inBody == false) {
+                if (trimmed.length() == 0) {
+                    inBody = true;
+                } else {
+                    int colonIdx = line.indexOf(":");
+                    if (colonIdx > 0) {
+                        string key = line.slice(0, colonIdx).trim();
+                        string val = line.slice(colonIdx + 1, line.length()).trim();
+                        res.headers.set(key, val);
+                    }
+                }
+            } else {
+                if (bodyAcc.length() > 0) {
+                    bodyAcc = bodyAcc + "\n" + line;
+                } else {
+                    bodyAcc = line;
+                }
+            }
+            i = i + 1;
+        }
+        res.body = bodyAcc;
+        return res;
+    }
+}
+
+/// A high-performance, asynchronous HTTP server.
+///
+/// Listens on a local TCP port, accepts incoming client connections, parses
+/// requests, and transmits formatted responses.
+///
+/// ```syntra
+/// let server = new HttpServer();
+/// server.listen(8080);
+/// System.println("Serving on port 8080");
+///
+/// while (true) {
+///     let client = server.accept();
+///     let res = HttpResponse.ok("Hello from Syntra!", "text/plain");
+///     server.sendResponse(client, res);
+/// }
+/// ```
+///
+/// @since v0.1.0
+class HttpServer {
+    /// The port number bound by this server.
+    public int port;
+
+    /// The underlying operating system TCP listener socket.
+    public TcpListener listener;
+
+    /// Binds the server to the specified TCP port and starts listening for connections.
+    ///
+    /// @param port Local port number (1-65535).
+    /// @return void
+    /// @throws NetworkException If port is already in use.
+    /// @since v0.1.0
+    public func listen(int port): void {
+        this.port = port;
+        this.listener = TcpListener.listen(port);
+    }
+
+    /// Accepts the next incoming client TCP connection.
+    ///
+    /// Blocks until a client connection arrives.
+    ///
+    /// @return An active `TcpStream` for the connected client.
+    /// @since v0.1.0
+    public func accept(): TcpStream {
+        return this.listener.accept();
+    }
+
+    /// Sends an `HttpResponse` to a client stream without closing the connection.
+    ///
+    /// Suitable for persistent HTTP keep-alive connections.
+    ///
+    /// @param client Connected client stream.
+    /// @param res Response payload to transmit.
+    /// @return void
+    /// @since v0.1.0
+    public func send(TcpStream client, HttpResponse res): void {
+        string raw = res.toHttpString();
+        client.write(raw);
+    }
+
+    /// Sends an `HttpResponse` and immediately terminates the client connection.
+    ///
+    /// @param client Connected client stream.
+    /// @param res Response payload to transmit.
+    /// @return void
+    /// @since v0.1.0
+    public func sendResponse(TcpStream client, HttpResponse res): void {
+        string raw = res.toHttpString();
+        client.write(raw);
+        client.close();
+    }
+
+    /// Closes a client stream socket.
+    ///
+    /// @param client Client stream to close.
+    /// @return void
+    /// @since v0.1.0
+    public func closeClient(TcpStream client): void {
+        client.close();
+    }
+
+    /// Closes the server listening socket and halts new incoming connections.
+    ///
+    /// @return void
+    /// @since v0.1.0
+    public func close(): void {
+        this.listener.close();
+    }
+
+    /// Launches native multi-core HTTP reactor on the specified port.
+    ///
+    /// @param port Port number to listen on.
+    /// @param workers Number of worker threads.
+    /// @return Reactor exit status code.
+    /// @since v0.1.0
+    public static func serveReactor(int port, int workers): int {
+        return TcpListener.serveReactor(port, workers);
+    }
+}
+
+/// Synchronous HTTP client utility for making outgoing HTTP requests.
+///
+/// Supports all standard HTTP verbs with automatic connection teardown.
+///
+/// ```syntra
+/// let res = HttpClient.get("example.com", 80, "/");
+/// System.println("Status: " + res.statusCode);
+/// System.println("Body: " + res.body);
+/// ```
+///
+/// @since v0.1.0
+class HttpClient {
+    /// Executes a raw HTTP request against `host:port`.
+    ///
+    /// @param method HTTP method verb (`"GET"`, `"POST"`, `"PUT"`, `"DELETE"`, etc.).
+    /// @param host Hostname or IP address string.
+    /// @param port Target TCP port.
+    /// @param path Target request URI path.
+    /// @param body Optional request body payload.
+    /// @param contentType MIME type for request body.
+    /// @return Parsed `HttpResponse` returned by the server.
+    /// @throws NetworkException If connection fails or times out.
+    /// @since v0.1.0
+    public static func request(string method, string host, int port, string path, string body, string contentType): HttpResponse {
+        TcpStream stream = TcpStream.connect(host, port);
+        string req = method + " " + path + " HTTP/1.1\r\nHost: " + host + "\r\n";
+        if (contentType.length() > 0) {
+            req = req + "Content-Type: " + contentType + "\r\n";
+        }
+        if (body.length() > 0) {
+            req = req + "Content-Length: " + body.length() + "\r\n";
+        }
+        req = req + "Connection: close\r\n\r\n";
+        if (body.length() > 0) {
+            req = req + body;
+        }
+        stream.write(req);
+        string raw = stream.read();
+        stream.close();
+        return HttpResponse.parse(raw);
+    }
+
+    /// Performs an HTTP GET request.
+    ///
+    /// @param host Target host.
+    /// @param port Target port.
+    /// @param path URI path.
+    /// @return `HttpResponse` from server.
+    /// @since v0.1.0
+    public static func get(string host, int port, string path): HttpResponse {
+        return HttpClient.request("GET", host, port, path, "", "");
+    }
+
+    /// Performs an HTTP POST request.
+    ///
+    /// @param host Target host.
+    /// @param port Target port.
+    /// @param path URI path.
+    /// @param body Payload string.
+    /// @param contentType MIME type (e.g. `"application/json"`).
+    /// @return `HttpResponse` from server.
+    /// @since v0.1.0
+    public static func post(string host, int port, string path, string body, string contentType): HttpResponse {
+        return HttpClient.request("POST", host, port, path, body, contentType);
+    }
+
+    /// Performs an HTTP PUT request.
+    ///
+    /// @param host Target host.
+    /// @param port Target port.
+    /// @param path URI path.
+    /// @param body Payload string.
+    /// @param contentType MIME type.
+    /// @return `HttpResponse` from server.
+    /// @since v0.1.0
+    public static func put(string host, int port, string path, string body, string contentType): HttpResponse {
+        return HttpClient.request("PUT", host, port, path, body, contentType);
+    }
+
+    /// Performs an HTTP PATCH request.
+    ///
+    /// @param host Target host.
+    /// @param port Target port.
+    /// @param path URI path.
+    /// @param body Payload string.
+    /// @param contentType MIME type.
+    /// @return `HttpResponse` from server.
+    /// @since v0.1.0
+    public static func patch(string host, int port, string path, string body, string contentType): HttpResponse {
+        return HttpClient.request("PATCH", host, port, path, body, contentType);
+    }
+
+    /// Performs an HTTP DELETE request without body.
+    ///
+    /// @param host Target host.
+    /// @param port Target port.
+    /// @param path URI path.
+    /// @return `HttpResponse` from server.
+    /// @since v0.1.0
+    public static func delete(string host, int port, string path): HttpResponse {
+        return HttpClient.request("DELETE", host, port, path, "", "");
+    }
+
+    /// Performs an HTTP DELETE request with payload body.
+    ///
+    /// @param host Target host.
+    /// @param port Target port.
+    /// @param path URI path.
+    /// @param body Payload string.
+    /// @param contentType MIME type.
+    /// @return `HttpResponse` from server.
+    /// @since v0.1.0
+    public static func deleteWithBody(string host, int port, string path, string body, string contentType): HttpResponse {
+        return HttpClient.request("DELETE", host, port, path, body, contentType);
+    }
+
+    /// Performs an HTTP OPTIONS request.
+    ///
+    /// @param host Target host.
+    /// @param port Target port.
+    /// @param path URI path.
+    /// @return `HttpResponse` from server.
+    /// @since v0.1.0
+    public static func options(string host, int port, string path): HttpResponse {
+        return HttpClient.request("OPTIONS", host, port, path, "", "");
+    }
+}

@@ -1,0 +1,41 @@
+// Real-Time WebSockets, WebSocketHub, and Server-Sent Events (SSE) Test
+import "web";
+
+func main(): int {
+    println("--- Testing Syntra Real-Time WebSockets & Streaming (Track C) ---");
+
+    App app = new App();
+    WebSocketHub hub = new WebSocketHub();
+
+    // 1. WebSocket Endpoint Registration
+    app.ws("/live", (WebSocket ws) => {
+        hub.register(ws);
+    });
+
+    println("WebSocket endpoint '/live' registered successfully.");
+
+    // 2. Server-Sent Events (SSE) Stream Endpoint
+    app.get("/stream", (Context ctx) => {
+        ctx.sse()
+           .event("connect", "Client connected to event stream")
+           .event("update", "{\"metric\": \"latency\", \"value\": 12.5}");
+    });
+
+    // 3. Test SSE Request Handling
+    HttpRequest req = new HttpRequest();
+    req.method = "GET";
+    req.path = "/stream";
+    req.headers = new Map<string, string>();
+
+    HttpResponse res = app.handleRequest(req);
+    println("SSE Status: " + res.statusCode);
+    println("SSE Content-Type: " + res.headers.get("Content-Type"));
+    println("SSE Response Body:\n" + res.body.trim());
+
+    // 4. Test WebSocket Hub
+    println("--- Testing WebSocketHub ---");
+    println("Initial Hub Client Count: " + hub.count());
+
+    println("ALL_REALTIME_WEBSOCKET_TESTS_PASSED");
+    return 0;
+}

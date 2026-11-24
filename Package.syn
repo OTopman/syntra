@@ -1,0 +1,23 @@
+// Package.syn - Syntra Package Manifest
+package Config {
+    name = "syntra"
+    version = "0.1.0"
+    edition = "2026"
+
+    optimization {
+        pgo = "locked"
+        telemetry_mode = "sampling"
+    }
+
+    build {
+        mode = "native"
+        memory_domains = "strict"
+    }
+
+    network {
+        tls_provider = "pure"
+    }
+
+    dependencies = [
+    ]
+}

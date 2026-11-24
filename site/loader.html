@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module: loader - Syntra Documentation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top-nav">
+<div class="nav-left">
+<button class="mobile-toggle" id="mobileToggle" aria-label="Toggle Navigation">☰</button>
+<a href="index.html" class="brand-link">
+<span class="brand-logo">🔮</span>
+<span class="brand-name">Syntra</span>
+<span class="brand-badge">Docs</span>
+</a>
+</div>
+<div class="nav-center">
+<div class="search-container">
+<span class="search-icon">🔍</span>
+<input type="text" id="searchInput" placeholder="Search in loader or all symbols... (/)" autocomplete="off">
+<span class="search-shortcut">/</span>
+<div id="searchResults" class="search-dropdown hidden"></div>
+</div>
+</div>
+<div class="nav-right">
+<a href="index.html" class="nav-link">Modules</a>
+<button id="themeToggle" class="theme-toggle" title="Toggle Dark / Light theme">🌙</button>
+</div>
+</header>
+<div class="layout-wrapper">
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-section">
+<h4 class="sidebar-title">Standard Library</h4>
+<ul class="sidebar-nav">
+<li><a href="air.html">air</a></li>
+<li><a href="checker.html">checker</a></li>
+<li><a href="codegen.html">codegen</a></li>
+<li><a href="concurrency.html">concurrency</a></li>
+<li><a href="crypto.html">crypto</a></li>
+<li><a href="email.html">email</a></li>
+<li><a href="file.html">file</a></li>
+<li><a href="http.html">http</a></li>
+<li><a href="io.html">io</a></li>
+<li><a href="json.html">json</a></li>
+<li><a href="loader.html" class="active">loader</a></li>
+<li><a href="map.html">map</a></li>
+<li><a href="net.html">net</a></li>
+<li><a href="syntax.html">syntax</a></li>
+<li><a href="system.html">system</a></li>
+<li><a href="web.html">web</a></li>
+</ul>
+</div>
+<div class="sidebar-section toc-section">
+<h4 class="sidebar-title">On This Page</h4>
+<ul class="sidebar-toc">
+<li><span class="toc-group">Classes</span><ul>
+<li><a href="#class-ModuleLoader">ModuleLoader</a></li>
+</ul></li>
+</ul>
+</div>
+</aside>
+<main class="content-main">
+<nav class="breadcrumbs">
+<a href="index.html">Home</a> &gt; <a href="index.html#modules">Standard Library</a> &gt; <span class="current">loader</span>
+</nav>
+<header class="page-header">
+<div class="page-title-row">
+<span class="header-icon">📦</span>
+<h1>loader</h1>
+<span class="badge category">Dynamic Module Loader</span>
+</div>
+<div class="module-lead"><p>Provides recursive multi-file dependency resolution, AST splicing, circular dependency prevention, and search path resolution for self-hosting.</p>
+</div>
+</header>
+<section id="class-ModuleLoader" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>ModuleLoader</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Pure Syntra Module Loader &amp; Dependency Resolver.</p>
+<p>Resolves and loads multi-file Syntra packages recursively, parsing imports into AST nodes, preventing circular dependencies, managing package search paths, and performing AST splicing.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">Arena arena = new Arena();
+ModuleLoader loader = new ModuleLoader(arena);
+loader.addSearchPath(&quot;./vendor&quot;);
+AstNode rootAst = loader.loadProgram(&quot;src/main.syn&quot;);</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>loadedFiles</code></td>
+<td><span class="type-pill">string[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>List of canonical file paths that have already been resolved and parsed to prevent cycles.</td>
+</tr>
+<tr>
+<td><code>searchPaths</code></td>
+<td><span class="type-pill">string[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Ordered search directory paths inspected when resolving imports without relative slashes.</td>
+</tr>
+<tr>
+<td><code>arena</code></td>
+<td><span class="type-pill">Arena</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Memory arena used for allocating AST nodes during parsing.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-ModuleLoader-addSearchPath" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ModuleLoader-addSearchPath" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">addSearchPath</span>(<span class="param-type">string</span> <span class="param-name">path</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Registers an additional directory search path for module resolution.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The directory path to search (e.g. <code class="inline-code">&quot;vendor/lib&quot;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-ModuleLoader-isLoaded" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ModuleLoader-isLoaded" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">isLoaded</span>(<span class="param-type">string</span> <span class="param-name">path</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks whether a given module file path has already been processed.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The canonical file path.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if already loaded; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="method-ModuleLoader-markLoaded" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ModuleLoader-markLoaded" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">markLoaded</span>(<span class="param-type">string</span> <span class="param-name">path</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Marks a module file path as loaded to guard against circular import loops.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The file path to mark.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-ModuleLoader-getParentDir" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ModuleLoader-getParentDir" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">getParentDir</span>(<span class="param-type">string</span> <span class="param-name">filePath</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Computes the directory path enclosing a given file path.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>filePath</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The relative or absolute file path.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; The parent directory path (e.g. <code class="inline-code">&quot;src/utils&quot;</code> from <code class="inline-code">&quot;src/utils/math.syn&quot;</code>).</p>
+</div>
+</div>
+<div id="method-ModuleLoader-joinPath" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ModuleLoader-joinPath" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">joinPath</span>(<span class="param-type">string</span> <span class="param-name">dir</span>, <span class="param-type">string</span> <span class="param-name">file</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Joins a parent directory path and a relative child path cleanly with a forward slash.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>dir</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The parent directory.</td>
+</tr>
+<tr>
+<td><code>file</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The child file or subdirectory path.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; The concatenated path string.</p>
+</div>
+</div>
+<div id="method-ModuleLoader-extractModuleName" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ModuleLoader-extractModuleName" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">extractModuleName</span>(<span class="param-type">string</span> <span class="param-name">importPath</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Extracts the canonical module identifier name from an import path string.</p>
+<p>Strips trailing <code class="inline-code">.syn</code> extensions, directory prefixes, and dotted package qualifiers.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>importPath</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The raw import string (e.g. <code class="inline-code">&quot;std.net.http&quot;</code> or <code class="inline-code">&quot;./math.syn&quot;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; The base module name (e.g. <code class="inline-code">&quot;http&quot;</code> or <code class="inline-code">&quot;math&quot;</code>).</p>
+</div>
+</div>
+<div id="method-ModuleLoader-findModuleFile" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ModuleLoader-findModuleFile" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">findModuleFile</span>(<span class="param-type">string</span> <span class="param-name">importPath</span>, <span class="param-type">string</span> <span class="param-name">currentFile</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Locates an import file on the filesystem relative to the importing file or search paths.</p>
+<p>Checks: 1. Direct path relative to current importing file. 2. Direct path relative to registered search paths. 3. Dot notation translation (e.g. <code class="inline-code">&quot;models.user&quot;</code> -&gt; <code class="inline-code">&quot;models/user.syn&quot;</code> or <code class="inline-code">&quot;models/user/src/lib.syn&quot;</code>).</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>importPath</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The raw import declaration path.</td>
+</tr>
+<tr>
+<td><code>currentFile</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The path of the file declaring the import.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; The absolute or relative file path found, or <code class="inline-code">&quot;&quot;</code> if not resolved.</p>
+</div>
+</div>
+<div id="method-ModuleLoader-loadModuleRecursive" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ModuleLoader-loadModuleRecursive" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">loadModuleRecursive</span>(<span class="param-type">string</span> <span class="param-name">moduleFile</span>, <span class="param-type">string</span> <span class="param-name">moduleName</span>) -&gt; <span class="return-type">AstNode[]</span>
+</div>
+<div class="doc-text"><p>Recursively parses an imported module file, resolving nested imports and splicing declarations.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>moduleFile</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The resolved file path of the module.</td>
+</tr>
+<tr>
+<td><code>moduleName</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The extracted module namespace name.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode[]</span> &mdash; Array of parsed AST declaration nodes from the module and its transitive dependencies.</p>
+</div>
+</div>
+<div id="method-ModuleLoader-loadProgram" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ModuleLoader-loadProgram" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">loadProgram</span>(<span class="param-type">string</span> <span class="param-name">rootFile</span>) -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Loads the root Syntra program and recursively resolves, parses, and splices all imported modules into one unified AST.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>rootFile</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Path to the primary source entry file (e.g. <code class="inline-code">&quot;src/main.syn&quot;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; The merged <code class="inline-code">Program</code> AST root node.</p>
+</div>
+<div class="example-box">
+<h5 class="sub-title">Example</h5>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">AstNode program = loader.loadProgram(&quot;src/main.syn&quot;);</code></pre>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<footer class="site-footer">
+<div class="footer-inner">
+<p>Built with ❤️ by the Syntra Language Team • Version 0.1.0 • Spec 2026</p>
+<p class="footer-sub">High-performance Whole-Program Adaptive Programming Platform</p>
+</div>
+</footer>
+<script src="search.js"></script>
+</body>
+</html>

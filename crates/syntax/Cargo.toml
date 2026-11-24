@@ -1,10 +1,9 @@
 [package]
-name = "aether_syntax"
+name = "syntra_syntax"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
 logos.workspace = true
-thiserror.workspace = true
-aether_diagnostics.workspace = true
+syntra_diagnostics.workspace = true

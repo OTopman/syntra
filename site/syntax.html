@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module: syntax - Syntra Documentation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top-nav">
+<div class="nav-left">
+<button class="mobile-toggle" id="mobileToggle" aria-label="Toggle Navigation">☰</button>
+<a href="index.html" class="brand-link">
+<span class="brand-logo">🔮</span>
+<span class="brand-name">Syntra</span>
+<span class="brand-badge">Docs</span>
+</a>
+</div>
+<div class="nav-center">
+<div class="search-container">
+<span class="search-icon">🔍</span>
+<input type="text" id="searchInput" placeholder="Search in syntax or all symbols... (/)" autocomplete="off">
+<span class="search-shortcut">/</span>
+<div id="searchResults" class="search-dropdown hidden"></div>
+</div>
+</div>
+<div class="nav-right">
+<a href="index.html" class="nav-link">Modules</a>
+<button id="themeToggle" class="theme-toggle" title="Toggle Dark / Light theme">🌙</button>
+</div>
+</header>
+<div class="layout-wrapper">
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-section">
+<h4 class="sidebar-title">Standard Library</h4>
+<ul class="sidebar-nav">
+<li><a href="air.html">air</a></li>
+<li><a href="checker.html">checker</a></li>
+<li><a href="codegen.html">codegen</a></li>
+<li><a href="concurrency.html">concurrency</a></li>
+<li><a href="crypto.html">crypto</a></li>
+<li><a href="email.html">email</a></li>
+<li><a href="file.html">file</a></li>
+<li><a href="http.html">http</a></li>
+<li><a href="io.html">io</a></li>
+<li><a href="json.html">json</a></li>
+<li><a href="loader.html">loader</a></li>
+<li><a href="map.html">map</a></li>
+<li><a href="net.html">net</a></li>
+<li><a href="syntax.html" class="active">syntax</a></li>
+<li><a href="system.html">system</a></li>
+<li><a href="web.html">web</a></li>
+</ul>
+</div>
+<div class="sidebar-section toc-section">
+<h4 class="sidebar-title">On This Page</h4>
+<ul class="sidebar-toc">
+<li><span class="toc-group">Classes</span><ul>
+<li><a href="#class-Span">Span</a></li>
+<li><a href="#class-Token">Token</a></li>
+<li><a href="#class-AstNode">AstNode</a></li>
+<li><a href="#class-Lexer">Lexer</a></li>
+<li><a href="#class-Parser">Parser</a></li>
+</ul></li>
+</ul>
+</div>
+</aside>
+<main class="content-main">
+<nav class="breadcrumbs">
+<a href="index.html">Home</a> &gt; <a href="index.html#modules">Standard Library</a> &gt; <span class="current">syntax</span>
+</nav>
+<header class="page-header">
+<div class="page-title-row">
+<span class="header-icon">🌲</span>
+<h1>syntax</h1>
+<span class="badge category">AST & Lexer Engine</span>
+</div>
+<div class="module-lead"><p>Provides a zero-GC self-hosting Lexer, AST, and recursive-descent Parser utilizing Syntra Memory Domains (Scoped Arenas) for high-performance compilation.</p>
+</div>
+</header>
+<section id="class-Span" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>Span</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Source code location span tracking byte offsets, 1-based line, and 1-based column coordinates.</p>
+<p>Attached to tokens, AST nodes, and compiler diagnostics for error reporting and IDE navigation.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">Span span = new Span(0, 10, 1, 1);
+println(span.toString()); // &quot;1:1&quot;</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>start</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>0-based start byte offset in the source buffer.</td>
+</tr>
+<tr>
+<td><code>end</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>0-based end byte offset in the source buffer.</td>
+</tr>
+<tr>
+<td><code>line</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>1-based source line number.</td>
+</tr>
+<tr>
+<td><code>col</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>1-based source column offset.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-Span-toString" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Span-toString" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">toString</span>() -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Formats the span as a standard line:column position string.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Position string formatted as <code class="inline-code">line:col</code>.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-Token" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>Token</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Lexical token produced by the Syntra Lexer.</p>
+<p>Encapsulates token classification kind, matched text slice, and precise source location span.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">Token tok = new Token(&quot;Identifier&quot;, &quot;myVar&quot;, span);
+println(tok.toString());</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Token kind tag (e.g. <code class="inline-code">&quot;Identifier&quot;</code>, <code class="inline-code">&quot;IntLit&quot;</code>, <code class="inline-code">&quot;KwFunc&quot;</code>, <code class="inline-code">&quot;LParen&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Matched source string text.</td>
+</tr>
+<tr>
+<td><code>span</code></td>
+<td><span class="type-pill">Span</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Source location span where the token was matched.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-Token-toString" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Token-toString" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">toString</span>() -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Serializes token debugging information.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Formatted token description string.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-AstNode" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>AstNode</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Abstract Syntax Tree (AST) node allocated within an Arena memory domain.</p>
+<p>Represents syntactical constructs (Programs, Functions, Classes, Expressions, Statements).</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">AstNode node = new AstNode(&quot;IntLit&quot;, &quot;42&quot;, 42, span);
+println(node.toSExpr());</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>AST node classification tag (e.g. <code class="inline-code">&quot;Program&quot;</code>, <code class="inline-code">&quot;FunctionDecl&quot;</code>, <code class="inline-code">&quot;BinaryExpr&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Identifier name or literal text payload.</td>
+</tr>
+<tr>
+<td><code>intVal</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Pre-parsed integer value for numeric literals.</td>
+</tr>
+<tr>
+<td><code>children</code></td>
+<td><span class="type-pill">AstNode[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Ordered children AST nodes.</td>
+</tr>
+<tr>
+<td><code>span</code></td>
+<td><span class="type-pill">Span</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Source code location span covering this syntactic construct.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-AstNode-addChild" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-AstNode-addChild" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">addChild</span>(<span class="param-type">AstNode</span> <span class="param-name">child</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Appends a child AST node to this node's children list.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>child</code></td>
+<td><span class="type-pill">AstNode</span></td>
+<td>Child AST node to append.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-AstNode-childCount" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-AstNode-childCount" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">childCount</span>() -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>Returns the total number of child nodes.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Child node count.</p>
+</div>
+</div>
+<div id="method-AstNode-getChild" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-AstNode-getChild" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">getChild</span>(<span class="param-type">int</span> <span class="param-name">i</span>) -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Retrieves the child AST node at index <code class="inline-code">i</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>i</code></td>
+<td><span class="type-pill">int</span></td>
+<td>0-based child index.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; The child <code class="inline-code">AstNode</code>.</p>
+</div>
+</div>
+<div id="method-AstNode-hasChildren" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-AstNode-hasChildren" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">hasChildren</span>() -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks if this node contains at least one child node.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if children exist; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="method-AstNode-printTree" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-AstNode-printTree" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">printTree</span>(<span class="param-type">string</span> <span class="param-name">indent</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Formats the AST sub-tree into an indented S-expression string.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>indent</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Current whitespace indentation string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; S-expression formatted string.</p>
+</div>
+</div>
+<div id="method-AstNode-toSExpr" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-AstNode-toSExpr" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">toSExpr</span>() -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Serializes the entire AST tree into a multi-line S-expression string.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; S-expression string.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-Lexer" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>Lexer</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>High-performance Syntra Lexer.</p>
+<p>Scans UTF-8 source text and produces a linear stream of strongly typed tokens. Handles comments (<code class="inline-code">//</code>, <code class="inline-code">/* */</code>), integer literals, string escapes, keywords, and operators.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">Lexer lexer = new Lexer(&quot;func add(int a, int b): int { return a + b; }&quot;);
+Token[] tokens = lexer.tokenize();</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>src</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Raw source text string.</td>
+</tr>
+<tr>
+<td><code>pos</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Current scanning cursor byte index.</td>
+</tr>
+<tr>
+<td><code>len</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Total byte length of source text.</td>
+</tr>
+<tr>
+<td><code>line</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Current 1-based source line.</td>
+</tr>
+<tr>
+<td><code>col</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Current 1-based source column.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-Lexer-isEof" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Lexer-isEof" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">isEof</span>() -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks if the scanner cursor has reached or passed the end of the source.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if at EOF; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="method-Lexer-peek" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Lexer-peek" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">peek</span>() -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>Peeks at the current character code without consuming it.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; ASCII character code (0-255), or -1 if at EOF.</p>
+</div>
+</div>
+<div id="method-Lexer-peekAhead" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Lexer-peekAhead" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">peekAhead</span>(<span class="param-type">int</span> <span class="param-name">offset</span>) -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>Peeks ahead by <code class="inline-code">offset</code> characters from the current position.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>offset</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Number of characters ahead to inspect.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Character code, or -1 if past EOF.</p>
+</div>
+</div>
+<div id="method-Lexer-advance" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Lexer-advance" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">advance</span>() -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>Consumes and returns the current character, advancing line and column counters.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Character code consumed.</p>
+</div>
+</div>
+<div id="method-Lexer-skipWhitespaceAndComments" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Lexer-skipWhitespaceAndComments" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">skipWhitespaceAndComments</span>() -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Skips whitespace characters (spaces, tabs, newlines) and single/multi-line comments.</p>
+</div>
+</div>
+<div id="method-Lexer-lexNumber" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Lexer-lexNumber" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">lexNumber</span>() -&gt; <span class="return-type">Token</span>
+</div>
+<div class="doc-text"><p>Scans a sequence of decimal digits into an <code class="inline-code">IntLit</code> token.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Token</span> &mdash; The scanned <code class="inline-code">Token</code>.</p>
+</div>
+</div>
+<div id="method-Lexer-lexString" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Lexer-lexString" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">lexString</span>() -&gt; <span class="return-type">Token</span>
+</div>
+<div class="doc-text"><p>Scans a quoted string literal and processes escape sequences (<code class="inline-code">\n</code>, <code class="inline-code">\t</code>, <code class="inline-code">\r</code>, <code class="inline-code">\&quot;</code>, <code class="inline-code">\\</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Token</span> &mdash; The scanned <code class="inline-code">Token</code>.</p>
+</div>
+</div>
+<div id="method-Lexer-lexIdentifier" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Lexer-lexIdentifier" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">lexIdentifier</span>() -&gt; <span class="return-type">Token</span>
+</div>
+<div class="doc-text"><p>Scans an identifier or keyword sequence into the appropriate keyword token or <code class="inline-code">Identifier</code>.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Token</span> &mdash; The scanned <code class="inline-code">Token</code>.</p>
+</div>
+</div>
+<div id="method-Lexer-nextToken" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Lexer-nextToken" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">nextToken</span>() -&gt; <span class="return-type">Token</span>
+</div>
+<div class="doc-text"><p>Scans and returns the next token from the character stream.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Token</span> &mdash; The next <code class="inline-code">Token</code>.</p>
+</div>
+</div>
+<div id="method-Lexer-tokenize" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Lexer-tokenize" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">tokenize</span>() -&gt; <span class="return-type">Token[]</span>
+</div>
+<div class="doc-text"><p>Tokenizes the entire source buffer until EOF into an array of tokens.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Token[]</span> &mdash; Complete array of <code class="inline-code">Token</code> instances.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-Parser" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>Parser</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Recursive-Descent Parser allocating AST nodes in an Arena Memory Domain.</p>
+<p>Implements standard precedence climbing for expressions and parses declarations, classes, interfaces, namespaces, imports, and statements.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">Arena arena = new Arena();
+Parser parser = new Parser(tokens, arena);
+AstNode ast = parser.parseProgram();</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>tokens</code></td>
+<td><span class="type-pill">Token[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Array of input tokens produced by the lexer.</td>
+</tr>
+<tr>
+<td><code>pos</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Current token stream index cursor.</td>
+</tr>
+<tr>
+<td><code>count</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Total count of input tokens.</td>
+</tr>
+<tr>
+<td><code>arena</code></td>
+<td><span class="type-pill">Arena</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Scoped memory arena allocating AST node lifetimes.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-Parser-allocNode" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-allocNode" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">allocNode</span>(<span class="param-type">string</span> <span class="param-name">kind</span>, <span class="param-type">string</span> <span class="param-name">name</span>, <span class="param-type">int</span> <span class="param-name">intVal</span>, <span class="param-type">Span</span> <span class="param-name">span</span>) -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Allocates an AST node directly in the attached memory arena.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td><span class="type-pill">string</span></td>
+<td>AST node discriminator tag.</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Name string or operator symbol.</td>
+</tr>
+<tr>
+<td><code>intVal</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Numeric literal payload.</td>
+</tr>
+<tr>
+<td><code>span</code></td>
+<td><span class="type-pill">Span</span></td>
+<td>Source location span.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; Arena-allocated <code class="inline-code">AstNode</code>.</p>
+</div>
+</div>
+<div id="method-Parser-isEof" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-isEof" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">isEof</span>() -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks if the parser cursor is past the end of tokens or at the <code class="inline-code">EOF</code> token.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if at EOF; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="method-Parser-peek" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-peek" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">peek</span>() -&gt; <span class="return-type">Token</span>
+</div>
+<div class="doc-text"><p>Peeks at the current token without consuming it.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Token</span> &mdash; The current <code class="inline-code">Token</code>.</p>
+</div>
+</div>
+<div id="method-Parser-peekKind" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-peekKind" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">peekKind</span>() -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Returns the kind tag of the current token.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Token kind string.</p>
+</div>
+</div>
+<div id="method-Parser-advance" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-advance" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">advance</span>() -&gt; <span class="return-type">Token</span>
+</div>
+<div class="doc-text"><p>Consumes and returns the current token, advancing the cursor.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Token</span> &mdash; Consumed <code class="inline-code">Token</code>.</p>
+</div>
+</div>
+<div id="method-Parser-check" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-check" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">check</span>(<span class="param-type">string</span> <span class="param-name">kind</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks whether the current token matches the specified kind without consuming it.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Token kind tag to check.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if matched; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="method-Parser-matchToken" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-matchToken" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">matchToken</span>(<span class="param-type">string</span> <span class="param-name">kind</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Consumes the current token if it matches <code class="inline-code">kind</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Token kind tag to match.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if matched and consumed; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="method-Parser-consume" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-consume" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">consume</span>(<span class="param-type">string</span> <span class="param-name">kind</span>, <span class="param-type">string</span> <span class="param-name">errMsg</span>) -&gt; <span class="return-type">Token</span>
+</div>
+<div class="doc-text"><p>Asserts that the current token matches <code class="inline-code">kind</code> and consumes it, emitting an error otherwise.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Expected token kind tag.</td>
+</tr>
+<tr>
+<td><code>errMsg</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Error message printed if expectation fails.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Token</span> &mdash; Consumed <code class="inline-code">Token</code>.</p>
+</div>
+</div>
+<div id="method-Parser-parseExpression" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseExpression" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseExpression</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses an expression starting at the lowest precedence level (assignments).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; Root expression <code class="inline-code">AstNode</code>.</p>
+</div>
+</div>
+<div id="method-Parser-parseAssignment" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseAssignment" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseAssignment</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses assignment expressions (<code class="inline-code">a = b = c</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; Assignment or higher-precedence expression node.</p>
+</div>
+</div>
+<div id="method-Parser-parseLogicalOr" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseLogicalOr" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseLogicalOr</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses logical OR expressions (<code class="inline-code">||</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; Expression <code class="inline-code">AstNode</code>.</p>
+</div>
+</div>
+<div id="method-Parser-parseLogicalAnd" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseLogicalAnd" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseLogicalAnd</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses logical AND expressions (<code class="inline-code">&amp;&amp;</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; Expression <code class="inline-code">AstNode</code>.</p>
+</div>
+</div>
+<div id="method-Parser-parseEquality" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseEquality" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseEquality</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses equality expressions (<code class="inline-code">==</code>, <code class="inline-code">!=</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; Expression <code class="inline-code">AstNode</code>.</p>
+</div>
+</div>
+<div id="method-Parser-parseComparison" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseComparison" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseComparison</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses relational comparisons (<code class="inline-code">&lt;</code>, <code class="inline-code">&lt;=</code>, <code class="inline-code">&gt;</code>, <code class="inline-code">&gt;=</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; Expression <code class="inline-code">AstNode</code>.</p>
+</div>
+</div>
+<div id="method-Parser-parseTerm" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseTerm" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseTerm</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses additive binary operations (<code class="inline-code">+</code>, <code class="inline-code">-</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; Expression <code class="inline-code">AstNode</code>.</p>
+</div>
+</div>
+<div id="method-Parser-parseFactor" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseFactor" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseFactor</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses multiplicative binary operations (<code class="inline-code">*</code>, <code class="inline-code">/</code>, <code class="inline-code">%</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; Expression <code class="inline-code">AstNode</code>.</p>
+</div>
+</div>
+<div id="method-Parser-parseUnary" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseUnary" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseUnary</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses prefix unary operations (<code class="inline-code">!</code>, <code class="inline-code">-</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; Expression <code class="inline-code">AstNode</code>.</p>
+</div>
+</div>
+<div id="method-Parser-parsePostfix" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parsePostfix" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parsePostfix</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses postfix operations: method/function calls <code class="inline-code">()</code>, field access <code class="inline-code">.</code>, and array indexing <code class="inline-code">[]</code>.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; Expression <code class="inline-code">AstNode</code>.</p>
+</div>
+</div>
+<div id="method-Parser-parsePrimary" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parsePrimary" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parsePrimary</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses primary atomic expressions (literals, identifiers, <code class="inline-code">this</code>, <code class="inline-code">new</code>, grouping, array literals).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; Primary expression <code class="inline-code">AstNode</code>.</p>
+</div>
+</div>
+<div id="method-Parser-parseStatement" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseStatement" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseStatement</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Dispatches statement parsing (imports, namespaces, variable declarations, control flow, blocks, expression statements).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; Statement <code class="inline-code">AstNode</code>.</p>
+</div>
+</div>
+<div id="method-Parser-parseVarDecl" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseVarDecl" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseVarDecl</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses a variable declaration statement (<code class="inline-code">int x = 42;</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; <code class="inline-code">VarDecl</code> AST node.</p>
+</div>
+</div>
+<div id="method-Parser-parseIfStatement" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseIfStatement" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseIfStatement</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses an <code class="inline-code">if-else</code> conditional statement.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; <code class="inline-code">IfStmt</code> AST node.</p>
+</div>
+</div>
+<div id="method-Parser-parseWhileStatement" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseWhileStatement" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseWhileStatement</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses a <code class="inline-code">while</code> loop statement.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; <code class="inline-code">WhileStmt</code> AST node.</p>
+</div>
+</div>
+<div id="method-Parser-parseImportDecl" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseImportDecl" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseImportDecl</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses an <code class="inline-code">import</code> statement declaration (<code class="inline-code">import &quot;std.http&quot;;</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; <code class="inline-code">ImportDecl</code> AST node.</p>
+</div>
+</div>
+<div id="method-Parser-parseNamespaceDecl" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseNamespaceDecl" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseNamespaceDecl</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses a <code class="inline-code">namespace Name { ... }</code> block declaration.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; <code class="inline-code">NamespaceDecl</code> AST node.</p>
+</div>
+</div>
+<div id="method-Parser-parseReturnStatement" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseReturnStatement" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseReturnStatement</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses a <code class="inline-code">return</code> statement (<code class="inline-code">return expr;</code> or <code class="inline-code">return;</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; <code class="inline-code">ReturnStmt</code> AST node.</p>
+</div>
+</div>
+<div id="method-Parser-parseBlock" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseBlock" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseBlock</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses a curly-brace delimited statement block <code class="inline-code">{ stmt1; stmt2; }</code>.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; <code class="inline-code">Block</code> AST node.</p>
+</div>
+</div>
+<div id="method-Parser-parseFunctionDecl" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseFunctionDecl" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseFunctionDecl</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses a function declaration (<code class="inline-code">func name(params): returnType { body }</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; <code class="inline-code">FunctionDecl</code> AST node.</p>
+</div>
+</div>
+<div id="method-Parser-parseClassDecl" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseClassDecl" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseClassDecl</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses a class declaration with fields, constructor, and methods (<code class="inline-code">class Name { ... }</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; <code class="inline-code">ClassDecl</code> AST node.</p>
+</div>
+</div>
+<div id="method-Parser-parseProgram" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Parser-parseProgram" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseProgram</span>() -&gt; <span class="return-type">AstNode</span>
+</div>
+<div class="doc-text"><p>Parses a complete compilation unit into a <code class="inline-code">Program</code> AST root node.</p>
+<p>Consumes tokens until EOF, parsing top-level functions, classes, namespaces, and statements.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AstNode</span> &mdash; The root <code class="inline-code">Program</code> AST node.</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<footer class="site-footer">
+<div class="footer-inner">
+<p>Built with ❤️ by the Syntra Language Team • Version 0.1.0 • Spec 2026</p>
+<p class="footer-sub">High-performance Whole-Program Adaptive Programming Platform</p>
+</div>
+</footer>
+<script src="search.js"></script>
+</body>
+</html>

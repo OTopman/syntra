@@ -1,0 +1,12 @@
+[package]
+name = "syntra_opt"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+syntra_diagnostics.workspace = true
+syntra_syntax.workspace = true
+syntra_frontend.workspace = true
+syntra_air.workspace = true
+syntra_analysis = { path = "../analysis" }

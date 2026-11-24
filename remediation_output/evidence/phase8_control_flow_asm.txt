@@ -1,0 +1,116 @@
+.intel_syntax noprefix
+.text
+
+.globl _main
+_main:
+    push rbp
+    mov rbp, rsp
+    sub rsp, 208
+.L_main_bb0:
+    mov rax, 15
+    mov qword ptr [rbp - 8], rax
+    mov rax, 5
+    mov qword ptr [rbp - 16], rax
+    mov rax, qword ptr [rbp - 8]
+    add rax, qword ptr [rbp - 16]
+    mov qword ptr [rbp - 24], rax
+    mov rax, 20
+    mov qword ptr [rbp - 32], rax
+    mov rax, qword ptr [rbp - 24]
+    cmp rax, qword ptr [rbp - 32]
+    setge al
+    movzx rax, al
+    mov qword ptr [rbp - 40], rax
+    mov rax, qword ptr [rbp - 40]
+    cmp rax, 0
+    jne .L_main_bb1
+    jmp .L_main_bb2
+.L_main_bb1:
+    mov rax, 2
+    mov qword ptr [rbp - 48], rax
+    mov rax, qword ptr [rbp - 8]
+    imul rax, qword ptr [rbp - 48]
+    mov qword ptr [rbp - 56], rax
+    jmp .L_main_bb3
+.L_main_bb2:
+    jmp .L_main_bb3
+.L_main_bb3:
+    mov rax, 5
+    mov qword ptr [rbp - 64], rax
+    mov rax, qword ptr [rbp - 8]
+    add rax, qword ptr [rbp - 64]
+    mov qword ptr [rbp - 72], rax
+    mov rax, 20
+    mov qword ptr [rbp - 80], rax
+    mov rax, qword ptr [rbp - 72]
+    cmp rax, qword ptr [rbp - 80]
+    setge al
+    movzx rax, al
+    mov qword ptr [rbp - 88], rax
+    mov rax, qword ptr [rbp - 88]
+    cmp rax, 0
+    jne .L_main_bb4
+    jmp .L_main_bb5
+.L_main_bb4:
+    mov rax, 2
+    mov qword ptr [rbp - 96], rax
+    mov rax, qword ptr [rbp - 8]
+    imul rax, qword ptr [rbp - 96]
+    mov qword ptr [rbp - 104], rax
+    jmp .L_main_bb6
+.L_main_bb5:
+    jmp .L_main_bb6
+.L_main_bb6:
+    jmp .L_main_bb7
+.L_main_bb7:
+    mov rax, 10
+    mov qword ptr [rbp - 112], rax
+    mov rax, qword ptr [rbp - 8]
+    cmp rax, qword ptr [rbp - 112]
+    setg al
+    movzx rax, al
+    mov qword ptr [rbp - 120], rax
+    mov rax, qword ptr [rbp - 120]
+    cmp rax, 0
+    jne .L_main_bb8
+    jmp .L_main_bb9
+.L_main_bb8:
+    mov rax, 1
+    mov qword ptr [rbp - 128], rax
+    mov rax, qword ptr [rbp - 8]
+    sub rax, qword ptr [rbp - 128]
+    mov qword ptr [rbp - 136], rax
+    mov rax, qword ptr [rbp - 136]
+    mov qword ptr [rbp - 8], rax
+    mov qword ptr [rbp - 144], rax
+    jmp .L_main_bb7
+.L_main_bb9:
+    jmp .L_main_bb10
+.L_main_bb10:
+    mov rax, 5
+    mov qword ptr [rbp - 152], rax
+    mov rax, qword ptr [rbp - 8]
+    cmp rax, qword ptr [rbp - 152]
+    setg al
+    movzx rax, al
+    mov qword ptr [rbp - 160], rax
+    mov rax, qword ptr [rbp - 160]
+    cmp rax, 0
+    jne .L_main_bb11
+    jmp .L_main_bb12
+.L_main_bb11:
+    mov rax, 1
+    mov qword ptr [rbp - 168], rax
+    mov rax, qword ptr [rbp - 8]
+    sub rax, qword ptr [rbp - 168]
+    mov qword ptr [rbp - 176], rax
+    mov rax, qword ptr [rbp - 176]
+    mov qword ptr [rbp - 8], rax
+    mov qword ptr [rbp - 184], rax
+    jmp .L_main_bb10
+.L_main_bb12:
+    mov rax, qword ptr [rbp - 8]
+    mov rsp, rbp
+    pop rbp
+    ret
+

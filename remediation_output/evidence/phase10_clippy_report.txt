@@ -1,0 +1,3 @@
+    Checking syntra_cli v0.1.0 (/Users/Topman/Documents/Projects/aether/crates/cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.58s
+clippy exit status: 0

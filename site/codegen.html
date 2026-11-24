@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module: codegen - Syntra Documentation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top-nav">
+<div class="nav-left">
+<button class="mobile-toggle" id="mobileToggle" aria-label="Toggle Navigation">☰</button>
+<a href="index.html" class="brand-link">
+<span class="brand-logo">🔮</span>
+<span class="brand-name">Syntra</span>
+<span class="brand-badge">Docs</span>
+</a>
+</div>
+<div class="nav-center">
+<div class="search-container">
+<span class="search-icon">🔍</span>
+<input type="text" id="searchInput" placeholder="Search in codegen or all symbols... (/)" autocomplete="off">
+<span class="search-shortcut">/</span>
+<div id="searchResults" class="search-dropdown hidden"></div>
+</div>
+</div>
+<div class="nav-right">
+<a href="index.html" class="nav-link">Modules</a>
+<button id="themeToggle" class="theme-toggle" title="Toggle Dark / Light theme">🌙</button>
+</div>
+</header>
+<div class="layout-wrapper">
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-section">
+<h4 class="sidebar-title">Standard Library</h4>
+<ul class="sidebar-nav">
+<li><a href="air.html">air</a></li>
+<li><a href="checker.html">checker</a></li>
+<li><a href="codegen.html" class="active">codegen</a></li>
+<li><a href="concurrency.html">concurrency</a></li>
+<li><a href="crypto.html">crypto</a></li>
+<li><a href="email.html">email</a></li>
+<li><a href="file.html">file</a></li>
+<li><a href="http.html">http</a></li>
+<li><a href="io.html">io</a></li>
+<li><a href="json.html">json</a></li>
+<li><a href="loader.html">loader</a></li>
+<li><a href="map.html">map</a></li>
+<li><a href="net.html">net</a></li>
+<li><a href="syntax.html">syntax</a></li>
+<li><a href="system.html">system</a></li>
+<li><a href="web.html">web</a></li>
+</ul>
+</div>
+<div class="sidebar-section toc-section">
+<h4 class="sidebar-title">On This Page</h4>
+<ul class="sidebar-toc">
+<li><span class="toc-group">Classes</span><ul>
+<li><a href="#class-AsmInstruction">AsmInstruction</a></li>
+<li><a href="#class-AsmBlock">AsmBlock</a></li>
+<li><a href="#class-AsmFunction">AsmFunction</a></li>
+<li><a href="#class-NativeCodegen">NativeCodegen</a></li>
+</ul></li>
+</ul>
+</div>
+</aside>
+<main class="content-main">
+<nav class="breadcrumbs">
+<a href="index.html">Home</a> &gt; <a href="index.html#modules">Standard Library</a> &gt; <span class="current">codegen</span>
+</nav>
+<header class="page-header">
+<div class="page-title-row">
+<span class="header-icon">⚙️</span>
+<h1>codegen</h1>
+<span class="badge category">Cranelift Code Generation</span>
+</div>
+<div class="module-lead"><p>Translates Syntra AIR (SSA Intermediate Representation) into native machine assembly (x86-64 / AMD64 System V ABI). Fully self-hosting, zero external dependencies, operating within Arena memory domains.</p>
+</div>
+</header>
+<section id="class-AsmInstruction" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>AsmInstruction</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Native Assembly Instruction representation.</p>
+<p>Encapsulates mnemonic, destination operand, and source operand formatted for Intel syntax.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">AsmInstruction inst = new AsmInstruction(&quot;mov&quot;, &quot;rax&quot;, &quot;42&quot;);
+println(inst.toString()); // &quot;    mov rax, 42&quot;</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>mnemonic</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Assembly mnemonic (e.g. <code class="inline-code">&quot;mov&quot;</code>, <code class="inline-code">&quot;add&quot;</code>, <code class="inline-code">&quot;call&quot;</code>, <code class="inline-code">&quot;ret&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>op1</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Primary destination or first operand.</td>
+</tr>
+<tr>
+<td><code>op2</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Secondary source operand.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-AsmInstruction-toString" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-AsmInstruction-toString" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">toString</span>() -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Formats the instruction as an indented assembly code line.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Formatted assembly string.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-AsmBlock" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>AsmBlock</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Native Assembly Basic Block with label and sequential instruction stream.</p>
+<p>Represents an un-branched linear sequence of instructions terminated by a branch or jump.</p>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>label</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Unique label marking the entry point of this block.</td>
+</tr>
+<tr>
+<td><code>instructions</code></td>
+<td><span class="type-pill">AsmInstruction[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Ordered sequence of emitted native instructions.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-AsmBlock-emit" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-AsmBlock-emit" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">emit</span>(<span class="param-type">string</span> <span class="param-name">mnemonic</span>, <span class="param-type">string</span> <span class="param-name">op1</span>, <span class="param-type">string</span> <span class="param-name">op2</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Emits and appends a new instruction into this block.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>mnemonic</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Instruction mnemonic.</td>
+</tr>
+<tr>
+<td><code>op1</code></td>
+<td><span class="type-pill">string</span></td>
+<td>First operand.</td>
+</tr>
+<tr>
+<td><code>op2</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Second operand.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-AsmBlock-toString" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-AsmBlock-toString" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">toString</span>() -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Serializes the block with its header label and all constituent instructions.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Assembly text representation of the block.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-AsmFunction" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>AsmFunction</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Native Assembly Function representation.</p>
+<p>Manages stack frame size allocation, calling convention prologue/epilogue emission, and block sequence assembly.</p>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Function name identifier.</td>
+</tr>
+<tr>
+<td><code>stackSize</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Total stack frame byte allocation size (16-byte aligned).</td>
+</tr>
+<tr>
+<td><code>blocks</code></td>
+<td><span class="type-pill">AsmBlock[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Basic blocks comprising the function body.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-AsmFunction-addBlock" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-AsmFunction-addBlock" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">addBlock</span>(<span class="param-type">AsmBlock</span> <span class="param-name">block</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Appends a basic block into the function.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>block</code></td>
+<td><span class="type-pill">AsmBlock</span></td>
+<td>The block to attach.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-AsmFunction-toString" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-AsmFunction-toString" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">toString</span>() -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Emits the function definition including Mach-O / ELF export symbol, prologue, body blocks, and epilogue.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Formatted assembly text for the complete function.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-NativeCodegen" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>NativeCodegen</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Self-Hosting Native Machine Code Generator.</p>
+<p>Translates SSA AIR basic blocks and instructions into x86-64 / AMD64 System V assembly code.</p>
+<p>Features:</p>
+<ul class="doc-list">
+<li>Register allocation / stack spilling</li>
+<li>System V AMD64 calling convention argument passing (<code class="inline-code">rdi</code>, <code class="inline-code">rsi</code>, <code class="inline-code">rdx</code>, <code class="inline-code">rcx</code>, <code class="inline-code">r8</code>, <code class="inline-code">r9</code>)</li>
+<li>16-byte stack frame alignment</li>
+<li>Mach-O / ELF interoperability</li>
+</ul>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">NativeCodegen codegen = new NativeCodegen(airModule);
+string asm = codegen.generateModule();
+File.writeText(&quot;out.s&quot;, asm);</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>airModule</code></td>
+<td><span class="type-pill">AirModule</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Source SSA AIR module being compiled.</td>
+</tr>
+<tr>
+<td><code>functions</code></td>
+<td><span class="type-pill">AsmFunction[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Emitted assembly functions.</td>
+</tr>
+<tr>
+<td><code>argRegs</code></td>
+<td><span class="type-pill">string[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Hardware registers used for passing incoming function arguments under System V ABI.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-NativeCodegen-getSlot" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-NativeCodegen-getSlot" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">getSlot</span>(<span class="param-type">int</span> <span class="param-name">valueId</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Computes the stack memory slot displacement string for a virtual SSA value ID.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>valueId</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Numeric SSA value index.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Memory pointer operand string (e.g. <code class="inline-code">&quot;qword ptr [rbp - 16]&quot;</code>).</p>
+</div>
+</div>
+<div id="method-NativeCodegen-generateModule" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-NativeCodegen-generateModule" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">generateModule</span>() -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Compiles all functions in the AIR module into a standalone assembly source text.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Complete x86-64 assembly program string formatted in <code class="inline-code">.intel_syntax noprefix</code>.</p>
+</div>
+</div>
+<div id="method-NativeCodegen-generateFunction" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-NativeCodegen-generateFunction" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">generateFunction</span>(<span class="param-type">AirFunction</span> <span class="param-name">airFn</span>) -&gt; <span class="return-type">AsmFunction</span>
+</div>
+<div class="doc-text"><p>Lowers a single AIR function into its native assembly function representation.</p>
+<p>Computes stack frame requirements, copies parameter registers to stack spill slots, and lowers instructions and block branch terminators.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>airFn</code></td>
+<td><span class="type-pill">AirFunction</span></td>
+<td>The AIR function to compile.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">AsmFunction</span> &mdash; The assembled <code class="inline-code">AsmFunction</code>.</p>
+</div>
+</div>
+<div id="method-NativeCodegen-parseArgList" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-NativeCodegen-parseArgList" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseArgList</span>(<span class="param-type">string</span> <span class="param-name">argsStr</span>) -&gt; <span class="return-type">int[]</span>
+</div>
+<div class="doc-text"><p>Parses a comma-separated list of value references into an integer array of value IDs.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>argsStr</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Value reference string (e.g. <code class="inline-code">&quot;v0, v1&quot;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int[]</span> &mdash; Array of integer value IDs.</p>
+</div>
+</div>
+<div id="method-NativeCodegen-parseValueId" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-NativeCodegen-parseValueId" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseValueId</span>(<span class="param-type">string</span> <span class="param-name">vStr</span>) -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>Parses an SSA value token (e.g. <code class="inline-code">&quot;v4&quot;</code>) into its integer ID (<code class="inline-code">4</code>).</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>vStr</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Value token string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Numeric value identifier.</p>
+</div>
+</div>
+<div id="method-NativeCodegen-lowerInstruction" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-NativeCodegen-lowerInstruction" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">lowerInstruction</span>(<span class="param-type">AirInstruction</span> <span class="param-name">inst</span>, <span class="param-type">AsmBlock</span> <span class="param-name">block</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Lowers an individual SSA AIR instruction into one or more native x86-64 instructions.</p>
+<p>Handles constant loading, arithmetic (<code class="inline-code">add</code>, <code class="inline-code">sub</code>, <code class="inline-code">mul</code>), relational comparisons (<code class="inline-code">cmp.gt</code>, <code class="inline-code">cmp.lt</code>, <code class="inline-code">cmp.eq</code>, <code class="inline-code">cmp.ne</code>, <code class="inline-code">cmp.le</code>, <code class="inline-code">cmp.ge</code>), logical operations (<code class="inline-code">and</code>, <code class="inline-code">or</code>), field accesses, and function calls.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>inst</code></td>
+<td><span class="type-pill">AirInstruction</span></td>
+<td>The AIR instruction to lower.</td>
+</tr>
+<tr>
+<td><code>block</code></td>
+<td><span class="type-pill">AsmBlock</span></td>
+<td>The target assembly block receiving emitted instructions.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-NativeCodegen-lowerTerminator" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-NativeCodegen-lowerTerminator" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">lowerTerminator</span>(<span class="param-type">AirTerminator</span> <span class="param-name">term</span>, <span class="param-type">string</span> <span class="param-name">fnName</span>, <span class="param-type">AsmBlock</span> <span class="param-name">block</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Lowers an SSA block terminator into control-flow branches, jumps, or function epilogue return.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>term</code></td>
+<td><span class="type-pill">AirTerminator</span></td>
+<td>The block terminator (<code class="inline-code">ret</code>, <code class="inline-code">br</code>, or <code class="inline-code">br_if</code>).</td>
+</tr>
+<tr>
+<td><code>fnName</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Enclosing function name used for block labels.</td>
+</tr>
+<tr>
+<td><code>block</code></td>
+<td><span class="type-pill">AsmBlock</span></td>
+<td>The target assembly block.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<footer class="site-footer">
+<div class="footer-inner">
+<p>Built with ❤️ by the Syntra Language Team • Version 0.1.0 • Spec 2026</p>
+<p class="footer-sub">High-performance Whole-Program Adaptive Programming Platform</p>
+</div>
+</footer>
+<script src="search.js"></script>
+</body>
+</html>

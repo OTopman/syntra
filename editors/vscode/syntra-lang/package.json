@@ -1,0 +1,201 @@
+{
+  "name": "syntra-lang",
+  "displayName": "Syntra Language Support",
+  "description": "Full IntelliSense, syntax autocomplete, diagnostics, formatting, and Language Server support for the Syntra programming language.",
+  "version": "0.2.0",
+  "publisher": "syntra-lang",
+  "icon": "icons/syntra-logo.png",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/syntra-lang/syntra"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Snippets",
+    "Formatters"
+  ],
+  "keywords": [
+    "syntra",
+    "syn",
+    "lsp",
+    "intellisense",
+    "autocomplete",
+    "language-server"
+  ],
+  "activationEvents": [
+    "onLanguage:syntra",
+    "workspaceContains:**/*.syn",
+    "workspaceContains:**/*.sy",
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "build": "tsc -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "@types/vscode": "^1.75.0",
+    "typescript": "^5.7.0"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "syntra",
+        "aliases": [
+          "Syntra",
+          "syntra",
+          "syn"
+        ],
+        "extensions": [
+          ".syn",
+          ".sy"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/syntra-file.svg",
+          "dark": "./icons/syntra-file.svg"
+        }
+      }
+    ],
+    "iconThemes": [
+      {
+        "id": "syntra-icons",
+        "label": "Syntra File Icons",
+        "path": "./icons/syntra-icon-theme.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "syntra",
+        "scopeName": "source.syn",
+        "path": "./syntaxes/syntra.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "syntra",
+        "path": "./snippets/syntra.json"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Syntra Configuration",
+      "properties": {
+        "syntra.lsp.path": {
+          "type": "string",
+          "default": "syn",
+          "description": "Path to the 'syn' executable. Defaults to workspace target/debug/syn, ~/.cargo/bin/syn, or system PATH."
+        },
+        "syntra.lsp.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable the Syntra Language Server (syn lsp)."
+        },
+        "syntra.format.onSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically format Syntra files on save using 'syn fmt'."
+        },
+        "syntra.sar.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Self-Adapting Runtime (SAR) governor during execution."
+        },
+        "syntra.intellisense.clientSideCompletions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable client-side rich IntelliSense autocomplete and standard library templates."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "syntra.runFile",
+        "title": "Syntra: Run File",
+        "category": "Syntra",
+        "icon": "$(play)"
+      },
+      {
+        "command": "syntra.runWithSar",
+        "title": "Syntra: Run File with SAR Adaptive Governor",
+        "category": "Syntra",
+        "icon": "$(zap)"
+      },
+      {
+        "command": "syntra.buildNative",
+        "title": "Syntra: Build Native Standalone Binary",
+        "category": "Syntra",
+        "icon": "$(package)"
+      },
+      {
+        "command": "syntra.checkFile",
+        "title": "Syntra: Check File for Errors",
+        "category": "Syntra"
+      },
+      {
+        "command": "syntra.formatDocument",
+        "title": "Syntra: Format Document",
+        "category": "Syntra"
+      },
+      {
+        "command": "syntra.planFile",
+        "title": "Syntra: Consult Intelligence Engine (SIE Plan)",
+        "category": "Syntra"
+      },
+      {
+        "command": "syntra.experimentFile",
+        "title": "Syntra: Run Autonomous Experimentation (SECE)",
+        "category": "Syntra"
+      },
+      {
+        "command": "syntra.restartLsp",
+        "title": "Syntra: Restart Language Server",
+        "category": "Syntra",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "syntra.showMenu",
+        "title": "Syntra: Quick Actions Menu",
+        "category": "Syntra"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "resourceLangId == syntra",
+          "command": "syntra.runFile",
+          "group": "Syntra@1"
+        },
+        {
+          "when": "resourceLangId == syntra",
+          "command": "syntra.runWithSar",
+          "group": "Syntra@2"
+        },
+        {
+          "when": "resourceLangId == syntra",
+          "command": "syntra.buildNative",
+          "group": "Syntra@3"
+        },
+        {
+          "when": "resourceLangId == syntra",
+          "command": "syntra.planFile",
+          "group": "Syntra@4"
+        }
+      ],
+      "editor/title": [
+        {
+          "when": "resourceLangId == syntra",
+          "command": "syntra.runFile",
+          "group": "navigation"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module: crypto - Syntra Documentation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top-nav">
+<div class="nav-left">
+<button class="mobile-toggle" id="mobileToggle" aria-label="Toggle Navigation">☰</button>
+<a href="index.html" class="brand-link">
+<span class="brand-logo">🔮</span>
+<span class="brand-name">Syntra</span>
+<span class="brand-badge">Docs</span>
+</a>
+</div>
+<div class="nav-center">
+<div class="search-container">
+<span class="search-icon">🔍</span>
+<input type="text" id="searchInput" placeholder="Search in crypto or all symbols... (/)" autocomplete="off">
+<span class="search-shortcut">/</span>
+<div id="searchResults" class="search-dropdown hidden"></div>
+</div>
+</div>
+<div class="nav-right">
+<a href="index.html" class="nav-link">Modules</a>
+<button id="themeToggle" class="theme-toggle" title="Toggle Dark / Light theme">🌙</button>
+</div>
+</header>
+<div class="layout-wrapper">
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-section">
+<h4 class="sidebar-title">Standard Library</h4>
+<ul class="sidebar-nav">
+<li><a href="air.html">air</a></li>
+<li><a href="checker.html">checker</a></li>
+<li><a href="codegen.html">codegen</a></li>
+<li><a href="concurrency.html">concurrency</a></li>
+<li><a href="crypto.html" class="active">crypto</a></li>
+<li><a href="email.html">email</a></li>
+<li><a href="file.html">file</a></li>
+<li><a href="http.html">http</a></li>
+<li><a href="io.html">io</a></li>
+<li><a href="json.html">json</a></li>
+<li><a href="loader.html">loader</a></li>
+<li><a href="map.html">map</a></li>
+<li><a href="net.html">net</a></li>
+<li><a href="syntax.html">syntax</a></li>
+<li><a href="system.html">system</a></li>
+<li><a href="web.html">web</a></li>
+</ul>
+</div>
+<div class="sidebar-section toc-section">
+<h4 class="sidebar-title">On This Page</h4>
+<ul class="sidebar-toc">
+<li><span class="toc-group">Classes</span><ul>
+<li><a href="#class-Hex">Hex</a></li>
+<li><a href="#class-Base64">Base64</a></li>
+<li><a href="#class-Sha256">Sha256</a></li>
+<li><a href="#class-HmacSha256">HmacSha256</a></li>
+<li><a href="#class-SecureRandom">SecureRandom</a></li>
+<li><a href="#class-ConstantTime">ConstantTime</a></li>
+<li><a href="#class-Zeroize">Zeroize</a></li>
+</ul></li>
+</ul>
+</div>
+</aside>
+<main class="content-main">
+<nav class="breadcrumbs">
+<a href="index.html">Home</a> &gt; <a href="index.html#modules">Standard Library</a> &gt; <span class="current">crypto</span>
+</nav>
+<header class="page-header">
+<div class="page-title-row">
+<span class="header-icon">🔒</span>
+<h1>crypto</h1>
+<span class="badge category">Cryptography</span>
+</div>
+<div class="module-lead"><p>100% Pure Syntra Implementation with ZERO external C or OpenSSL dependencies. Standards compliant: - SHA-256: FIPS PUB 180-4 Secure Hash Standard - HMAC-SHA256: RFC 2104 Keyed-Hashing for Message Authentication - Hex &amp; Base64: RFC 4648 Encoders &amp; Decoders - SecureRandom: Cryptographically secure entropy source - ConstantTime: Timing-attack resistant operations</p>
+</div>
+</header>
+<section id="class-Hex" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>Hex</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>High-performance hexadecimal serialization and deserialization utilities.</p>
+<p>Encodes raw binary byte arrays into lowercase hexadecimal strings and parses valid hex strings back to byte sequences.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">string hex = Hex.encode([0xde, 0xad, 0xbe, 0xef]); // &quot;deadbeef&quot;
+int[] bytes = Hex.decode(&quot;deadbeef&quot;);</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-Hex-encode" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Hex-encode" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">encode</span>(<span class="param-type">int[]</span> <span class="param-name">bytes</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Encodes an array of byte values (0-255) into a lowercase hexadecimal string.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>bytes</code></td>
+<td><span class="type-pill">int[]</span></td>
+<td>Array of integer byte values to encode.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Lowercase hex string with length equal to <code class="inline-code">bytes.length() * 2</code>.</p>
+</div>
+</div>
+<div id="method-Hex-decode" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Hex-decode" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">decode</span>(<span class="param-type">string</span> <span class="param-name">hex</span>) -&gt; <span class="return-type">int[]</span>
+</div>
+<div class="doc-text"><p>Decodes a hexadecimal string into an array of integer byte values.</p>
+<p>Handles both uppercase (<code class="inline-code">A-F</code>) and lowercase (<code class="inline-code">a-f</code>) characters.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>hex</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The hexadecimal string to decode.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int[]</span> &mdash; Array of integer byte values (0-255).</p>
+</div>
+</div>
+<div id="method-Hex-hexDigit" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Hex-hexDigit" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">hexDigit</span>(<span class="param-type">int</span> <span class="param-name">c</span>) -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>Converts an ASCII character code into its corresponding numeric nibble (0-15).</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>c</code></td>
+<td><span class="type-pill">int</span></td>
+<td>The ASCII code of the character (<code class="inline-code">&#39;0&#39;-&#39;9&#39;</code>, <code class="inline-code">&#39;a&#39;-&#39;f&#39;</code>, or <code class="inline-code">&#39;A&#39;-&#39;F&#39;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Integer value 0-15; returns 0 if character is outside hex range.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-Base64" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>Base64</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>RFC 4648 Base64 serialization and deserialization subsystem.</p>
+<p>Converts arbitrary binary buffers into URL-safe or standard Base64 representation with padding.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">string encoded = Base64.encodeString(&quot;Hello, World!&quot;);
+string decoded = Base64.decodeString(encoded);</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-Base64-encode" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Base64-encode" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">encode</span>(<span class="param-type">int[]</span> <span class="param-name">data</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Encodes an array of binary bytes into standard RFC 4648 Base64 format with <code class="inline-code">=</code> padding.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>data</code></td>
+<td><span class="type-pill">int[]</span></td>
+<td>Array of integer byte values (0-255).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Base64 encoded string.</p>
+</div>
+</div>
+<div id="method-Base64-encodeString" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Base64-encodeString" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">encodeString</span>(<span class="param-type">string</span> <span class="param-name">str</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Encodes an input UTF-8 string into RFC 4648 Base64.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>str</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The raw string to encode.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Base64 encoded string.</p>
+</div>
+</div>
+<div id="method-Base64-decode" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Base64-decode" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">decode</span>(<span class="param-type">string</span> <span class="param-name">b64</span>) -&gt; <span class="return-type">int[]</span>
+</div>
+<div class="doc-text"><p>Decodes an RFC 4648 Base64 string into an array of integer byte values.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>b64</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The Base64 string to decode.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int[]</span> &mdash; Array of integer byte values.</p>
+</div>
+</div>
+<div id="method-Base64-decodeString" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Base64-decodeString" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">decodeString</span>(<span class="param-type">string</span> <span class="param-name">b64</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Decodes an RFC 4648 Base64 string directly into a UTF-8 string.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>b64</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The Base64 encoded string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; The decoded UTF-8 string.</p>
+</div>
+</div>
+<div id="method-Base64-buildReverseTable" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Base64-buildReverseTable" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">buildReverseTable</span>() -&gt; <span class="return-type">int[]</span>
+</div>
+<div class="doc-text"><p>Builds a 256-element reverse lookup table for fast Base64 decoding.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int[]</span> &mdash; Reverse lookup table mapping ASCII character codes to 6-bit values.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-Sha256" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>Sha256</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>NIST FIPS PUB 180-4 Secure Hash Standard (SHA-256) implementation.</p>
+<p>Implements 256-bit cryptographic digest hashing with zero external dependencies.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">string digest = Sha256.hash(&quot;password123&quot;);
+int[] rawBytes = Sha256.digest([1, 2, 3, 4]);</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-Sha256-getK" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Sha256-getK" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">getK</span>() -&gt; <span class="return-type">int[]</span>
+</div>
+<div class="doc-text"><p>Returns the 64 round constants from the fractional cube roots of the first 64 prime numbers.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int[]</span> &mdash; Array of 64 unsigned 32-bit constants.</p>
+</div>
+</div>
+<div id="method-Sha256-rotr" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Sha256-rotr" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">rotr</span>(<span class="param-type">int</span> <span class="param-name">x</span>, <span class="param-type">int</span> <span class="param-name">n</span>) -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>Performs bitwise 32-bit right rotation: <code class="inline-code">ROTR(x, n)</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>x</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Unsigned 32-bit integer operand.</td>
+</tr>
+<tr>
+<td><code>n</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Bit count to rotate right.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Rotated 32-bit integer.</p>
+</div>
+</div>
+<div id="method-Sha256-ch" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Sha256-ch" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">ch</span>(<span class="param-type">int</span> <span class="param-name">x</span>, <span class="param-type">int</span> <span class="param-name">y</span>, <span class="param-type">int</span> <span class="param-name">z</span>) -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>SHA-256 bitwise choice function: <code class="inline-code">Ch(x, y, z) = (x &amp; y) ^ (~x &amp; z)</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>x</code></td>
+<td><span class="type-pill">int</span></td>
+<td>First bit operand.</td>
+</tr>
+<tr>
+<td><code>y</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Second bit operand.</td>
+</tr>
+<tr>
+<td><code>z</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Third bit operand.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Choice bitmask.</p>
+</div>
+</div>
+<div id="method-Sha256-maj" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Sha256-maj" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">maj</span>(<span class="param-type">int</span> <span class="param-name">x</span>, <span class="param-type">int</span> <span class="param-name">y</span>, <span class="param-type">int</span> <span class="param-name">z</span>) -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>SHA-256 majority bitwise function: <code class="inline-code">Maj(x, y, z) = (x &amp; y) ^ (x &amp; z) ^ (y &amp; z)</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>x</code></td>
+<td><span class="type-pill">int</span></td>
+<td>First bit operand.</td>
+</tr>
+<tr>
+<td><code>y</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Second bit operand.</td>
+</tr>
+<tr>
+<td><code>z</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Third bit operand.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Majority bitmask.</p>
+</div>
+</div>
+<div id="method-Sha256-sigma0" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Sha256-sigma0" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">sigma0</span>(<span class="param-type">int</span> <span class="param-name">x</span>) -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>SHA-256 uppercase sigma-0 round function: <code class="inline-code">ROTR^2(x) ^ ROTR^13(x) ^ ROTR^22(x)</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>x</code></td>
+<td><span class="type-pill">int</span></td>
+<td>32-bit word operand.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Computed round value.</p>
+</div>
+</div>
+<div id="method-Sha256-sigma1" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Sha256-sigma1" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">sigma1</span>(<span class="param-type">int</span> <span class="param-name">x</span>) -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>SHA-256 uppercase sigma-1 round function: <code class="inline-code">ROTR^6(x) ^ ROTR^11(x) ^ ROTR^25(x)</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>x</code></td>
+<td><span class="type-pill">int</span></td>
+<td>32-bit word operand.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Computed round value.</p>
+</div>
+</div>
+<div id="method-Sha256-gamma0" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Sha256-gamma0" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">gamma0</span>(<span class="param-type">int</span> <span class="param-name">x</span>) -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>SHA-256 lowercase gamma-0 message schedule function: <code class="inline-code">ROTR^7(x) ^ ROTR^18(x) ^ (x &gt;&gt; 3)</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>x</code></td>
+<td><span class="type-pill">int</span></td>
+<td>32-bit word operand.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Computed schedule word.</p>
+</div>
+</div>
+<div id="method-Sha256-gamma1" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Sha256-gamma1" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">gamma1</span>(<span class="param-type">int</span> <span class="param-name">x</span>) -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>SHA-256 lowercase gamma-1 message schedule function: <code class="inline-code">ROTR^17(x) ^ ROTR^19(x) ^ (x &gt;&gt; 10)</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>x</code></td>
+<td><span class="type-pill">int</span></td>
+<td>32-bit word operand.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Computed schedule word.</p>
+</div>
+</div>
+<div id="method-Sha256-digest" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Sha256-digest" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">digest</span>(<span class="param-type">int[]</span> <span class="param-name">data</span>) -&gt; <span class="return-type">int[]</span>
+</div>
+<div class="doc-text"><p>Computes the raw 32-byte SHA-256 cryptographic hash of an input byte array.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>data</code></td>
+<td><span class="type-pill">int[]</span></td>
+<td>Array of integer byte values (0-255).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int[]</span> &mdash; Array of exactly 32 integer byte values representing the hash.</p>
+</div>
+</div>
+<div id="method-Sha256-hash" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Sha256-hash" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">hash</span>(<span class="param-type">string</span> <span class="param-name">input</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Computes the 64-character lowercase hexadecimal SHA-256 digest of a string.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>input</code></td>
+<td><span class="type-pill">string</span></td>
+<td>String payload to hash.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; 64-character lowercase hex digest string.</p>
+</div>
+<div class="example-box">
+<h5 class="sub-title">Example</h5>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">string hash = Sha256.hash(&quot;admin&quot;);</code></pre>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="class-HmacSha256" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>HmacSha256</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>RFC 2104 HMAC-SHA256 Keyed-Hashing for Message Authentication.</p>
+<p>Produces cryptographically validated message authentication codes (MACs) using a shared secret key and SHA-256.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">string signature = HmacSha256.compute(&quot;secret-key&quot;, &quot;data-payload&quot;);
+bool valid = HmacSha256.verify(&quot;secret-key&quot;, &quot;data-payload&quot;, signature);</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-HmacSha256-computeBytes" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HmacSha256-computeBytes" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">computeBytes</span>(<span class="param-type">int[]</span> <span class="param-name">keyBytes</span>, <span class="param-type">int[]</span> <span class="param-name">msgBytes</span>) -&gt; <span class="return-type">int[]</span>
+</div>
+<div class="doc-text"><p>Computes HMAC-SHA256 over raw binary key and message byte arrays.</p>
+<p>Handles key padding and reduction according to RFC 2104.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>keyBytes</code></td>
+<td><span class="type-pill">int[]</span></td>
+<td>Raw secret key byte array.</td>
+</tr>
+<tr>
+<td><code>msgBytes</code></td>
+<td><span class="type-pill">int[]</span></td>
+<td>Raw message payload byte array.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int[]</span> &mdash; Array of exactly 32 MAC digest bytes.</p>
+</div>
+</div>
+<div id="method-HmacSha256-compute" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HmacSha256-compute" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">compute</span>(<span class="param-type">string</span> <span class="param-name">key</span>, <span class="param-type">string</span> <span class="param-name">message</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Computes the 64-character lowercase hex HMAC-SHA256 signature for a string key and message.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>key</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Secret key string.</td>
+</tr>
+<tr>
+<td><code>message</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Message payload string to authenticate.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; 64-character hex signature string.</p>
+</div>
+</div>
+<div id="method-HmacSha256-verify" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HmacSha256-verify" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">verify</span>(<span class="param-type">string</span> <span class="param-name">key</span>, <span class="param-type">string</span> <span class="param-name">message</span>, <span class="param-type">string</span> <span class="param-name">expectedHex</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Verifies an HMAC-SHA256 signature using constant-time comparison immune to timing attacks.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>key</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Shared secret key string.</td>
+</tr>
+<tr>
+<td><code>message</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Message payload string.</td>
+</tr>
+<tr>
+<td><code>expectedHex</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Expected 64-character hex HMAC string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if the computed HMAC matches <code class="inline-code">expectedHex</code>; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-SecureRandom" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>SecureRandom</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Cryptographically Secure Pseudorandom Number Generator (CSPRNG).</p>
+<p>Implements Hash_DRBG-style entropy pooling based on nanosecond timers, process metrics, and SHA-256 state folding for generating cryptographically robust session tokens and salts.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">string token = SecureRandom.hex(16); // 32-character hex token (128 bits)
+int[] randomBytes = SecureRandom.bytes(32);</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-SecureRandom-bytes" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-SecureRandom-bytes" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">bytes</span>(<span class="param-type">int</span> <span class="param-name">count</span>) -&gt; <span class="return-type">int[]</span>
+</div>
+<div class="doc-text"><p>Generates an array of cryptographically strong pseudo-random bytes.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>count</code></td>
+<td><span class="type-pill">int</span></td>
+<td>The number of random bytes to produce.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int[]</span> &mdash; Array of integer byte values (0-255) of length <code class="inline-code">count</code>.</p>
+</div>
+</div>
+<div id="method-SecureRandom-hex" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-SecureRandom-hex" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">hex</span>(<span class="param-type">int</span> <span class="param-name">byteCount</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Generates a random lowercase hexadecimal string of the requested byte length.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>byteCount</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Number of random entropy bytes (produces string of length <code class="inline-code">byteCount * 2</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Random hex string.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-ConstantTime" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>ConstantTime</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Constant-Time Comparison and Selection Utilities for Timing-Attack Mitigation.</p>
+<p>Prevents side-channel timing attacks by ensuring comparison runtime is independent of data contents.</p>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-ConstantTime-equals" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ConstantTime-equals" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">equals</span>(<span class="param-type">int[]</span> <span class="param-name">a</span>, <span class="param-type">int[]</span> <span class="param-name">b</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Compares two byte arrays in constant time.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>a</code></td>
+<td><span class="type-pill">int[]</span></td>
+<td>First byte array.</td>
+</tr>
+<tr>
+<td><code>b</code></td>
+<td><span class="type-pill">int[]</span></td>
+<td>Second byte array.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if arrays have identical length and identical elements; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="method-ConstantTime-equalsHex" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ConstantTime-equalsHex" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">equalsHex</span>(<span class="param-type">string</span> <span class="param-name">a</span>, <span class="param-type">string</span> <span class="param-name">b</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Compares two strings in constant time.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>a</code></td>
+<td><span class="type-pill">string</span></td>
+<td>First string.</td>
+</tr>
+<tr>
+<td><code>b</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Second string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if strings are identical; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="method-ConstantTime-select" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ConstantTime-select" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">select</span>(<span class="param-type">int</span> <span class="param-name">cond</span>, <span class="param-type">int</span> <span class="param-name">x</span>, <span class="param-type">int</span> <span class="param-name">y</span>) -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>Branchless conditional multiplexer selecting <code class="inline-code">x</code> when <code class="inline-code">cond != 0</code>, otherwise <code class="inline-code">y</code>.</p>
+<p>Executes without branching instructions to resist speculative execution and timing leakage.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>cond</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Non-zero for truthy selection; zero for falsy selection.</td>
+</tr>
+<tr>
+<td><code>x</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Value returned when condition is true.</td>
+</tr>
+<tr>
+<td><code>y</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Value returned when condition is false.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; The selected 32-bit integer value.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-Zeroize" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>Zeroize</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Sensitive Memory Buffer Overwrite Subsystem.</p>
+<p>Securely overwrites cryptographic keys, nonces, and passwords with zeros in memory.</p>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-Zeroize-wipe" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Zeroize-wipe" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">wipe</span>(<span class="param-type">int[]</span> <span class="param-name">arr</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Overwrites all elements of an integer byte buffer with zero values.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>arr</code></td>
+<td><span class="type-pill">int[]</span></td>
+<td>The buffer array to wipe.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<footer class="site-footer">
+<div class="footer-inner">
+<p>Built with ❤️ by the Syntra Language Team • Version 0.1.0 • Spec 2026</p>
+<p class="footer-sub">High-performance Whole-Program Adaptive Programming Platform</p>
+</div>
+</footer>
+<script src="search.js"></script>
+</body>
+</html>

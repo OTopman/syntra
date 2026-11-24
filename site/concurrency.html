@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module: concurrency - Syntra Documentation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top-nav">
+<div class="nav-left">
+<button class="mobile-toggle" id="mobileToggle" aria-label="Toggle Navigation">☰</button>
+<a href="index.html" class="brand-link">
+<span class="brand-logo">🔮</span>
+<span class="brand-name">Syntra</span>
+<span class="brand-badge">Docs</span>
+</a>
+</div>
+<div class="nav-center">
+<div class="search-container">
+<span class="search-icon">🔍</span>
+<input type="text" id="searchInput" placeholder="Search in concurrency or all symbols... (/)" autocomplete="off">
+<span class="search-shortcut">/</span>
+<div id="searchResults" class="search-dropdown hidden"></div>
+</div>
+</div>
+<div class="nav-right">
+<a href="index.html" class="nav-link">Modules</a>
+<button id="themeToggle" class="theme-toggle" title="Toggle Dark / Light theme">🌙</button>
+</div>
+</header>
+<div class="layout-wrapper">
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-section">
+<h4 class="sidebar-title">Standard Library</h4>
+<ul class="sidebar-nav">
+<li><a href="air.html">air</a></li>
+<li><a href="checker.html">checker</a></li>
+<li><a href="codegen.html">codegen</a></li>
+<li><a href="concurrency.html" class="active">concurrency</a></li>
+<li><a href="crypto.html">crypto</a></li>
+<li><a href="email.html">email</a></li>
+<li><a href="file.html">file</a></li>
+<li><a href="http.html">http</a></li>
+<li><a href="io.html">io</a></li>
+<li><a href="json.html">json</a></li>
+<li><a href="loader.html">loader</a></li>
+<li><a href="map.html">map</a></li>
+<li><a href="net.html">net</a></li>
+<li><a href="syntax.html">syntax</a></li>
+<li><a href="system.html">system</a></li>
+<li><a href="web.html">web</a></li>
+</ul>
+</div>
+<div class="sidebar-section toc-section">
+<h4 class="sidebar-title">On This Page</h4>
+<ul class="sidebar-toc">
+<li><span class="toc-group">Functions</span><ul>
+<li><a href="#func-sleepMs">sleepMs</a></li>
+<li><a href="#func-createChannel">createChannel</a></li>
+<li><a href="#func-createThreadPool">createThreadPool</a></li>
+<li><a href="#func-selectChannels">selectChannels</a></li>
+</ul></li>
+</ul>
+</div>
+</aside>
+<main class="content-main">
+<nav class="breadcrumbs">
+<a href="index.html">Home</a> &gt; <a href="index.html#modules">Standard Library</a> &gt; <span class="current">concurrency</span>
+</nav>
+<header class="page-header">
+<div class="page-title-row">
+<span class="header-icon">⚡</span>
+<h1>concurrency</h1>
+<span class="badge category">Async & Threading</span>
+</div>
+<div class="module-lead"><p>Standard Library: Concurrency &amp; Thread Synchronization Provides Task, Channel, ThreadPool, and Select primitives</p>
+</div>
+</header>
+<section class="api-section">
+<div class="section-title-bar">
+<span class="kind-tag function">functions</span>
+<h2>Module Functions</h2>
+</div>
+<div id="func-sleepMs" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#func-sleepMs" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">sleepMs</span>(<span class="param-type">int</span> <span class="param-name">ms</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Suspends execution of the current fiber or thread for the specified duration.</p>
+<p>Yields CPU execution to other concurrent fibers during the sleep period.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">System.println(&quot;Pausing for 500ms...&quot;);
+sleepMs(500);
+System.println(&quot;Resumed.&quot;);</code></pre>
+</div>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>ms</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Sleep duration in milliseconds.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">void</span> &mdash; void</p>
+</div>
+</div>
+<div id="func-createChannel" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#func-createChannel" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">createChannel</span>() -&gt; <span class="return-type">Channel</span>
+</div>
+<div class="doc-text"><p>Creates a new unbounded FIFO synchronization channel for message passing.</p>
+<p>Channels provide thread-safe communication between concurrent tasks without shared-memory synchronization locks.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let ch = createChannel();
+Task.spawn(fn() {
+    ch.send(&quot;Worker message&quot;);
+});
+let response = ch.recv();</code></pre>
+</div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Channel</span> &mdash; A new <code class="inline-code">Channel</code> instance.</p>
+</div>
+</div>
+<div id="func-createThreadPool" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#func-createThreadPool" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">createThreadPool</span>(<span class="param-type">int</span> <span class="param-name">workers</span>) -&gt; <span class="return-type">ThreadPool</span>
+</div>
+<div class="doc-text"><p>Creates a bounded worker thread pool for parallel CPU-bound compute tasks.</p>
+<p>Worker threads are pooled and reused across tasks, eliminating thread creation overhead.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let pool = createThreadPool(4);
+for i in 0..10 {
+    pool.submit(fn() {
+        computeItem(i);
+    });
+}
+pool.wait_idle();</code></pre>
+</div>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>workers</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Number of dedicated background execution threads.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">ThreadPool</span> &mdash; A new <code class="inline-code">ThreadPool</code> instance.</p>
+</div>
+</div>
+<div id="func-selectChannels" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#func-selectChannels" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">selectChannels</span>(<span class="param-type">Channel[]</span> <span class="param-name">channels</span>) -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>Non-blocking multiplexer over an array of channels.</p>
+<p>Inspects the provided channels and returns the zero-based integer index of the first channel that contains an available message ready for receiving.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let ch1 = createChannel();
+let ch2 = createChannel();
+ch2.send(&quot;Alert&quot;);
+
+let readyIndex = selectChannels([ch1, ch2]);
+if (readyIndex == 1) {
+    let msg = ch2.recv();
+    System.println(&quot;Received: &quot; + msg);
+}</code></pre>
+</div>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>channels</code></td>
+<td><span class="type-pill">Channel[]</span></td>
+<td>Array of <code class="inline-code">Channel</code> instances to poll.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Zero-based index of the ready channel, or -1 if none ready.</p>
+</div>
+</div>
+</section>
+</main>
+</div>
+<footer class="site-footer">
+<div class="footer-inner">
+<p>Built with ❤️ by the Syntra Language Team • Version 0.1.0 • Spec 2026</p>
+<p class="footer-sub">High-performance Whole-Program Adaptive Programming Platform</p>
+</div>
+</footer>
+<script src="search.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+[package]
+name = "syntra_intelligence"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+syntra_air = { path = "../air" }
+syntra_opt = { path = "../opt" }
+syntra_diagnostics = { path = "../diagnostics" }
+syntra_runtime = { path = "../runtime" }
+syntra_analysis = { path = "../analysis" }
+syntra_syntax = { path = "../syntax" }

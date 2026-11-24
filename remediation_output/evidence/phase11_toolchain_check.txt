@@ -1,0 +1,4 @@
+🔍 Checking 'benchmarks/bench_syntra.syn'...
+✅ Syntax check passed! Successfully parsed 26 top-level item(s).
+✅ Type check passed! 0 semantic errors found.
+check exit: 0

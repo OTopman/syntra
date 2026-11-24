@@ -1,0 +1,185 @@
+// Syntra Self-Hosting Native Compiler Driver (syn-self)
+// Written entirely in Syntra (.syn)
+// Translates Syntra source code -> Lexer -> Parser -> TypeChecker -> AIR SSA -> x86-64 Assembly -> Executable Binary
+// Operates with zero external GC dependencies inside scoped memory arenas.
+
+import "../stdlib/syntax.syn";
+import "../stdlib/checker.syn";
+import "../stdlib/air.syn";
+import "../stdlib/codegen.syn";
+import "../stdlib/system.syn";
+import "../stdlib/loader.syn";
+
+/// Displays the command-line interface usage, available flags, and compilation options.
+///
+/// Prints available switches:
+/// - `-o <path>`: Output executable binary path
+/// - `-S`: Assembly emission only (.s)
+/// - `--dump-ast`: Prints S-expression AST tree
+/// - `--dump-air`: Prints Syntra Intermediate Representation (SSA)
+/// - `--help`, `-h`: Shows usage manual
+///
+/// @since v0.1.0
+func printUsage() {
+    println("===============================================================");
+    println("      Syntra Self-Hosting Native Compiler (syn-self) v0.1.0    ");
+    println("===============================================================");
+    println("Usage: syn_self <input.syn> [options]");
+    println("");
+    println("Options:");
+    println("  -o <path>       Specify the output executable name");
+    println("  -S              Generate native x86-64 assembly only (.s)");
+    println("  --dump-ast      Print S-expression Abstract Syntax Tree");
+    println("  --dump-air      Print Syntra Intermediate Representation (AIR)");
+    println("  --help, -h      Display this help menu");
+    println("===============================================================");
+}
+
+/// Main entry point for the self-hosting native compiler (`syn-self`).
+///
+/// Orchestrates the entire compilation pipeline:
+/// 1. CLI argument parsing and validation
+/// 2. Memory arena initialization (`Arena.create(524288)`)
+/// 3. Recursive multi-module dependency loading and AST parsing via `ModuleLoader`
+/// 4. Semantic analysis, symbol resolution, and type checking via `TypeChecker`
+/// 5. SSA intermediate representation generation via `AirLowering`
+/// 6. Native machine assembly generation (x86-64 System V ABI) via `NativeCodegen`
+/// 7. Executable linking via system toolchain (`clang`)
+/// 8. Zero-GC arena reclamation (`compArena.reset()`)
+///
+/// @returns Integer status code: `0` on successful build, `1` on error.
+/// @example
+/// ```bash
+/// syn run src/syn_self.syn -- examples/m01_hello.syn -o hello_bin
+/// ./hello_bin
+/// ```
+/// @since v0.1.0
+func main(): int {
+    string[] args = System.args();
+    if (args.length() < 1) {
+        printUsage();
+        return 0;
+    }
+
+    string inputFile = "";
+    string outputFile = "";
+    bool assemblyOnly = false;
+    bool dumpAst = false;
+    bool dumpAir = false;
+
+    int i = 0;
+    while (i < args.length()) {
+        string arg = args[i];
+        if (arg == "--help" || arg == "-h") {
+            printUsage();
+            return 0;
+        } else if (arg == "-S") {
+            assemblyOnly = true;
+        } else if (arg == "--dump-ast") {
+            dumpAst = true;
+        } else if (arg == "--dump-air") {
+            dumpAir = true;
+        } else if (arg == "-o") {
+            if (i + 1 < args.length()) {
+                i = i + 1;
+                outputFile = args[i];
+            }
+        } else if (inputFile.length() == 0 && arg.startsWith("-") == false) {
+            inputFile = arg;
+        }
+        i = i + 1;
+    }
+
+    if (inputFile.length() == 0) {
+        println("❌ Error: No input file specified.");
+        printUsage();
+        return 1;
+    }
+
+    if (outputFile.length() == 0) {
+        if (inputFile.endsWith(".syn")) {
+            outputFile = inputFile.substring(0, inputFile.length() - 4);
+        } else {
+            outputFile = inputFile + ".out";
+        }
+    }
+
+    if (File.exists(inputFile) == false) {
+        println("❌ Error: Input file not found: " + inputFile);
+        return 1;
+    }
+
+    println("⚡ Syntra Self-Hosting Compiler (syn-self)");
+    println("   Target Source: " + inputFile);
+
+    Arena compArena = Arena.create(524288); // 512 KB Arena Domain
+
+    // -------------------------------------------------------------
+    // Step 1 & 2: Multi-Module Dependency Resolution & Parsing
+    // -------------------------------------------------------------
+    ModuleLoader loader = new ModuleLoader(compArena);
+    AstNode programAst = loader.loadProgram(inputFile);
+    if (programAst.kind == "ErrorNode") {
+        println("❌ Parsing / Module loading failed for: " + inputFile);
+        return 1;
+    }
+
+    if (dumpAst) {
+        println("\n--- Abstract Syntax Tree (AST) ---");
+        println(programAst.toSExpr());
+    }
+
+    // -------------------------------------------------------------
+    // Step 3: Semantic Analysis & Type Checking
+    // -------------------------------------------------------------
+    TypeChecker checker = new TypeChecker();
+    checker.checkProgram(programAst);
+    if (checker.hasErrors()) {
+        println("❌ Semantic analysis failed with " + checker.errorCount() + " error(s).");
+        return 1;
+    }
+
+    // -------------------------------------------------------------
+    // Step 4: AIR SSA Lowering
+    // -------------------------------------------------------------
+    AirLowering lowering = new AirLowering(checker, "syn_module");
+    AirModule airMod = lowering.lowerProgram(programAst);
+
+    if (dumpAir) {
+        println("\n--- Syntra Intermediate Representation (AIR) ---");
+        println(airMod.toString());
+    }
+
+    // -------------------------------------------------------------
+    // Step 5: Native Machine Code Generation (x86-64 System V)
+    // -------------------------------------------------------------
+    NativeCodegen codegen = new NativeCodegen(airMod);
+    string asmSource = codegen.generateModule();
+
+    string asmPath = outputFile + ".s";
+    File.writeText(asmPath, asmSource);
+    println("📝 Emitted native assembly: " + asmPath + " (" + asmSource.length() + " bytes)");
+
+    // -------------------------------------------------------------
+    // Step 6: Assembling & Linking Executable Binary
+    // -------------------------------------------------------------
+    if (assemblyOnly == false) {
+        println("🔨 Linking native executable: " + outputFile);
+        string linkCmd = "clang " + asmPath + " -o " + outputFile;
+        int linkStatus = System.exec(linkCmd);
+        if (linkStatus != 0) {
+            println("❌ Linker failed with exit code: " + linkStatus);
+            return 1;
+        }
+        println("✅ Successfully built standalone native executable: " + outputFile);
+    }
+
+    // -------------------------------------------------------------
+    // Step 7: Zero-GC Arena Memory Reclamation
+    // -------------------------------------------------------------
+    int recycledBytes = compArena.allocatedBytes();
+    compArena.reset();
+    println("♻️  Arena domain recycled: " + recycledBytes + " bytes (0ms pause).");
+
+    return 0;
+}

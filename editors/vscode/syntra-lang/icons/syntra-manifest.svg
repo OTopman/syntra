@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="5" fill="#D97706"/>
+  <!-- Crisp flat white isometric package box -->
+  <path d="M 16 6.5 L 25 11.5 L 16 16.5 L 7 11.5 Z" fill="#FFFFFF" fill-opacity="0.9"/>
+  <path d="M 7 13.5 L 15 18 L 15 25.5 L 7 21 Z" fill="#FFFFFF" fill-opacity="0.75"/>
+  <path d="M 17 18 L 25 13.5 L 25 21 L 17 25.5 Z" fill="#FFFFFF" fill-opacity="0.85"/>
+</svg>

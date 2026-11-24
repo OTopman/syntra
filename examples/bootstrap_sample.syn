@@ -1,0 +1,10 @@
+func multiply(int x, int y): int {
+    return x * y;
+}
+
+func main(): int {
+    int a = 6;
+    int b = 7;
+    int res = multiply(a, b);
+    return res;
+}

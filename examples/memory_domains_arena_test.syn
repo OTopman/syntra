@@ -1,0 +1,120 @@
+/// @fileoverview Syntra Memory Domains Subsystem: Scoped Arena Allocation & Bulk Reclamation.
+///
+/// Demonstrates:
+/// - Arena creation with configurable slab sizes (`Arena.create(32768)`)
+/// - High-throughput batch allocation inside Arena domain with zero GC pauses
+/// - Accurate byte tracking (`arena.allocatedBytes()`)
+/// - Instant bulk memory reset and reuse (`arena.reset()`)
+/// - Permanent slab release on domain destruction (`arena.destroy()`)
+///
+/// @example
+/// ```bash
+/// syn run examples/memory_domains_arena_test.syn
+/// ```
+/// @since v0.1.0
+
+class AstNode {
+    public int id;
+    public string kind;
+    public int value;
+
+    new(int id, string kind, int val) {
+        this.id = id;
+        this.kind = kind;
+        this.value = val;
+    }
+}
+
+func main(): int {
+    println("=== Syntra Memory Domains Subsystem: Scoped Arenas (Specification 02) ===");
+
+    // 1. Explicit Arena Creation
+    println("--- Test 1: Arena Creation & Slab Allocation ---");
+    Arena arena = Arena.create(32768);
+    println("Initial Arena Allocated Bytes: " + arena.allocatedBytes());
+
+    if (arena.allocatedBytes() != 0) {
+        println("FAILED: Initial allocated bytes should be 0");
+        return 1;
+    }
+
+    // 2. High-Throughput Batch Allocation in Arena Domain
+    println("--- Test 2: Batch Allocation in Arena Domain ---");
+    int i = 0;
+    while (i < 500) {
+        AstNode node = arena.alloc(new AstNode(i, "Literal", i * 10));
+        i = i + 1;
+    }
+
+    int bytesAfterBatch = arena.allocatedBytes();
+    println("Allocated 500 AST Nodes in Arena. Total Arena Bytes: " + bytesAfterBatch);
+
+    if (bytesAfterBatch <= 0) {
+        println("FAILED: Arena should record positive allocated bytes");
+        return 1;
+    }
+    println("BATCH_ARENA_ALLOCATION_PASSED: True");
+
+    // 3. Instant O(1) Bulk Reclamation (Bump Reset)
+    println("--- Test 3: O(1) Instant Bulk Reclamation (Reset) ---");
+    arena.reset();
+    println("Arena Allocated Bytes after reset(): " + arena.allocatedBytes());
+
+    if (arena.allocatedBytes() != 0) {
+        println("FAILED: Arena bytes after reset should be 0");
+        return 1;
+    }
+    println("O1_BULK_RECLAMATION_PASSED: True");
+
+    // 4. Reusing Reclaimed Arena Memory Pool
+    println("--- Test 4: Reusing Reclaimed Memory Pool ---");
+    int j = 0;
+    while (j < 500) {
+        AstNode node2 = arena.alloc(new AstNode(j, "Operator", j + 100));
+        j = j + 1;
+    }
+
+    int bytesAfterReuse = arena.allocatedBytes();
+    println("Re-allocated 500 AST Nodes in Reused Arena. Bytes: " + bytesAfterReuse);
+
+    if (bytesAfterReuse <= 0) {
+        println("FAILED: Reused arena should record positive bytes");
+        return 1;
+    }
+    arena.destroy();
+    println("ARENA_REUSE_AND_DESTROY_PASSED: True");
+
+    // 5. Scoped Arena Lifecycle (Automatic Reclamation on Scope Exit)
+    println("--- Test 5: Scoped Arena Lifecycle (Arena.scoped) ---");
+    int scopedSum = Arena.scoped((Arena localArena) => {
+        println("Inside scoped arena block!");
+        int sum = 0;
+        int k = 0;
+        while (k < 100) {
+            AstNode n = localArena.alloc(new AstNode(k, "Identifier", k));
+            sum = sum + n.value;
+            k = k + 1;
+        }
+        println("Scoped Arena Allocated Bytes: " + localArena.allocatedBytes());
+        return sum;
+    });
+
+    println("Scoped block completed. Calculated sum: " + scopedSum);
+    if (scopedSum != 4950) {
+        println("FAILED: Expected sum 4950, got " + scopedSum);
+        return 1;
+    }
+    println("SCOPED_ARENA_LIFECYCLE_PASSED: True");
+
+    // 6. Direct Constructor Syntax: new Arena()
+    println("--- Test 6: Constructor Instantiation: new Arena() ---");
+    Arena arena2 = new Arena(65536);
+    AstNode n1 = arena2.alloc(new AstNode(1, "BinaryExpr", 42));
+    println("Allocated node value: " + n1.value + ", arena2 bytes: " + arena2.allocatedBytes());
+    arena2.destroy();
+
+    println("=========================================================================");
+    println("SUCCESS: ALL MEMORY DOMAIN & SCOPED ARENA INVARIANTS VERIFIED (SPEC 02)");
+    println("=========================================================================");
+    return 0;
+}

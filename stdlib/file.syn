@@ -1,0 +1,78 @@
+// Syntra Standard Library: File Subsystem
+// Aliases and high-level file utilities.
+
+import io;
+
+/// The `File` namespace provides file reading, writing, presence checks,
+/// deletion, and size inspection.
+///
+/// ```syntra
+/// import File;
+///
+/// func main(): void {
+///     if (File.exists("Package.syn")) {
+///         let manifest = File.readText("Package.syn");
+///         System.println("Manifest loaded (" + manifest.length() + " chars)");
+///     }
+/// }
+/// ```
+///
+/// @since v0.1.0
+namespace File {
+    /// Check whether a file exists at the specified path.
+    ///
+    /// @param path Target filesystem path.
+    /// @return `true` if file exists; `false` otherwise.
+    /// @since v0.1.0
+    func exists(string path): bool {
+        return fileExists(path);
+    }
+
+    /// Read file content as a UTF-8 string.
+    ///
+    /// @param path Target filesystem path.
+    /// @return Entire file content as string.
+    /// @throws RuntimeException If file cannot be read.
+    /// @since v0.1.0
+    func readText(string path): string {
+        return readFile(path);
+    }
+
+    /// Write text to a file, replacing existing content.
+    ///
+    /// @param path Target filesystem path.
+    /// @param content String data to write.
+    /// @return `true` on success, `false` on failure.
+    /// @since v0.1.0
+    func writeText(string path, string content): bool {
+        return writeFile(path, content);
+    }
+
+    /// Append text to the end of a file.
+    ///
+    /// @param path Target filesystem path.
+    /// @param content String data to append.
+    /// @return `true` on success, `false` on failure.
+    /// @since v0.1.0
+    func appendText(string path, string content): bool {
+        return appendFile(path, content);
+    }
+
+    /// Delete a file from disk.
+    ///
+    /// @param path Target file path to unlink.
+    /// @return `true` if deleted, `false` otherwise.
+    /// @since v0.1.0
+    func delete(string path): bool {
+        return deleteFile(path);
+    }
+
+    /// Get file size in bytes.
+    ///
+    /// @param path Target file path.
+    /// @return Size in bytes, or `-1` if not found.
+    /// @since v0.1.0
+    func size(string path): int {
+        return fileSize(path);
+    }
+}

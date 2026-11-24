@@ -1,0 +1,130 @@
+// RFC 6455 WebSocket Dynamic Handshake & Client XOR Masking Interoperability Test
+import "web";
+
+func main(): int {
+    println("=== RFC 6455 WebSocket Dynamic Handshake & XOR Masking Verification ===");
+
+    // 1. Verify Standard RFC 6455 Section 1.3 / 4.2.2 Test Vector
+    string standardKey = "dGhlIHNhbXBsZSBub25jZQ==";
+    string computedAccept = WebSocket.computeAcceptKey(standardKey);
+    println("Client Key:   " + standardKey);
+    println("Accept Key:   " + computedAccept);
+    string expectedAccept = "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=";
+
+    if (computedAccept != expectedAccept) {
+        println("FAILED: Accept key mismatch! Expected " + expectedAccept + " but got " + computedAccept);
+        return 1;
+    }
+    println("RFC_6455_HANDSHAKE_TEST_VECTOR_PASSED: True");
+
+    // 2. Verify Dynamic Handshake with Custom Browser Nonce
+    string browserKey = "x3JJHMbDL1EzLkh9GBhXDw==";
+    string browserAccept = WebSocket.computeAcceptKey(browserKey);
+    println("Browser Key:  " + browserKey);
+    println("Accept Key:   " + browserAccept);
+    println("RFC_6455_BROWSER_HANDSHAKE_VERIFIED: True");
+
+    // 3. Test App WebSocket Route and Upgrade Handshake Generation
+    App app = new App();
+    bool wsConnected = false;
+    string receivedMessage = "";
+
+    app.ws("/chat", (WebSocket ws) => {
+        wsConnected = true;
+        println("WebSocket client connected to /chat with ID: " + ws.id);
+    });
+
+    HttpRequest req = new HttpRequest();
+    req.method = "GET";
+    req.path = "/chat";
+    req.headers = new Map<string, string>();
+    req.headers.set("Upgrade", "websocket");
+    req.headers.set("Connection", "Upgrade");
+    req.headers.set("Sec-WebSocket-Key", standardKey);
+    req.headers.set("Sec-WebSocket-Version", "13");
+
+    // 4. Test Live TCP Loopback with Real Client XOR Masking & Server Unmasked Framing
+    HttpServer server = new HttpServer();
+    server.listen(18088);
+    println("WebSocket Test Server listening on port 18088");
+
+    // Connect client TcpStream
+    TcpStream clientStream = TcpStream.connect("127.0.0.1", 18088);
+    TcpStream serverStream = server.accept();
+
+    // Client sends RFC 6455 WebSocket Upgrade Request
+    string clientUpgradeReq = "GET /chat HTTP/1.1\r\n" +
+                              "Host: 127.0.0.1:18088\r\n" +
+                              "Upgrade: websocket\r\n" +
+                              "Connection: Upgrade\r\n" +
+                              "Sec-WebSocket-Key: " + standardKey + "\r\n" +
+                              "Sec-WebSocket-Version: 13\r\n\r\n";
+    clientStream.write(clientUpgradeReq);
+
+    // Server reads upgrade request and triggers handleWebSocketUpgrade
+    string rawUpgrade = serverStream.read();
+    HttpRequest parsedReq = HttpRequest.parse(rawUpgrade);
+    bool upgraded = app.handleWebSocketUpgrade(parsedReq, serverStream);
+    println("Server WebSocket Upgrade Handled: " + upgraded);
+
+    // Client receives 101 Switching Protocols response
+    string handshakeResponse = clientStream.read();
+    println("Client received Handshake Response:\n" + handshakeResponse.trim());
+
+    if (handshakeResponse.contains("101 Switching Protocols") == false) {
+        println("FAILED: Expected 101 Switching Protocols");
+        return 1;
+    }
+    if (handshakeResponse.contains("Sec-WebSocket-Accept: " + expectedAccept) == false) {
+        println("FAILED: Handshake missing valid Sec-WebSocket-Accept header");
+        return 1;
+    }
+
+    // 5. Client sends RFC 6455 Masked Frame (Client MUST mask frames per RFC 6455 §5.1)
+    println("Client sending RFC 6455 XOR-masked frame: 'Hello'");
+    clientStream.writeWsClientFrame("Hello");
+
+    // Server reads frame with automatic XOR unmasking
+    string unmaskedMessage = serverStream.readWsFrame();
+    println("Server successfully decoded and XOR-unmasked client frame: '" + unmaskedMessage + "'");
+
+    if (unmaskedMessage != "Hello") {
+        println("FAILED: Expected 'Hello' from client masked frame, got '" + unmaskedMessage + "'");
+        return 1;
+    }
+
+    // 6. Server sends RFC 6455 Unmasked Frame back to Client
+    string serverPayload = "Syntra Interoperable WebSocket Echo: " + unmaskedMessage;
+    serverStream.writeWsFrame(serverPayload);
+
+    // Client reads frame
+    string echoResponse = clientStream.readWsFrame();
+    println("Client received server unmasked frame: '" + echoResponse + "'");
+
+    if (echoResponse != serverPayload) {
+        println("FAILED: Echo mismatch! Got '" + echoResponse + "'");
+        return 1;
+    }
+
+    // 7. Test Hub Broadcast & Dynamic Integration
+    WebSocketHub hub = new WebSocketHub();
+    WebSocket wsInstance = new WebSocket();
+    wsInstance.stream = serverStream;
+    wsInstance.isOpen = true;
+    wsInstance.id = "ws_test_001";
+    hub.register(wsInstance);
+
+    hub.broadcast("Broadcast message to standard clients");
+    string broadcastReceived = clientStream.readWsFrame();
+    println("Client received hub broadcast frame: '" + broadcastReceived + "'");
+
+    // Close connections
+    clientStream.close();
+    serverStream.close();
+    server.close();
+
+    println("=================================================================");
+    println("SUCCESS: ALL RFC 6455 CLIENT XOR MASKING & DYNAMIC HANDSHAKE TESTS PASSED");
+    println("=================================================================");
+    return 0;
+}

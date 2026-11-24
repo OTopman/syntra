@@ -1,0 +1,26 @@
+func main(): int {
+    int a = 12; // 0b1100
+    int b = 10; // 0b1010
+
+    int and_res = a & b; // 8
+    int or_res = a | b;  // 14
+    int xor_res = a ^ b; // 6
+    int shl_res = a << 2; // 48
+    int shr_res = a >> 2; // 3
+    int mod_res = a % 5;  // 2
+    int not_res = ~0;     // -1
+
+    println("and: " + and_res);
+    println("or: " + or_res);
+    println("xor: " + xor_res);
+    println("shl: " + shl_res);
+    println("shr: " + shr_res);
+    println("mod: " + mod_res);
+    println("not: " + not_res);
+
+    if (and_res == 8 && or_res == 14 && xor_res == 6 && shl_res == 48 && shr_res == 3 && mod_res == 2 && not_res == -1) {
+        println("BITWISE_OPERATIONS_OK");
+        return 42;
+    }
+    return 1;
+}

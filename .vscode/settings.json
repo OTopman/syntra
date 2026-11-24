@@ -1,0 +1,7 @@
+{
+  "files.associations": {
+    "*.syn": "syntra",
+    "*.sy": "syntra"
+  },
+  "syntra.lsp.path": "/usr/local/bin/syn"
+}

@@ -1,0 +1,13 @@
+func compute(int a, int b): int {
+    int x = a * 2;
+    int y = b + 10;
+    int res = x + y;
+    return res;
+}
+
+func main(): int {
+    int total = 0;
+    int val = compute(5, 7);
+    total = total + val;
+    return total;
+}

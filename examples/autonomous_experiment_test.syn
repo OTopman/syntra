@@ -1,0 +1,51 @@
+// Autonomous Experimentation & Whole-Program Escape Analysis Test
+class Point {
+    public int x;
+    public int y;
+}
+
+class Node {
+    public int id;
+    public int value;
+}
+
+// 1. Non-escaping allocation: Point is created and used locally
+func compute_local_distance(int dx, int dy): int {
+    Point p = new Point();
+    p.x = dx;
+    p.y = dy;
+    int dist_sq = p.x * p.x + p.y * p.y;
+    return dist_sq;
+}
+
+// 2. Escaping allocation: Node is created and returned
+func create_persistent_node(int node_id, int val): Node {
+    Node n = new Node();
+    n.id = node_id;
+    n.value = val;
+    return n;
+}
+
+func mod10(int val): int {
+    int div = val / 10;
+    return val - div * 10;
+}
+
+func main(): int {
+    println("--- Testing Syntra Whole-Program Escape Analysis & SECE ---");
+
+    // Compute 1000 iterations of local non-escaping points
+    int total_dist = 0;
+    int i = 0;
+    while i < 1000 {
+        total_dist = total_dist + compute_local_distance(mod10(i), mod10(i + 3));
+        i = i + 1;
+    }
+    println("Total Local Distance: " + total_dist);
+
+    // Escaping allocation test
+    Node root = create_persistent_node(42, 999);
+    println("Root Node ID: " + root.id + ", Value: " + root.value);
+    println("--- Test Completed Deterministically ---");
+    return 0;
+}

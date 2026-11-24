@@ -1,0 +1,55 @@
+/// Test program for Syntra First-Class String Operations.
+
+func main(): int {
+    string msg = "  Hello, Syntra Universe!  ";
+
+    println("Original text: [" + msg + "]");
+    println("Original length: " + msg.length);
+
+    string trimmed = msg.trim();
+    println("Trimmed text: [" + trimmed + "]");
+    println("Trimmed length: " + trimmed.length);
+
+    println("Uppercase: " + trimmed.toUpper());
+    println("Lowercase: " + trimmed.toLower());
+
+    bool has_syntra = trimmed.contains("Syntra");
+    println("Contains 'Syntra': " + has_syntra);
+
+    int idx = trimmed.indexOf("Universe");
+    println("Index of 'Universe': " + idx);
+
+    bool starts = trimmed.startsWith("Hello");
+    println("Starts with 'Hello': " + starts);
+
+    bool ends = trimmed.endsWith("!");
+    println("Ends with '!': " + ends);
+
+    string sliced = trimmed.slice(7, 13);
+    println("Slice(7, 13): " + sliced);
+
+    string ch = trimmed.charAt(0);
+    println("First char: " + ch);
+
+    string replaced = trimmed.replace("Universe", "Multiverse");
+    println("Replaced: " + replaced);
+
+    string csv = "apple,banana,cherry,dragonfruit";
+    println("CSV string: " + csv);
+
+    string[] fruits = csv.split(",");
+    println("Fruits count: " + fruits.length);
+    for f in fruits {
+        println(" - Fruit: " + f);
+    }
+
+    string rejoined = fruits.join(" -> ");
+    println("Rejoined fruits: " + rejoined);
+
+    if has_syntra && starts && ends && (idx == 14) {
+        println("All string assertions PASSED!");
+        return 42;
+    }
+
+    return 0;
+}

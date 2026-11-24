@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module: file - Syntra Documentation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top-nav">
+<div class="nav-left">
+<button class="mobile-toggle" id="mobileToggle" aria-label="Toggle Navigation">☰</button>
+<a href="index.html" class="brand-link">
+<span class="brand-logo">🔮</span>
+<span class="brand-name">Syntra</span>
+<span class="brand-badge">Docs</span>
+</a>
+</div>
+<div class="nav-center">
+<div class="search-container">
+<span class="search-icon">🔍</span>
+<input type="text" id="searchInput" placeholder="Search in file or all symbols... (/)" autocomplete="off">
+<span class="search-shortcut">/</span>
+<div id="searchResults" class="search-dropdown hidden"></div>
+</div>
+</div>
+<div class="nav-right">
+<a href="index.html" class="nav-link">Modules</a>
+<button id="themeToggle" class="theme-toggle" title="Toggle Dark / Light theme">🌙</button>
+</div>
+</header>
+<div class="layout-wrapper">
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-section">
+<h4 class="sidebar-title">Standard Library</h4>
+<ul class="sidebar-nav">
+<li><a href="air.html">air</a></li>
+<li><a href="checker.html">checker</a></li>
+<li><a href="codegen.html">codegen</a></li>
+<li><a href="concurrency.html">concurrency</a></li>
+<li><a href="crypto.html">crypto</a></li>
+<li><a href="email.html">email</a></li>
+<li><a href="file.html" class="active">file</a></li>
+<li><a href="http.html">http</a></li>
+<li><a href="io.html">io</a></li>
+<li><a href="json.html">json</a></li>
+<li><a href="loader.html">loader</a></li>
+<li><a href="map.html">map</a></li>
+<li><a href="net.html">net</a></li>
+<li><a href="syntax.html">syntax</a></li>
+<li><a href="system.html">system</a></li>
+<li><a href="web.html">web</a></li>
+</ul>
+</div>
+<div class="sidebar-section toc-section">
+<h4 class="sidebar-title">On This Page</h4>
+<ul class="sidebar-toc">
+<li><span class="toc-group">Namespaces</span><ul>
+<li><a href="#ns-File">File</a></li>
+</ul></li>
+</ul>
+</div>
+</aside>
+<main class="content-main">
+<nav class="breadcrumbs">
+<a href="index.html">Home</a> &gt; <a href="index.html#modules">Standard Library</a> &gt; <span class="current">file</span>
+</nav>
+<header class="page-header">
+<div class="page-title-row">
+<span class="header-icon">📁</span>
+<h1>file</h1>
+<span class="badge category">Filesystem Primitives</span>
+</div>
+<div class="module-lead"><p>Aliases and high-level file utilities.</p>
+</div>
+</header>
+<section id="ns-File" class="api-section">
+<div class="section-title-bar">
+<span class="kind-tag namespace">namespace</span>
+<h2>File</h2>
+</div>
+<div class="doc-text"><p>The <code class="inline-code">File</code> namespace provides file reading, writing, presence checks, deletion, and size inspection.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">import File;
+
+func main(): void {
+    if (File.exists(&quot;Package.syn&quot;)) {
+        let manifest = File.readText(&quot;Package.syn&quot;);
+        System.println(&quot;Manifest loaded (&quot; + manifest.length() + &quot; chars)&quot;);
+    }
+}</code></pre>
+</div>
+</div>
+<div id="func-File-exists" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#func-File-exists" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">exists</span>(<span class="param-type">string</span> <span class="param-name">path</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Check whether a file exists at the specified path.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Target filesystem path.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if file exists; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="func-File-readText" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#func-File-readText" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">readText</span>(<span class="param-type">string</span> <span class="param-name">path</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Read file content as a UTF-8 string.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Target filesystem path.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Entire file content as string.</p>
+</div>
+</div>
+<div id="func-File-writeText" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#func-File-writeText" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">writeText</span>(<span class="param-type">string</span> <span class="param-name">path</span>, <span class="param-type">string</span> <span class="param-name">content</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Write text to a file, replacing existing content.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Target filesystem path.</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td><span class="type-pill">string</span></td>
+<td>String data to write.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> on success, <code class="inline-code">false</code> on failure.</p>
+</div>
+</div>
+<div id="func-File-appendText" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#func-File-appendText" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">appendText</span>(<span class="param-type">string</span> <span class="param-name">path</span>, <span class="param-type">string</span> <span class="param-name">content</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Append text to the end of a file.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Target filesystem path.</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td><span class="type-pill">string</span></td>
+<td>String data to append.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> on success, <code class="inline-code">false</code> on failure.</p>
+</div>
+</div>
+<div id="func-File-delete" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#func-File-delete" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">delete</span>(<span class="param-type">string</span> <span class="param-name">path</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Delete a file from disk.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Target file path to unlink.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if deleted, <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="func-File-size" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#func-File-size" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">size</span>(<span class="param-type">string</span> <span class="param-name">path</span>) -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>Get file size in bytes.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Target file path.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Size in bytes, or <code class="inline-code">-1</code> if not found.</p>
+</div>
+</div>
+</section>
+</main>
+</div>
+<footer class="site-footer">
+<div class="footer-inner">
+<p>Built with ❤️ by the Syntra Language Team • Version 0.1.0 • Spec 2026</p>
+<p class="footer-sub">High-performance Whole-Program Adaptive Programming Platform</p>
+</div>
+</footer>
+<script src="search.js"></script>
+</body>
+</html>

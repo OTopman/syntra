@@ -1,0 +1,24 @@
+{
+  "$schema": "vscode://schemas/icon-theme",
+  "iconDefinitions": {
+    "_syntra_file": {
+      "iconPath": "./syntra-file.svg"
+    },
+    "_syntra_manifest": {
+      "iconPath": "./syntra-manifest.svg"
+    },
+    "_syntra_lock": {
+      "iconPath": "./syntra-lock.svg"
+    }
+  },
+  "fileExtensions": {
+    "syn": "_syntra_file",
+    "sy": "_syntra_file"
+  },
+  "fileNames": {
+    "Package.syn": "_syntra_manifest",
+    "Package.lock": "_syntra_lock",
+    "syntra.lock": "_syntra_lock",
+    "profile.synlock": "_syntra_lock"
+  }
+}

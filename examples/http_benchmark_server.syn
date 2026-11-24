@@ -1,0 +1,47 @@
+import net;
+import http;
+
+async fn http_worker(int port, int id): int {
+    HttpServer server = new HttpServer();
+    server.listen(port);
+    while (true) {
+        TcpStream client = server.accept();
+        bool active = true;
+        while (active) {
+            string raw = client.read();
+            if (raw.length() == 0) {
+                server.closeClient(client);
+                active = false;
+            } else {
+                HttpRequest req = HttpRequest.parse(raw);
+                HttpResponse res = HttpResponse.text("Hello from Syntra native server!");
+                if (req.isKeepAlive()) {
+                    res.setKeepAlive(true);
+                    server.send(client, res);
+                } else {
+                    res.setKeepAlive(false);
+                    server.sendResponse(client, res);
+                    active = false;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+fn main(): void {
+    int port = 19999;
+    int numWorkers = 8;
+    System.println("Starting Syntra High-Performance HTTP Benchmark Server on port " + port + " with " + numWorkers + " workers...");
+
+    int i = 0;
+    while (i < numWorkers) {
+        Task workerTask = http_worker(port, i);
+        i = i + 1;
+    }
+
+    System.println("Syntra HTTP Server ready to accept connections!");
+    while (true) {
+        Task.sleep(1000);
+    }
+}

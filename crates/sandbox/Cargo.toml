@@ -1,0 +1,15 @@
+[package]
+name = "syntra_sandbox"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+syntra_diagnostics = { path = "../diagnostics" }
+syntra_syntax = { path = "../syntax" }
+syntra_frontend = { path = "../frontend" }
+syntra_air = { path = "../air" }
+syntra_opt = { path = "../opt" }
+syntra_analysis = { path = "../analysis" }
+syntra_backend_cranelift = { path = "../backend_cranelift" }
+syntra_provenance = { path = "../provenance" }
+syntra_intelligence = { path = "../intelligence" }

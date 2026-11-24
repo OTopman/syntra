@@ -1,0 +1,22 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.24s
+     Running `target/debug/syn build examples/advanced_concurrency_test.syn -o /tmp/adv_conc_bin`
+🔨 Building native binary for 'examples/advanced_concurrency_test.syn' (target: x86_64-apple-darwin)...
+🎯 PGO: Consuming profile lockfile 'profile.synlock' (Integrity: 1c82801ac39c219e)
+⚡ Optimization pipeline applied 1 pass(es) with verified invariants.
+🔒 Build Identity Manifest: 8cf58453f609afde
+✅ Successfully compiled native executable: /tmp/adv_conc_bin
+🚀 Run it directly: .//tmp/adv_conc_bin
+--- Testing Advanced Concurrency ---
+1. Initializing ThreadPool with 4 workers...
+   Task 1 result: 25
+   Task 2 result: 64
+   Task 3 result: 70
+   ThreadPool successfully shut down.
+2. Testing Non-Blocking Channel operations...
+   tryRecv on empty channel: 0
+   trySend results: true, true
+   tryRecv results: 100, 200
+3. Testing Channel.select across multiple channels...
+   Ready channel index: 1
+   Received value from selected channel: 42
+--- Advanced Concurrency Test PASSED! ---

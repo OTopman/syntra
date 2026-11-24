@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module: http - Syntra Documentation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top-nav">
+<div class="nav-left">
+<button class="mobile-toggle" id="mobileToggle" aria-label="Toggle Navigation">☰</button>
+<a href="index.html" class="brand-link">
+<span class="brand-logo">🔮</span>
+<span class="brand-name">Syntra</span>
+<span class="brand-badge">Docs</span>
+</a>
+</div>
+<div class="nav-center">
+<div class="search-container">
+<span class="search-icon">🔍</span>
+<input type="text" id="searchInput" placeholder="Search in http or all symbols... (/)" autocomplete="off">
+<span class="search-shortcut">/</span>
+<div id="searchResults" class="search-dropdown hidden"></div>
+</div>
+</div>
+<div class="nav-right">
+<a href="index.html" class="nav-link">Modules</a>
+<button id="themeToggle" class="theme-toggle" title="Toggle Dark / Light theme">🌙</button>
+</div>
+</header>
+<div class="layout-wrapper">
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-section">
+<h4 class="sidebar-title">Standard Library</h4>
+<ul class="sidebar-nav">
+<li><a href="air.html">air</a></li>
+<li><a href="checker.html">checker</a></li>
+<li><a href="codegen.html">codegen</a></li>
+<li><a href="concurrency.html">concurrency</a></li>
+<li><a href="crypto.html">crypto</a></li>
+<li><a href="email.html">email</a></li>
+<li><a href="file.html">file</a></li>
+<li><a href="http.html" class="active">http</a></li>
+<li><a href="io.html">io</a></li>
+<li><a href="json.html">json</a></li>
+<li><a href="loader.html">loader</a></li>
+<li><a href="map.html">map</a></li>
+<li><a href="net.html">net</a></li>
+<li><a href="syntax.html">syntax</a></li>
+<li><a href="system.html">system</a></li>
+<li><a href="web.html">web</a></li>
+</ul>
+</div>
+<div class="sidebar-section toc-section">
+<h4 class="sidebar-title">On This Page</h4>
+<ul class="sidebar-toc">
+<li><span class="toc-group">Classes</span><ul>
+<li><a href="#class-HttpRequest">HttpRequest</a></li>
+<li><a href="#class-HttpResponse">HttpResponse</a></li>
+<li><a href="#class-HttpServer">HttpServer</a></li>
+<li><a href="#class-HttpClient">HttpClient</a></li>
+</ul></li>
+</ul>
+</div>
+</aside>
+<main class="content-main">
+<nav class="breadcrumbs">
+<a href="index.html">Home</a> &gt; <a href="index.html#modules">Standard Library</a> &gt; <span class="current">http</span>
+</nav>
+<header class="page-header">
+<div class="page-title-row">
+<span class="header-icon">📡</span>
+<h1>http</h1>
+<span class="badge category">HTTP Client/Server</span>
+</div>
+<div class="module-lead"><p>Provides HttpRequest, HttpResponse, HttpServer, and HttpClient Supports HTTP methods: GET, POST, PUT, PATCH, DELETE, OPTIONS</p>
+</div>
+</header>
+<section id="class-HttpRequest" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>HttpRequest</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Represents an incoming or outgoing HTTP/1.1 request message.</p>
+<p>Encapsulates the HTTP verb (method), request target URI path, HTTP version, key-value header mappings, and payload body.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let req = new HttpRequest();
+req.method = &quot;POST&quot;;
+req.path = &quot;/api/v1/users&quot;;
+req.headers.set(&quot;Content-Type&quot;, &quot;application/json&quot;);
+req.body = &quot;{\&quot;name\&quot;:\&quot;Alex\&quot;}&quot;;</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>method</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>The HTTP verb string (e.g. <code class="inline-code">&quot;GET&quot;</code>, <code class="inline-code">&quot;POST&quot;</code>, <code class="inline-code">&quot;PUT&quot;</code>, <code class="inline-code">&quot;DELETE&quot;</code>, <code class="inline-code">&quot;PATCH&quot;</code>, <code class="inline-code">&quot;OPTIONS&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>The target URI resource path (e.g. <code class="inline-code">&quot;/index.html&quot;</code> or <code class="inline-code">&quot;/api/data&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>version</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>The HTTP protocol version string (conventionally <code class="inline-code">&quot;HTTP/1.1&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>headers</code></td>
+<td><span class="type-pill">Map</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Case-insensitive key-value map of HTTP headers.</td>
+</tr>
+<tr>
+<td><code>body</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>UTF-8 encoded request payload body.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-HttpRequest-getHeader" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpRequest-getHeader" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">getHeader</span>(<span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Retrieves the value of an HTTP header by name.</p>
+<p>Returns an empty string <code class="inline-code">&quot;&quot;</code> if the header is not present.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The case-insensitive header key (e.g. <code class="inline-code">&quot;Content-Type&quot;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; The header string value or <code class="inline-code">&quot;&quot;</code> if missing.</p>
+</div>
+</div>
+<div id="method-HttpRequest-setKeepAlive" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpRequest-setKeepAlive" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">setKeepAlive</span>(<span class="param-type">bool</span> <span class="param-name">enable</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Sets or clears the HTTP <code class="inline-code">Connection</code> keep-alive header.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>enable</code></td>
+<td><span class="type-pill">bool</span></td>
+<td><code class="inline-code">true</code> sets <code class="inline-code">Connection: keep-alive</code>; <code class="inline-code">false</code> sets <code class="inline-code">Connection: close</code>.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">void</span> &mdash; void</p>
+</div>
+</div>
+<div id="method-HttpRequest-isGet" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpRequest-isGet" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">isGet</span>() -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Returns <code class="inline-code">true</code> if this request method is <code class="inline-code">&quot;GET&quot;</code>.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> for GET requests.</p>
+</div>
+</div>
+<div id="method-HttpRequest-isPost" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpRequest-isPost" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">isPost</span>() -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Returns <code class="inline-code">true</code> if this request method is <code class="inline-code">&quot;POST&quot;</code>.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> for POST requests.</p>
+</div>
+</div>
+<div id="method-HttpRequest-isPut" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpRequest-isPut" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">isPut</span>() -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Returns <code class="inline-code">true</code> if this request method is <code class="inline-code">&quot;PUT&quot;</code>.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> for PUT requests.</p>
+</div>
+</div>
+<div id="method-HttpRequest-isPatch" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpRequest-isPatch" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">isPatch</span>() -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Returns <code class="inline-code">true</code> if this request method is <code class="inline-code">&quot;PATCH&quot;</code>.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> for PATCH requests.</p>
+</div>
+</div>
+<div id="method-HttpRequest-isDelete" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpRequest-isDelete" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">isDelete</span>() -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Returns <code class="inline-code">true</code> if this request method is <code class="inline-code">&quot;DELETE&quot;</code>.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> for DELETE requests.</p>
+</div>
+</div>
+<div id="method-HttpRequest-isOptions" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpRequest-isOptions" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">isOptions</span>() -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Returns <code class="inline-code">true</code> if this request method is <code class="inline-code">&quot;OPTIONS&quot;</code>.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> for OPTIONS requests.</p>
+</div>
+</div>
+<div id="method-HttpRequest-isKeepAlive" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpRequest-isKeepAlive" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">isKeepAlive</span>() -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks whether the connection should remain open for subsequent requests.</p>
+<p>Inspects the <code class="inline-code">Connection</code> header and HTTP version rules.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if connection is persistent; <code class="inline-code">false</code> if connection must be closed.</p>
+</div>
+</div>
+<div id="method-HttpRequest-parse" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpRequest-parse" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parse</span>(<span class="param-type">string</span> <span class="param-name">raw</span>) -&gt; <span class="return-type">HttpRequest</span>
+</div>
+<div class="doc-text"><p>Parses a raw wire-format HTTP request string into a structured <code class="inline-code">HttpRequest</code> instance.</p>
+<p>Deconstructs request line, headers, and body according to RFC 7230.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let raw = &quot;GET /index.html HTTP/1.1\r\nHost: localhost\r\n\r\n&quot;;
+let req = HttpRequest.parse(raw);
+System.println(&quot;Parsed path: &quot; + req.path);</code></pre>
+</div>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>raw</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Raw HTTP wire request text.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpRequest</span> &mdash; Structured <code class="inline-code">HttpRequest</code> object.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-HttpResponse" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>HttpResponse</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Represents an HTTP response message sent by an HTTP server or returned by a client.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let res = HttpResponse.ok(&quot;Hello, World!&quot;, &quot;text/plain&quot;);
+client.write(res.toHttpString());</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>statusCode</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>3-digit HTTP status code (e.g. 200, 201, 400, 404, 500).</td>
+</tr>
+<tr>
+<td><code>statusText</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Canonical HTTP status phrase (e.g. <code class="inline-code">&quot;OK&quot;</code>, <code class="inline-code">&quot;Not Found&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>headers</code></td>
+<td><span class="type-pill">Map</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Key-value map of response headers.</td>
+</tr>
+<tr>
+<td><code>body</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Response payload body text.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-HttpResponse-getHeader" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpResponse-getHeader" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">getHeader</span>(<span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Retrieves an HTTP response header by name.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Header key string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Header value or <code class="inline-code">&quot;&quot;</code> if not set.</p>
+</div>
+</div>
+<div id="method-HttpResponse-setKeepAlive" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpResponse-setKeepAlive" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">setKeepAlive</span>(<span class="param-type">bool</span> <span class="param-name">enable</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Sets or clears the <code class="inline-code">Connection</code> header on the response.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>enable</code></td>
+<td><span class="type-pill">bool</span></td>
+<td><code class="inline-code">true</code> for <code class="inline-code">&quot;keep-alive&quot;</code>, <code class="inline-code">false</code> for <code class="inline-code">&quot;close&quot;</code>.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">void</span> &mdash; void</p>
+</div>
+</div>
+<div id="method-HttpResponse-toHttpString" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpResponse-toHttpString" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">toHttpString</span>() -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Serializes this <code class="inline-code">HttpResponse</code> into standard RFC 7230 wire format.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let rawHttp = res.toHttpString();
+stream.write(rawHttp);</code></pre>
+</div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Formatted wire string (<code class="inline-code">HTTP/1.1 200 OK\r\n...</code>).</p>
+</div>
+</div>
+<div id="method-HttpResponse-ok" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpResponse-ok" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">ok</span>(<span class="param-type">string</span> <span class="param-name">content</span>, <span class="param-type">string</span> <span class="param-name">contentType</span>) -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Constructs an <code class="inline-code">HTTP 200 OK</code> response with the specified body content.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>content</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Response payload string.</td>
+</tr>
+<tr>
+<td><code>contentType</code></td>
+<td><span class="type-pill">string</span></td>
+<td>MIME type (e.g. <code class="inline-code">&quot;text/html&quot;</code> or <code class="inline-code">&quot;application/json&quot;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; Initialized <code class="inline-code">HttpResponse</code> instance.</p>
+</div>
+</div>
+<div id="method-HttpResponse-created" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpResponse-created" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">created</span>(<span class="param-type">string</span> <span class="param-name">content</span>, <span class="param-type">string</span> <span class="param-name">contentType</span>) -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Constructs an <code class="inline-code">HTTP 201 Created</code> response.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>content</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Response payload string.</td>
+</tr>
+<tr>
+<td><code>contentType</code></td>
+<td><span class="type-pill">string</span></td>
+<td>MIME type.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; Initialized <code class="inline-code">HttpResponse</code> instance.</p>
+</div>
+</div>
+<div id="method-HttpResponse-noContent" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpResponse-noContent" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">noContent</span>() -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Constructs an <code class="inline-code">HTTP 204 No Content</code> response with an empty body.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; Initialized <code class="inline-code">HttpResponse</code> instance.</p>
+</div>
+</div>
+<div id="method-HttpResponse-text" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpResponse-text" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">text</span>(<span class="param-type">string</span> <span class="param-name">content</span>) -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Constructs an <code class="inline-code">HTTP 200 OK</code> response with <code class="inline-code">text/plain</code> MIME type.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>content</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Plain text message.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; <code class="inline-code">HttpResponse</code> with <code class="inline-code">Content-Type: text/plain</code>.</p>
+</div>
+</div>
+<div id="method-HttpResponse-json" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpResponse-json" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">json</span>(<span class="param-type">string</span> <span class="param-name">jsonContent</span>) -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Constructs an <code class="inline-code">HTTP 200 OK</code> response with <code class="inline-code">application/json</code> MIME type.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>jsonContent</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Serialized JSON payload string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; <code class="inline-code">HttpResponse</code> with <code class="inline-code">Content-Type: application/json</code>.</p>
+</div>
+</div>
+<div id="method-HttpResponse-badRequest" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpResponse-badRequest" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">badRequest</span>(<span class="param-type">string</span> <span class="param-name">message</span>) -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Constructs an <code class="inline-code">HTTP 400 Bad Request</code> error response.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>message</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Descriptive error message.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; Initialized error <code class="inline-code">HttpResponse</code>.</p>
+</div>
+</div>
+<div id="method-HttpResponse-notFound" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpResponse-notFound" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">notFound</span>(<span class="param-type">string</span> <span class="param-name">message</span>) -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Constructs an <code class="inline-code">HTTP 404 Not Found</code> error response.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>message</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Resource not found message.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; Initialized error <code class="inline-code">HttpResponse</code>.</p>
+</div>
+</div>
+<div id="method-HttpResponse-methodNotAllowed" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpResponse-methodNotAllowed" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">methodNotAllowed</span>(<span class="param-type">string</span> <span class="param-name">allowedMethods</span>) -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Constructs an <code class="inline-code">HTTP 405 Method Not Allowed</code> response with the <code class="inline-code">Allow</code> header.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>allowedMethods</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Comma-separated allowed methods (e.g. <code class="inline-code">&quot;GET, POST&quot;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; Initialized error <code class="inline-code">HttpResponse</code>.</p>
+</div>
+</div>
+<div id="method-HttpResponse-internalServerError" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpResponse-internalServerError" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">internalServerError</span>(<span class="param-type">string</span> <span class="param-name">message</span>) -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Constructs an <code class="inline-code">HTTP 500 Internal Server Error</code> response.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>message</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Internal error description.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; Initialized error <code class="inline-code">HttpResponse</code>.</p>
+</div>
+</div>
+<div id="method-HttpResponse-parse" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpResponse-parse" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parse</span>(<span class="param-type">string</span> <span class="param-name">raw</span>) -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Parses raw HTTP wire response text into a structured <code class="inline-code">HttpResponse</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>raw</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Raw HTTP wire response text.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; Structured <code class="inline-code">HttpResponse</code> instance.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-HttpServer" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>HttpServer</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>A high-performance, asynchronous HTTP server.</p>
+<p>Listens on a local TCP port, accepts incoming client connections, parses requests, and transmits formatted responses.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let server = new HttpServer();
+server.listen(8080);
+System.println(&quot;Serving on port 8080&quot;);
+
+while (true) {
+    let client = server.accept();
+    let res = HttpResponse.ok(&quot;Hello from Syntra!&quot;, &quot;text/plain&quot;);
+    server.sendResponse(client, res);
+}</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>port</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>The port number bound by this server.</td>
+</tr>
+<tr>
+<td><code>listener</code></td>
+<td><span class="type-pill">TcpListener</span></td>
+<td><span class="badge pub">public</span></td>
+<td>The underlying operating system TCP listener socket.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-HttpServer-listen" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpServer-listen" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">listen</span>(<span class="param-type">int</span> <span class="param-name">port</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Binds the server to the specified TCP port and starts listening for connections.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>port</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Local port number (1-65535).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">void</span> &mdash; void</p>
+</div>
+<div class="throws-section">
+<h5 class="sub-title">Throws</h5><ul>
+<li>NetworkException If port is already in use.</li>
+</ul></div>
+</div>
+<div id="method-HttpServer-accept" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpServer-accept" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">accept</span>() -&gt; <span class="return-type">TcpStream</span>
+</div>
+<div class="doc-text"><p>Accepts the next incoming client TCP connection.</p>
+<p>Blocks until a client connection arrives.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">TcpStream</span> &mdash; An active <code class="inline-code">TcpStream</code> for the connected client.</p>
+</div>
+</div>
+<div id="method-HttpServer-send" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpServer-send" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">send</span>(<span class="param-type">TcpStream</span> <span class="param-name">client</span>, <span class="param-type">HttpResponse</span> <span class="param-name">res</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Sends an <code class="inline-code">HttpResponse</code> to a client stream without closing the connection.</p>
+<p>Suitable for persistent HTTP keep-alive connections.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>client</code></td>
+<td><span class="type-pill">TcpStream</span></td>
+<td>Connected client stream.</td>
+</tr>
+<tr>
+<td><code>res</code></td>
+<td><span class="type-pill">HttpResponse</span></td>
+<td>Response payload to transmit.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">void</span> &mdash; void</p>
+</div>
+</div>
+<div id="method-HttpServer-sendResponse" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpServer-sendResponse" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">sendResponse</span>(<span class="param-type">TcpStream</span> <span class="param-name">client</span>, <span class="param-type">HttpResponse</span> <span class="param-name">res</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Sends an <code class="inline-code">HttpResponse</code> and immediately terminates the client connection.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>client</code></td>
+<td><span class="type-pill">TcpStream</span></td>
+<td>Connected client stream.</td>
+</tr>
+<tr>
+<td><code>res</code></td>
+<td><span class="type-pill">HttpResponse</span></td>
+<td>Response payload to transmit.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">void</span> &mdash; void</p>
+</div>
+</div>
+<div id="method-HttpServer-closeClient" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpServer-closeClient" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">closeClient</span>(<span class="param-type">TcpStream</span> <span class="param-name">client</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Closes a client stream socket.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>client</code></td>
+<td><span class="type-pill">TcpStream</span></td>
+<td>Client stream to close.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">void</span> &mdash; void</p>
+</div>
+</div>
+<div id="method-HttpServer-close" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpServer-close" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">close</span>() -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Closes the server listening socket and halts new incoming connections.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">void</span> &mdash; void</p>
+</div>
+</div>
+<div id="method-HttpServer-serveReactor" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpServer-serveReactor" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">serveReactor</span>(<span class="param-type">int</span> <span class="param-name">port</span>, <span class="param-type">int</span> <span class="param-name">workers</span>) -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>Launches native multi-core HTTP reactor on the specified port.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>port</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Port number to listen on.</td>
+</tr>
+<tr>
+<td><code>workers</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Number of worker threads.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Reactor exit status code.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-HttpClient" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>HttpClient</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Synchronous HTTP client utility for making outgoing HTTP requests.</p>
+<p>Supports all standard HTTP verbs with automatic connection teardown.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let res = HttpClient.get(&quot;example.com&quot;, 80, &quot;/&quot;);
+System.println(&quot;Status: &quot; + res.statusCode);
+System.println(&quot;Body: &quot; + res.body);</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-HttpClient-request" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpClient-request" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">request</span>(<span class="param-type">string</span> <span class="param-name">method</span>, <span class="param-type">string</span> <span class="param-name">host</span>, <span class="param-type">int</span> <span class="param-name">port</span>, <span class="param-type">string</span> <span class="param-name">path</span>, <span class="param-type">string</span> <span class="param-name">body</span>, <span class="param-type">string</span> <span class="param-name">contentType</span>) -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Executes a raw HTTP request against <code class="inline-code">host:port</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>method</code></td>
+<td><span class="type-pill">string</span></td>
+<td>HTTP method verb (<code class="inline-code">&quot;GET&quot;</code>, <code class="inline-code">&quot;POST&quot;</code>, <code class="inline-code">&quot;PUT&quot;</code>, <code class="inline-code">&quot;DELETE&quot;</code>, etc.).</td>
+</tr>
+<tr>
+<td><code>host</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Hostname or IP address string.</td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Target TCP port.</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Target request URI path.</td>
+</tr>
+<tr>
+<td><code>body</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Optional request body payload.</td>
+</tr>
+<tr>
+<td><code>contentType</code></td>
+<td><span class="type-pill">string</span></td>
+<td>MIME type for request body.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; Parsed <code class="inline-code">HttpResponse</code> returned by the server.</p>
+</div>
+<div class="throws-section">
+<h5 class="sub-title">Throws</h5><ul>
+<li>NetworkException If connection fails or times out.</li>
+</ul></div>
+</div>
+<div id="method-HttpClient-get" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpClient-get" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">get</span>(<span class="param-type">string</span> <span class="param-name">host</span>, <span class="param-type">int</span> <span class="param-name">port</span>, <span class="param-type">string</span> <span class="param-name">path</span>) -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Performs an HTTP GET request.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>host</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Target host.</td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Target port.</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>URI path.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; <code class="inline-code">HttpResponse</code> from server.</p>
+</div>
+</div>
+<div id="method-HttpClient-post" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpClient-post" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">post</span>(<span class="param-type">string</span> <span class="param-name">host</span>, <span class="param-type">int</span> <span class="param-name">port</span>, <span class="param-type">string</span> <span class="param-name">path</span>, <span class="param-type">string</span> <span class="param-name">body</span>, <span class="param-type">string</span> <span class="param-name">contentType</span>) -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Performs an HTTP POST request.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>host</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Target host.</td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Target port.</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>URI path.</td>
+</tr>
+<tr>
+<td><code>body</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Payload string.</td>
+</tr>
+<tr>
+<td><code>contentType</code></td>
+<td><span class="type-pill">string</span></td>
+<td>MIME type (e.g. <code class="inline-code">&quot;application/json&quot;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; <code class="inline-code">HttpResponse</code> from server.</p>
+</div>
+</div>
+<div id="method-HttpClient-put" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpClient-put" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">put</span>(<span class="param-type">string</span> <span class="param-name">host</span>, <span class="param-type">int</span> <span class="param-name">port</span>, <span class="param-type">string</span> <span class="param-name">path</span>, <span class="param-type">string</span> <span class="param-name">body</span>, <span class="param-type">string</span> <span class="param-name">contentType</span>) -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Performs an HTTP PUT request.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>host</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Target host.</td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Target port.</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>URI path.</td>
+</tr>
+<tr>
+<td><code>body</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Payload string.</td>
+</tr>
+<tr>
+<td><code>contentType</code></td>
+<td><span class="type-pill">string</span></td>
+<td>MIME type.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; <code class="inline-code">HttpResponse</code> from server.</p>
+</div>
+</div>
+<div id="method-HttpClient-patch" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpClient-patch" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">patch</span>(<span class="param-type">string</span> <span class="param-name">host</span>, <span class="param-type">int</span> <span class="param-name">port</span>, <span class="param-type">string</span> <span class="param-name">path</span>, <span class="param-type">string</span> <span class="param-name">body</span>, <span class="param-type">string</span> <span class="param-name">contentType</span>) -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Performs an HTTP PATCH request.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>host</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Target host.</td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Target port.</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>URI path.</td>
+</tr>
+<tr>
+<td><code>body</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Payload string.</td>
+</tr>
+<tr>
+<td><code>contentType</code></td>
+<td><span class="type-pill">string</span></td>
+<td>MIME type.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; <code class="inline-code">HttpResponse</code> from server.</p>
+</div>
+</div>
+<div id="method-HttpClient-delete" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpClient-delete" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">delete</span>(<span class="param-type">string</span> <span class="param-name">host</span>, <span class="param-type">int</span> <span class="param-name">port</span>, <span class="param-type">string</span> <span class="param-name">path</span>) -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Performs an HTTP DELETE request without body.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>host</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Target host.</td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Target port.</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>URI path.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; <code class="inline-code">HttpResponse</code> from server.</p>
+</div>
+</div>
+<div id="method-HttpClient-deleteWithBody" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpClient-deleteWithBody" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">deleteWithBody</span>(<span class="param-type">string</span> <span class="param-name">host</span>, <span class="param-type">int</span> <span class="param-name">port</span>, <span class="param-type">string</span> <span class="param-name">path</span>, <span class="param-type">string</span> <span class="param-name">body</span>, <span class="param-type">string</span> <span class="param-name">contentType</span>) -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Performs an HTTP DELETE request with payload body.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>host</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Target host.</td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Target port.</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>URI path.</td>
+</tr>
+<tr>
+<td><code>body</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Payload string.</td>
+</tr>
+<tr>
+<td><code>contentType</code></td>
+<td><span class="type-pill">string</span></td>
+<td>MIME type.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; <code class="inline-code">HttpResponse</code> from server.</p>
+</div>
+</div>
+<div id="method-HttpClient-options" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-HttpClient-options" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">options</span>(<span class="param-type">string</span> <span class="param-name">host</span>, <span class="param-type">int</span> <span class="param-name">port</span>, <span class="param-type">string</span> <span class="param-name">path</span>) -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Performs an HTTP OPTIONS request.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>host</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Target host.</td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Target port.</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>URI path.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; <code class="inline-code">HttpResponse</code> from server.</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<footer class="site-footer">
+<div class="footer-inner">
+<p>Built with ❤️ by the Syntra Language Team • Version 0.1.0 • Spec 2026</p>
+<p class="footer-sub">High-performance Whole-Program Adaptive Programming Platform</p>
+</div>
+</footer>
+<script src="search.js"></script>
+</body>
+</html>

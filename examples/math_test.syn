@@ -1,0 +1,27 @@
+func main(): int {
+    // Multi-argument Math.min and Math.max
+    int min_val = Math.min(42, 17, 99, 8, 23);
+    int max_val = Math.max(42, 17, 99, 8, 23);
+    println("Math.min(42, 17, 99, 8, 23) = " + min_val);
+    println("Math.max(42, 17, 99, 8, 23) = " + max_val);
+
+    // Array argument Math.min and Math.max
+    int[] scores = [150, 80, 240, 95, 310];
+    int lowest_score = Math.min(scores);
+    int highest_score = Math.max(scores);
+    println("Lowest score in array: " + lowest_score);
+    println("Highest score in array: " + highest_score);
+
+    // Absolute value, clamp, power, and square root
+    int abs_val = Math.abs(-128);
+    int clamped = Math.clamp(250, 0, 100);
+    int power = Math.pow(2, 10);
+    int root = Math.sqrt(144);
+
+    println("Math.abs(-128) = " + abs_val);
+    println("Math.clamp(250, 0, 100) = " + clamped);
+    println("Math.pow(2, 10) = " + power);
+    println("Math.sqrt(144) = " + root);
+
+    return min_val + max_val;
+}

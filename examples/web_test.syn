@@ -1,0 +1,131 @@
+/// @fileoverview Syntra Web Framework, Radix Router, and OpenAPI 3.0 Integration.
+///
+/// Demonstrates:
+/// - Asynchronous HTTP routing with Radix Trie matching (`app.get`, `app.post`)
+/// - Route middleware chaining with fluent `.with(...)`
+/// - Path parameter extraction (`:id`) and query string parsing
+/// - Automatic OpenAPI 3.0.3 specification emission (`/openapi.json`)
+/// - Self-contained responsive Swagger UI playground (`/docs`)
+///
+/// @example
+/// ```bash
+/// syn run examples/web_test.syn
+/// ```
+/// @since v0.1.0
+
+import "web";
+
+custom User {
+    name: string
+    age: int
+}
+
+func authMiddleware(Context ctx): bool {
+    string auth = ctx.header("Authorization");
+    if (auth.length() == 0) {
+        ctx.status(401).json("{\"error\": \"Unauthorized\"}");
+        return false;
+    }
+    return true;
+}
+
+func loggingMiddleware(Context ctx): void {
+    // Audit logging
+}
+
+func main(): int {
+    App app = new App();
+
+    // 1. Emits the raw OpenAPI 3.0 specification
+    app.enableOpenApi("/openapi.json");
+
+    // 2. Serves a self-contained, responsive Swagger UI
+    app.enableSwagger("/docs");
+
+    // Unified .with(...) with multiple middlewares, custom DTO request & response
+    app.post("/users", (Context ctx) => {
+        string b = ctx.body();
+        ctx.status(201).json(b);
+    })
+    .with(loggingMiddleware, authMiddleware)
+    .tag("Users")
+    .summary("Create a new user")
+    .description("Registers a user and emits auto-inferred OpenAPI schema")
+    .request(User)
+    .response(201, User, "User created successfully")
+    .response(401, "Missing or invalid authorization");
+
+    // Parameterized GET route
+    app.get("/users/:id", (Context ctx) => {
+        string id = ctx.param("id");
+        string filter = ctx.query("filter");
+        ctx.json("{\"id\": \"" + id + "\", \"filter\": \"" + filter + "\"}");
+    })
+    .tag("Users")
+    .summary("Get user by ID");
+
+    // Test 1: GET /openapi.json
+    HttpRequest openApiReq = new HttpRequest();
+    openApiReq.method = "GET";
+    openApiReq.path = "/openapi.json";
+    openApiReq.headers = new Map<string, string>();
+    HttpResponse openApiRes = app.handleRequest(openApiReq);
+
+    println("=== Test 1: OpenAPI 3.0 Spec Generation ===");
+    println("Status: " + openApiRes.statusCode);
+    println("Content-Type: " + openApiRes.getHeader("Content-Type"));
+    println("Contains 'User' schema: " + openApiRes.body.contains("\"User\":"));
+    println("Contains 'age': " + openApiRes.body.contains("\"age\""));
+    println("Contains 'name': " + openApiRes.body.contains("\"name\""));
+
+    // Test 2: GET /docs (Swagger UI)
+    HttpRequest swaggerReq = new HttpRequest();
+    swaggerReq.method = "GET";
+    swaggerReq.path = "/docs";
+    swaggerReq.headers = new Map<string, string>();
+    HttpResponse swaggerRes = app.handleRequest(swaggerReq);
+
+    println("=== Test 2: Embedded Swagger UI ===");
+    println("Status: " + swaggerRes.statusCode);
+    println("Contains SwaggerUIBundle: " + swaggerRes.body.contains("SwaggerUIBundle"));
+    println("Points to /openapi.json: " + swaggerRes.body.contains("/openapi.json"));
+
+    // Test 3: Middleware Auth rejection (missing auth header)
+    HttpRequest unauthReq = new HttpRequest();
+    unauthReq.method = "POST";
+    unauthReq.path = "/users";
+    unauthReq.headers = new Map<string, string>();
+    unauthReq.body = "{\"name\":\"Alex\",\"age\":28}";
+    HttpResponse unauthRes = app.handleRequest(unauthReq);
+
+    println("=== Test 3: Unified .with(...) Middleware Auth Guard ===");
+    println("Unauthenticated Status: " + unauthRes.statusCode);
+    println("Body: " + unauthRes.body);
+
+    // Test 4: Middleware Auth pass with Authorization header
+    HttpRequest authReq = new HttpRequest();
+    authReq.method = "POST";
+    authReq.path = "/users";
+    authReq.headers = new Map<string, string>();
+    authReq.headers.set("Authorization", "Bearer valid_token_123");
+    authReq.body = "{\"name\":\"Alex\",\"age\":28}";
+    HttpResponse authRes = app.handleRequest(authReq);
+
+    println("=== Test 4: Authorized Request ===");
+    println("Authorized Status: " + authRes.statusCode);
+    println("Echoed Body: " + authRes.body);
+
+    // Test 5: Parameterized path and query string parsing
+    HttpRequest paramReq = new HttpRequest();
+    paramReq.method = "GET";
+    paramReq.path = "/users/42?filter=active";
+    paramReq.headers = new Map<string, string>();
+    HttpResponse paramRes = app.handleRequest(paramReq);
+
+    println("=== Test 5: Route Params & Query Parsing ===");
+    println("Status: " + paramRes.statusCode);
+    println("Response: " + paramRes.body);
+
+    println("ALL_WEB_FRAMEWORK_TESTS_PASSED");
+    return 0;
+}

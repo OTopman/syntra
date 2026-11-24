@@ -2,12 +2,34 @@ use logos::Logos;
 
 #[derive(Logos, Debug, Clone, PartialEq)]
 #[logos(skip r"[ \t\r\n\f]+")] // Skip whitespace
-#[logos(skip r"//[^\n]*")]       // Skip line comments
 pub enum Token {
+    // First-class Doc Comments: /// ...
+    #[regex(r"///[^\r\n]*", |lex| {
+        let s = lex.slice();
+        let text = s.strip_prefix("///").unwrap_or(s);
+        let text = text.strip_prefix(' ').unwrap_or(text);
+        text.to_string()
+    })]
+    DocComment(String),
+
+    // Regular line comments: // ... (filtered in tokenize)
+    #[regex(r"//[^\r\n]*", |_| ())]
+    Comment,
+
+    // Keywords - Modules & Namespaces
+    #[token("namespace")]
+    Namespace,
+    #[token("import")]
+    Import,
+
     // Keywords - Functions & Control Flow
     #[token("func")]
     #[token("fn")]
     Func,
+    #[token("async")]
+    Async,
+    #[token("await")]
+    Await,
     #[token("return")]
     Return,
     #[token("if")]
@@ -20,10 +42,22 @@ pub enum Token {
     For,
     #[token("in")]
     In,
+    #[token("try")]
+    Try,
+    #[token("catch")]
+    Catch,
+    #[token("finally")]
+    Finally,
+    #[token("throw")]
+    Throw,
 
     // Keywords - OOP & Types
     #[token("class")]
     Class,
+    #[token("custom")]
+    Custom,
+    #[token("struct")]
+    Struct,
     #[token("interface")]
     Interface,
     #[token("implements")]
@@ -90,6 +124,8 @@ pub enum Token {
     // Operators - Arithmetic
     #[token("=")]
     Assign,
+    #[token("=>")]
+    FatArrow,
     #[token("+")]
     Plus,
     #[token("-")]
@@ -98,6 +134,22 @@ pub enum Token {
     Star,
     #[token("/")]
     Slash,
+    #[token("%")]
+    Percent,
+
+    // Operators - Bitwise
+    #[token("&")]
+    Amp,
+    #[token("|")]
+    Pipe,
+    #[token("^")]
+    Caret,
+    #[token("~")]
+    Tilde,
+    #[token("<<")]
+    LessLess,
+    #[token(">>")]
+    GreaterGreater,
 
     // Operators - Comparisons
     #[token("==")]
@@ -112,6 +164,12 @@ pub enum Token {
     Greater,
     #[token(">=")]
     GreaterEqual,
+
+    // Operators - Logical
+    #[token("&&")]
+    AmpAmp,
+    #[token("||")]
+    PipePipe,
 
     // Literals & Identifiers
     #[regex(r"[0-9]+\.[0-9]+", |lex| lex.slice().parse::<f64>().ok())]
@@ -131,6 +189,24 @@ pub enum Token {
                     Some('n') => unescaped.push('\n'),
                     Some('t') => unescaped.push('\t'),
                     Some('r') => unescaped.push('\r'),
+                    Some('x') => {
+                        let h1 = chars.next();
+                        let h2 = chars.next();
+                        if let (Some(c1), Some(c2)) = (h1, h2) {
+                            if let Ok(b) = u8::from_str_radix(&format!("{c1}{c2}"), 16) {
+                                unescaped.push(b as char);
+                            } else {
+                                unescaped.push('\\');
+                                unescaped.push('x');
+                                unescaped.push(c1);
+                                unescaped.push(c2);
+                            }
+                        } else {
+                            unescaped.push('\\');
+                            unescaped.push('x');
+                            if let Some(c1) = h1 { unescaped.push(c1); }
+                        }
+                    }
                     Some('\\') => unescaped.push('\\'),
                     Some('"') => unescaped.push('"'),
                     Some(other) => {
@@ -146,6 +222,12 @@ pub enum Token {
         Some(unescaped)
     })]
     StringLit(String),
+
+    #[regex(r#"\$"([^"\\]|\\.)*""#, |lex| {
+        let s = lex.slice();
+        Some(s[2..s.len()-1].to_string())
+    })]
+    InterpolatedStringLit(String),
 
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", |lex| lex.slice().to_string())]
     Ident(String),

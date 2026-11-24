@@ -1,0 +1,21 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running unittests src/lib.rs (target/debug/deps/syntra_backend_cranelift-706b6e4045699a84)
+
+running 8 tests
+test tests::test_native_cross_target_isa_arm64_and_x86_64 ... ok
+test tests::test_native_runtime_gc_direct_c_api ... ok
+test tests::test_native_gc_reclamation_loop ... ok
+test tests::test_native_compile_float_arithmetic ... ok
+test tests::test_native_compile_and_link_return_code ... ok
+test tests::test_native_compile_void_main ... ok
+test tests::test_native_channel_select_concurrency ... ok
+test tests::test_native_compile_function_calls_and_recursion ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.32s
+
+   Doc-tests syntra_backend_cranelift
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

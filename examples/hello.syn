@@ -1,5 +1,17 @@
-// Welcome to Aether!
-// A full OOP example showcasing classes, interfaces, constructors, methods, and clean datatypes.
+/// @fileoverview Syntra Object-Oriented Programming (OOP) & Clean Datatypes Showcase.
+///
+/// Demonstrates:
+/// - Interfaces (`interface Damageable`)
+/// - Classes with encapsulation (`class Player implements Damageable`)
+/// - Constructors (`new(string name, int health)`)
+/// - Member methods and property accesses
+/// - String concatenation and integer arithmetic
+///
+/// @example
+/// ```bash
+/// syn run examples/hello.syn
+/// ```
+/// @since v0.1.0
 
 interface Damageable {
     func take_damage(int amount): void;
@@ -39,7 +51,7 @@ class Player implements Damageable {
 func main(): int {
     const int STARTING_HEALTH = 100;
     
-    println("--- Starting Aether Adventure ---");
+    println("--- Starting Syntra Adventure ---");
     Player hero = new Player("Knight", STARTING_HEALTH);
     println("Created hero: " + hero.name + " with " + hero.health + " HP.");
 

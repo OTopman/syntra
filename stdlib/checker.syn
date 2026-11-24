@@ -1,0 +1,1334 @@
+// Syntra Standard Library: Type Checker & Semantic Analyzer (Specification 01 & 02)
+// Provides a zero-GC self-hosting Type Checker, Symbol Table, and Scope Analyzer in Syntra.
+
+import "../stdlib/syntax.syn";
+
+/// Type representation in the Syntra semantic model.
+///
+/// Encapsulates primitive types (`int`, `float`, `bool`, `string`, `void`),
+/// user-defined class references, array dimensions (`T[]`), and subtyping compatibility checks.
+///
+/// @example
+/// ```syntra
+/// Type intTy = Type.Int();
+/// Type arrTy = Type.Array(intTy);
+/// println(arrTy.toString()); // "int[]"
+/// ```
+/// @since v0.1.0
+class Type {
+    /// Type discriminator kind (`"int"`, `"float"`, `"bool"`, `"string"`, `"void"`, `"class"`, or `"unknown"`).
+    public string kind;
+
+    /// Class symbol name if kind is `"class"`, otherwise empty string.
+    public string name;
+
+    /// True if this represents an array collection type: `T[]`.
+    public bool isArray;
+
+    /// Constructs a Type instance.
+    ///
+    /// @param kind Type discriminator kind.
+    /// @param name Class name if applicable.
+    /// @param isArray True if array dimension.
+    /// @since v0.1.0
+    new(string kind, string name, bool isArray) {
+        this.kind = kind;
+        this.name = name;
+        this.isArray = isArray;
+    }
+
+    /// Checks if this type represents a scalar numeric type (`int` or `float`).
+    ///
+    /// @returns `true` if numeric; `false` otherwise.
+    /// @since v0.1.0
+    func isNumeric(): bool {
+        return this.isArray == false && (this.kind == "int" || this.kind == "float");
+    }
+
+    /// Checks if this type represents a scalar boolean type.
+    ///
+    /// @returns `true` if boolean; `false` otherwise.
+    /// @since v0.1.0
+    func isBool(): bool {
+        return this.isArray == false && this.kind == "bool";
+    }
+
+    /// Checks if this type represents a string.
+    ///
+    /// @returns `true` if string; `false` otherwise.
+    /// @since v0.1.0
+    func isString(): bool {
+        return this.isArray == false && this.kind == "string";
+    }
+
+    /// Checks if this type represents the `void` return type.
+    ///
+    /// @returns `true` if void; `false` otherwise.
+    /// @since v0.1.0
+    func isVoid(): bool {
+        return this.isArray == false && this.kind == "void";
+    }
+
+    /// Determines whether this type is assignable to the target type under Syntra typing rules.
+    ///
+    /// Allows implicit assignment if either type is `unknown`, checks array flag parity,
+    /// and verifies class nominal equivalence.
+    ///
+    /// @param target The target variable or parameter type.
+    /// @returns `true` if assignable; `false` otherwise.
+    /// @since v0.1.0
+    func isAssignableTo(Type target): bool {
+        if (this.kind == "unknown" || target.kind == "unknown") {
+            return true;
+        }
+        if (this.isArray != target.isArray) {
+            return false;
+        }
+        if (this.kind == target.kind) {
+            if (this.kind == "class") {
+                return this.name == target.name;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /// Formats the type into canonical Syntra type syntax (e.g. `"int"`, `"string[]"`, `"Context"`).
+    ///
+    /// @returns Text representation of the type.
+    /// @since v0.1.0
+    func toString(): string {
+        string baseName = this.kind;
+        if (this.kind == "class") {
+            baseName = this.name;
+        }
+        if (this.isArray) {
+            return baseName + "[]";
+        }
+        return baseName;
+    }
+
+    // Static helper constructors
+
+    /// Constructs the scalar integer type (`int`).
+    ///
+    /// @returns `Type` instance for integer.
+    /// @since v0.1.0
+    public static func Int(): Type { return new Type("int", "", false); }
+
+    /// Constructs the scalar floating-point type (`float`).
+    ///
+    /// @returns `Type` instance for float.
+    /// @since v0.1.0
+    public static func Float(): Type { return new Type("float", "", false); }
+
+    /// Constructs the scalar boolean type (`bool`).
+    ///
+    /// @returns `Type` instance for boolean.
+    /// @since v0.1.0
+    public static func Bool(): Type { return new Type("bool", "", false); }
+
+    /// Constructs the UTF-8 string type (`string`).
+    ///
+    /// @returns `Type` instance for string.
+    /// @since v0.1.0
+    public static func String(): Type { return new Type("string", "", false); }
+
+    /// Constructs the unit/void type (`void`).
+    ///
+    /// @returns `Type` instance for void.
+    /// @since v0.1.0
+    public static func Void(): Type { return new Type("void", "", false); }
+
+    /// Constructs an un-inferred placeholder type (`unknown`).
+    ///
+    /// @returns `Type` instance for unknown.
+    /// @since v0.1.0
+    public static func Unknown(): Type { return new Type("unknown", "", false); }
+
+    /// Constructs a nominal user-defined class type reference.
+    ///
+    /// @param name Class identifier name.
+    /// @returns `Type` instance for the named class.
+    /// @since v0.1.0
+    public static func Class(string name): Type { return new Type("class", name, false); }
+
+    /// Constructs a 1-dimensional array type of the given element type.
+    ///
+    /// @param elem Element type.
+    /// @returns `Type` instance representing an array of `elem`.
+    /// @since v0.1.0
+    public static func Array(Type elem): Type { return new Type(elem.kind, elem.name, true); }
+}
+
+/// Structured semantic diagnostic emitted during type checking.
+///
+/// Contains error code (e.g. `"LANG-020"`), descriptive error message, and source span.
+///
+/// @since v0.1.0
+class Diagnostic {
+    /// Standard error rule code identifier.
+    public string code;
+
+    /// Human-readable diagnostic explanation.
+    public string message;
+
+    /// Source location span where the violation occurred.
+    public Span span;
+
+    /// Constructs a diagnostic record.
+    ///
+    /// @param code Diagnostic category code.
+    /// @param message Explanatory error message.
+    /// @param span Source location span.
+    /// @since v0.1.0
+    new(string code, string message, Span span) {
+        this.code = code;
+        this.message = message;
+        this.span = span;
+    }
+
+    /// Formats the diagnostic into a compiler error message line.
+    ///
+    /// @returns Formatted diagnostic string.
+    /// @since v0.1.0
+    func toString(): string {
+        return "[" + this.code + "] Error at " + this.span.toString() + ": " + this.message;
+    }
+}
+
+/// Variable symbol in lexical scope.
+///
+/// Tracks identifier name, semantic type, mutability (`isConst`), and declaration span.
+///
+/// @since v0.1.0
+class VarSymbol {
+    /// Variable identifier name.
+    public string name;
+
+    /// Resolved semantic type.
+    public Type ty;
+
+    /// True if declared as an immutable constant.
+    public bool isConst;
+
+    /// Declaration source span.
+    public Span span;
+
+    /// Creates a variable symbol record.
+    ///
+    /// @param name Identifier name.
+    /// @param ty Resolved variable type.
+    /// @param isConst Immutability flag.
+    /// @param span Source location span.
+    /// @since v0.1.0
+    new(string name, Type ty, bool isConst, Span span) {
+        this.name = name;
+        this.ty = ty;
+        this.isConst = isConst;
+        this.span = span;
+    }
+}
+
+/// Function symbol record with parameter signatures and return type.
+///
+/// Tracks function name, formal parameter names, parameter types, return type, and span.
+///
+/// @since v0.1.0
+class FnSymbol {
+    /// Function identifier name.
+    public string name;
+
+    /// Parameter names list.
+    public string[] paramNames;
+
+    /// Parameter types list.
+    public Type[] paramTypes;
+
+    /// Declared return type.
+    public Type returnType;
+
+    /// Definition source span.
+    public Span span;
+
+    /// Constructs a function symbol entry.
+    ///
+    /// @param name Function symbol name.
+    /// @param returnType Return type.
+    /// @param span Source span.
+    /// @since v0.1.0
+    new(string name, Type returnType, Span span) {
+        this.name = name;
+        this.paramNames = [];
+        this.paramTypes = [];
+        this.returnType = returnType;
+        this.span = span;
+    }
+
+    /// Registers a formal parameter on this function.
+    ///
+    /// @param name Parameter name string.
+    /// @param ty Parameter type.
+    /// @since v0.1.0
+    func addParam(string name, Type ty) {
+        this.paramNames.push(name);
+        this.paramTypes.push(ty);
+    }
+
+    /// Returns the total formal parameter count.
+    ///
+    /// @returns Number of parameters.
+    /// @since v0.1.0
+    func paramCount(): int {
+        return this.paramNames.length();
+    }
+}
+
+/// Class symbol table entry tracking fields and methods.
+///
+/// Encapsulates class name, field names, field types, and member method symbols.
+///
+/// @since v0.1.0
+class ClassSymbol {
+    /// Class identifier name.
+    public string name;
+
+    /// Ordered field names list.
+    public string[] fieldNames;
+
+    /// Ordered field types list.
+    public Type[] fieldTypes;
+
+    /// Member method symbols list.
+    public FnSymbol[] methods;
+
+    /// Class declaration source span.
+    public Span span;
+
+    /// Constructs a class symbol table record.
+    ///
+    /// @param name Class identifier name.
+    /// @param span Source declaration span.
+    /// @since v0.1.0
+    new(string name, Span span) {
+        this.name = name;
+        this.fieldNames = [];
+        this.fieldTypes = [];
+        this.methods = [];
+        this.span = span;
+    }
+
+    /// Adds a typed field member to the class.
+    ///
+    /// @param name Field identifier name.
+    /// @param ty Field type.
+    /// @since v0.1.0
+    func addField(string name, Type ty) {
+        this.fieldNames.push(name);
+        this.fieldTypes.push(ty);
+    }
+
+    /// Adds a member method symbol to the class.
+    ///
+    /// @param method Member method symbol.
+    /// @since v0.1.0
+    func addMethod(FnSymbol method) {
+        this.methods.push(method);
+    }
+
+    /// Retrieves the type of a declared field by name.
+    ///
+    /// @param name Field identifier name.
+    /// @returns The resolved field type, or `Type.Unknown()` if not declared.
+    /// @since v0.1.0
+    func getFieldType(string name): Type {
+        int i = 0;
+        while (i < this.fieldNames.length()) {
+            if (this.fieldNames[i] == name) {
+                return this.fieldTypes[i];
+            }
+            i = i + 1;
+        }
+        return Type.Unknown();
+    }
+
+    /// Checks if a field exists on this class.
+    ///
+    /// @param name Field identifier name.
+    /// @returns `true` if declared; `false` otherwise.
+    /// @since v0.1.0
+    func hasField(string name): bool {
+        int i = 0;
+        while (i < this.fieldNames.length()) {
+            if (this.fieldNames[i] == name) {
+                return true;
+            }
+            i = i + 1;
+        }
+        return false;
+    }
+
+    /// Retrieves a member method symbol by name.
+    ///
+    /// @param name Method name string.
+    /// @returns The resolved `FnSymbol`, or an empty symbol if not found.
+    /// @since v0.1.0
+    func getMethod(string name): FnSymbol {
+        int i = 0;
+        while (i < this.methods.length()) {
+            if (this.methods[i].name == name) {
+                return this.methods[i];
+            }
+            i = i + 1;
+        }
+        return new FnSymbol("", Type.Unknown(), new Span(0, 0, 0, 0));
+    }
+
+    /// Checks if a method exists on this class.
+    ///
+    /// @param name Method name string.
+    /// @returns `true` if declared; `false` otherwise.
+    /// @since v0.1.0
+    func hasMethod(string name): bool {
+        int i = 0;
+        while (i < this.methods.length()) {
+            if (this.methods[i].name == name) {
+                return true;
+            }
+            i = i + 1;
+        }
+        return false;
+    }
+}
+
+/// Nested lexical scope frame for variable resolution and shadowing.
+///
+/// Implements standard innermost-first scope resolution.
+///
+/// @since v0.1.0
+class Scope {
+    /// Variables declared within this specific scope block.
+    public VarSymbol[] symbols;
+
+    /// Creates an empty scope frame.
+    ///
+    /// @since v0.1.0
+    new() {
+        this.symbols = [];
+    }
+
+    /// Declares a variable symbol in this scope frame.
+    ///
+    /// @param sym Variable symbol record.
+    /// @since v0.1.0
+    func define(VarSymbol sym) {
+        this.symbols.push(sym);
+    }
+
+    /// Looks up a variable by name within this scope frame (innermost-first).
+    ///
+    /// @param name Variable identifier name.
+    /// @returns The found `VarSymbol`, or an empty symbol if not found in this frame.
+    /// @since v0.1.0
+    func lookup(string name): VarSymbol {
+        int i = this.symbols.length() - 1;
+        while (i >= 0) {
+            if (this.symbols[i].name == name) {
+                return this.symbols[i];
+            }
+            i = i - 1;
+        }
+        return new VarSymbol("", Type.Unknown(), false, new Span(0, 0, 0, 0));
+    }
+
+    /// Checks if a variable name is defined in this scope frame.
+    ///
+    /// @param name Variable identifier name.
+    /// @returns `true` if present; `false` otherwise.
+    /// @since v0.1.0
+    func contains(string name): bool {
+        int i = 0;
+        while (i < this.symbols.length()) {
+            if (this.symbols[i].name == name) {
+                return true;
+            }
+            i = i + 1;
+        }
+        return false;
+    }
+}
+
+/// Syntra Self-Hosting Type Checker and Semantic Analyzer (Specification 01: LANG-020).
+///
+/// Executes two-pass semantic analysis:
+/// - Pass 1 (`collectSymbols`): Discovers and registers global functions, classes, and fields.
+/// - Pass 2 (`checkProgram`): Type checks statements, expressions, control flow, assignments, and returns.
+///
+/// @example
+/// ```syntra
+/// TypeChecker checker = new TypeChecker();
+/// checker.checkProgram(ast);
+/// if (checker.hasErrors()) {
+///     println("Errors: " + checker.errorCount());
+/// }
+/// ```
+/// @since v0.1.0
+class TypeChecker {
+    /// Active lexical scope stack frames.
+    public Scope[] scopeStack;
+
+    /// Global functions registry.
+    public FnSymbol[] functions;
+
+    /// Global classes registry.
+    public ClassSymbol[] classes;
+
+    /// Diagnostic errors accumulated during analysis.
+    public Diagnostic[] diagnostics;
+
+    /// Expected return type of the function currently being checked.
+    public Type currentReturnType;
+
+    /// Name of the class currently being checked, or empty if in global scope.
+    public string currentClassName;
+
+    /// Creates and initializes a new `TypeChecker` with built-in functions (`print`, `println`) and classes (`Arena`).
+    ///
+    /// @since v0.1.0
+    new() {
+        this.scopeStack = [];
+        this.functions = [];
+        this.classes = [];
+        this.diagnostics = [];
+        this.currentReturnType = Type.Void();
+        this.currentClassName = "";
+        this.registerBuiltins();
+    }
+
+    /// Registers intrinsic compiler built-in symbols into the symbol table.
+    ///
+    /// Registers:
+    /// - `print(msg)`
+    /// - `println(msg)`
+    /// - `class Arena` with `alloc`, `reset`, `destroy`, `allocatedBytes`
+    ///
+    /// @since v0.1.0
+    func registerBuiltins() {
+        // Built-in System functions
+        FnSymbol printFn = new FnSymbol("print", Type.Void(), new Span(0, 0, 0, 0));
+        printFn.addParam("msg", Type.Unknown());
+        this.functions.push(printFn);
+
+        FnSymbol printlnFn = new FnSymbol("println", Type.Void(), new Span(0, 0, 0, 0));
+        printlnFn.addParam("msg", Type.Unknown());
+        this.functions.push(printlnFn);
+
+        // Built-in Arena Class
+        ClassSymbol arenaCls = new ClassSymbol("Arena", new Span(0, 0, 0, 0));
+        FnSymbol allocMethod = new FnSymbol("alloc", Type.Unknown(), new Span(0, 0, 0, 0));
+        allocMethod.addParam("obj", Type.Unknown());
+        arenaCls.addMethod(allocMethod);
+
+        FnSymbol resetMethod = new FnSymbol("reset", Type.Void(), new Span(0, 0, 0, 0));
+        arenaCls.addMethod(resetMethod);
+
+        FnSymbol destroyMethod = new FnSymbol("destroy", Type.Void(), new Span(0, 0, 0, 0));
+        arenaCls.addMethod(destroyMethod);
+
+        FnSymbol bytesMethod = new FnSymbol("allocatedBytes", Type.Int(), new Span(0, 0, 0, 0));
+        arenaCls.addMethod(bytesMethod);
+        this.classes.push(arenaCls);
+    }
+
+    /// Pushes a new lexical scope frame onto the scope stack.
+    ///
+    /// @since v0.1.0
+    func enterScope() {
+        this.scopeStack.push(new Scope());
+    }
+
+    /// Pops the active lexical scope frame off the scope stack.
+    ///
+    /// @since v0.1.0
+    func exitScope() {
+        if (this.scopeStack.length() > 0) {
+            Scope[] newStack = [];
+            int i = 0;
+            while (i < this.scopeStack.length() - 1) {
+                newStack.push(this.scopeStack[i]);
+                i = i + 1;
+            }
+            this.scopeStack = newStack;
+        }
+    }
+
+    /// Defines a variable symbol in the topmost lexical scope frame.
+    ///
+    /// @param sym Variable symbol record.
+    /// @since v0.1.0
+    func defineVar(VarSymbol sym) {
+        if (this.scopeStack.length() > 0) {
+            this.scopeStack[this.scopeStack.length() - 1].define(sym);
+        }
+    }
+
+    /// Resolves a variable symbol by searching from topmost to outermost scope frame.
+    ///
+    /// @param name Variable identifier name.
+    /// @returns The found `VarSymbol`, or an empty symbol if not found.
+    /// @since v0.1.0
+    func lookupVar(string name): VarSymbol {
+        int i = this.scopeStack.length() - 1;
+        while (i >= 0) {
+            Scope s = this.scopeStack[i];
+            if (s.contains(name)) {
+                return s.lookup(name);
+            }
+            i = i - 1;
+        }
+        return new VarSymbol("", Type.Unknown(), false, new Span(0, 0, 0, 0));
+    }
+
+    /// Checks whether a variable is visible in any active lexical scope frame.
+    ///
+    /// @param name Variable identifier name.
+    /// @returns `true` if defined; `false` otherwise.
+    /// @since v0.1.0
+    func hasVar(string name): bool {
+        int i = this.scopeStack.length() - 1;
+        while (i >= 0) {
+            if (this.scopeStack[i].contains(name)) {
+                return true;
+            }
+            i = i - 1;
+        }
+        return false;
+    }
+
+    /// Looks up a registered function symbol by name.
+    ///
+    /// @param name Function identifier name.
+    /// @returns The found `FnSymbol`, or an empty symbol if not found.
+    /// @since v0.1.0
+    func getFunction(string name): FnSymbol {
+        int i = 0;
+        while (i < this.functions.length()) {
+            if (this.functions[i].name == name) {
+                return this.functions[i];
+            }
+            i = i + 1;
+        }
+        return new FnSymbol("", Type.Unknown(), new Span(0, 0, 0, 0));
+    }
+
+    /// Checks if a global function is declared.
+    ///
+    /// @param name Function identifier name.
+    /// @returns `true` if declared; `false` otherwise.
+    /// @since v0.1.0
+    func hasFunction(string name): bool {
+        int i = 0;
+        while (i < this.functions.length()) {
+            if (this.functions[i].name == name) {
+                return true;
+            }
+            i = i + 1;
+        }
+        return false;
+    }
+
+    /// Looks up a registered class symbol by name.
+    ///
+    /// @param name Class identifier name.
+    /// @returns The found `ClassSymbol`, or an empty symbol if not declared.
+    /// @since v0.1.0
+    func getClass(string name): ClassSymbol {
+        int i = 0;
+        while (i < this.classes.length()) {
+            if (this.classes[i].name == name) {
+                return this.classes[i];
+            }
+            i = i + 1;
+        }
+        return new ClassSymbol("", new Span(0, 0, 0, 0));
+    }
+
+    /// Checks if a class is declared.
+    ///
+    /// @param name Class identifier name.
+    /// @returns `true` if declared; `false` otherwise.
+    /// @since v0.1.0
+    func hasClass(string name): bool {
+        int i = 0;
+        while (i < this.classes.length()) {
+            if (this.classes[i].name == name) {
+                return true;
+            }
+            i = i + 1;
+        }
+        return false;
+    }
+
+    /// Emits a diagnostic error record with standard error code `"LANG-020"`.
+    ///
+    /// @param msg Diagnostic explanation string.
+    /// @param span Source location span.
+    /// @since v0.1.0
+    func error(string msg, Span span) {
+        this.diagnostics.push(new Diagnostic("LANG-020", msg, span));
+    }
+
+    /// Returns the total number of diagnostic errors recorded.
+    ///
+    /// @returns Diagnostic count.
+    /// @since v0.1.0
+    func errorCount(): int {
+        return this.diagnostics.length();
+    }
+
+    /// Checks if any diagnostic errors were encountered during checking.
+    ///
+    /// @returns `true` if errors exist; `false` if clean.
+    /// @since v0.1.0
+    func hasErrors(): bool {
+        return this.diagnostics.length() > 0;
+    }
+
+    /// Parses a textual type string into a semantic `Type` instance.
+    ///
+    /// Handles array brackets `[]`, scalar types (`int`, `float`, `bool`, `string`, `void`),
+    /// and user class names.
+    ///
+    /// @param typeStr Type annotation string (e.g. `"int[]"`, `"string"`).
+    /// @returns The constructed `Type` instance.
+    /// @since v0.1.0
+    func parseType(string typeStr): Type {
+        string t = typeStr.trim();
+        bool isArr = false;
+        if (t.endsWith("[]")) {
+            isArr = true;
+            t = t.substring(0, t.length() - 2);
+        }
+        if (t == "int") { return new Type("int", "", isArr); }
+        if (t == "float") { return new Type("float", "", isArr); }
+        if (t == "bool") { return new Type("bool", "", isArr); }
+        if (t == "string") { return new Type("string", "", isArr); }
+        if (t == "void") { return new Type("void", "", isArr); }
+        return new Type("class", t, isArr);
+    }
+
+    // --- Pass 1: Collect Top-Level Declarations ---
+
+    /// Scans the root program AST and populates symbol tables for functions, classes, and namespaces.
+    ///
+    /// @param program The root `Program` AST node.
+    /// @since v0.1.0
+    func collectSymbols(AstNode program) {
+        int i = 0;
+        while (i < program.childCount()) {
+            AstNode item = program.getChild(i);
+
+            if (item.kind == "FunctionDecl") {
+                string fnName = item.name;
+                Type retType = Type.Void();
+                if (item.childCount() > 1 && item.getChild(1).kind == "ReturnType") {
+                    retType = this.parseType(item.getChild(1).name);
+                }
+
+                FnSymbol fnSym = new FnSymbol(fnName, retType, item.span);
+
+                if (item.childCount() > 0 && item.getChild(0).kind == "Params") {
+                    AstNode paramsNode = item.getChild(0);
+                    int p = 0;
+                    while (p < paramsNode.childCount()) {
+                        AstNode pNode = paramsNode.getChild(p);
+                        string pName = pNode.name;
+                        Type pType = Type.Unknown();
+                        if (pNode.childCount() > 0 && pNode.getChild(0).kind == "Type") {
+                            pType = this.parseType(pNode.getChild(0).name);
+                        }
+                        fnSym.addParam(pName, pType);
+                        p = p + 1;
+                    }
+                }
+                this.functions.push(fnSym);
+            } else if (item.kind == "NamespaceDecl") {
+                int nm = 0;
+                while (nm < item.childCount()) {
+                    AstNode nItem = item.getChild(nm);
+                    if (nItem.kind == "FunctionDecl") {
+                        string fnName = item.name + "_" + nItem.name;
+                        Type retType = Type.Void();
+                        if (nItem.childCount() > 1 && nItem.getChild(1).kind == "ReturnType") {
+                            retType = this.parseType(nItem.getChild(1).name);
+                        }
+                        FnSymbol fnSym = new FnSymbol(fnName, retType, nItem.span);
+                        if (nItem.childCount() > 0 && nItem.getChild(0).kind == "Params") {
+                            AstNode paramsNode = nItem.getChild(0);
+                            int p = 0;
+                            while (p < paramsNode.childCount()) {
+                                AstNode pNode = paramsNode.getChild(p);
+                                Type pType = Type.Unknown();
+                                if (pNode.childCount() > 0 && pNode.getChild(0).kind == "Type") {
+                                    pType = this.parseType(pNode.getChild(0).name);
+                                }
+                                fnSym.addParam(pNode.name, pType);
+                                p = p + 1;
+                            }
+                        }
+                        this.functions.push(fnSym);
+                    }
+                    nm = nm + 1;
+                }
+            } else if (item.kind == "ClassDecl") {
+                string clsName = item.name;
+                ClassSymbol clsSym = new ClassSymbol(clsName, item.span);
+
+                int m = 0;
+                while (m < item.childCount()) {
+                    AstNode member = item.getChild(m);
+                    if (member.kind == "VarDecl") {
+                        string fName = member.name;
+                        Type fType = Type.Unknown();
+                        if (member.childCount() > 0 && member.getChild(0).kind == "Type") {
+                            fType = this.parseType(member.getChild(0).name);
+                        }
+                        clsSym.addField(fName, fType);
+                    } else if (member.kind == "FunctionDecl") {
+                        string mName = member.name;
+                        Type mRet = Type.Void();
+                        if (member.childCount() > 1 && member.getChild(1).kind == "ReturnType") {
+                            mRet = this.parseType(member.getChild(1).name);
+                        }
+                        FnSymbol mSym = new FnSymbol(mName, mRet, member.span);
+                        if (member.childCount() > 0 && member.getChild(0).kind == "Params") {
+                            AstNode pNodeList = member.getChild(0);
+                            int pi = 0;
+                            while (pi < pNodeList.childCount()) {
+                                AstNode piNode = pNodeList.getChild(pi);
+                                Type piTy = Type.Unknown();
+                                if (piNode.childCount() > 0 && piNode.getChild(0).kind == "Type") {
+                                    piTy = this.parseType(piNode.getChild(0).name);
+                                }
+                                mSym.addParam(piNode.name, piTy);
+                                pi = pi + 1;
+                            }
+                        }
+                        clsSym.addMethod(mSym);
+                    }
+                    m = m + 1;
+                }
+                this.classes.push(clsSym);
+            }
+            i = i + 1;
+        }
+    }
+
+    // --- Pass 2: Type Check Program & Expressions ---
+
+    /// Executes complete semantic validation over an AST program tree.
+    ///
+    /// Runs symbol collection followed by recursive declaration, statement, and expression checking.
+    ///
+    /// @param program The root `Program` AST node.
+    /// @since v0.1.0
+    func checkProgram(AstNode program) {
+        this.collectSymbols(program);
+
+        this.enterScope();
+        int i = 0;
+        while (i < program.childCount()) {
+            AstNode item = program.getChild(i);
+            if (item.kind == "FunctionDecl") {
+                this.checkFunctionDecl(item);
+            } else if (item.kind == "NamespaceDecl") {
+                int nm = 0;
+                while (nm < item.childCount()) {
+                    AstNode nItem = item.getChild(nm);
+                    if (nItem.kind == "FunctionDecl") {
+                        AstNode cloned = new AstNode("FunctionDecl", item.name + "_" + nItem.name, nItem.intVal, nItem.span);
+                        cloned.children = nItem.children;
+                        this.checkFunctionDecl(cloned);
+                    } else if (nItem.kind == "ClassDecl") {
+                        this.checkClassDecl(nItem);
+                    }
+                    nm = nm + 1;
+                }
+            } else if (item.kind == "ClassDecl") {
+                this.checkClassDecl(item);
+            } else {
+                this.checkStatement(item);
+            }
+            i = i + 1;
+        }
+        this.exitScope();
+    }
+
+    /// Checks a function declaration, binding its formal parameters into scope and verifying its body.
+    ///
+    /// @param funcNode The `FunctionDecl` AST node.
+    /// @since v0.1.0
+    func checkFunctionDecl(AstNode funcNode) {
+        FnSymbol fnSym = this.getFunction(funcNode.name);
+        this.currentReturnType = fnSym.returnType;
+
+        this.enterScope();
+        int p = 0;
+        while (p < fnSym.paramCount()) {
+            this.defineVar(new VarSymbol(fnSym.paramNames[p], fnSym.paramTypes[p], false, funcNode.span));
+            p = p + 1;
+        }
+
+        // Body block is the last child of FunctionDecl
+        if (funcNode.childCount() > 0) {
+            AstNode bodyBlock = funcNode.getChild(funcNode.childCount() - 1);
+            if (bodyBlock.kind == "Block") {
+                this.checkBlock(bodyBlock);
+            }
+        }
+
+        this.exitScope();
+    }
+
+    /// Checks a class declaration, verifying fields, constructors, and methods with bound `this` references.
+    ///
+    /// @param classNode The `ClassDecl` AST node.
+    /// @since v0.1.0
+    func checkClassDecl(AstNode classNode) {
+        this.currentClassName = classNode.name;
+        ClassSymbol clsSym = this.getClass(classNode.name);
+
+        int i = 0;
+        while (i < classNode.childCount()) {
+            AstNode member = classNode.getChild(i);
+            if (member.kind == "Constructor" || member.kind == "FunctionDecl") {
+                this.enterScope();
+                this.defineVar(new VarSymbol("this", Type.Class(classNode.name), true, member.span));
+
+                if (member.kind == "Constructor") {
+                    this.currentReturnType = Type.Void();
+                    if (member.childCount() > 0 && member.getChild(0).kind == "Params") {
+                        AstNode paramsNode = member.getChild(0);
+                        int cpi = 0;
+                        while (cpi < paramsNode.childCount()) {
+                            AstNode cpNode = paramsNode.getChild(cpi);
+                            string cpName = cpNode.name;
+                            Type cpType = Type.Unknown();
+                            if (cpNode.childCount() > 0 && cpNode.getChild(0).kind == "Type") {
+                                cpType = this.parseType(cpNode.getChild(0).name);
+                            }
+                            this.defineVar(new VarSymbol(cpName, cpType, false, member.span));
+                            cpi = cpi + 1;
+                        }
+                    }
+                } else {
+                    FnSymbol mSym = clsSym.getMethod(member.name);
+                    this.currentReturnType = mSym.returnType;
+                    int pi = 0;
+                    while (pi < mSym.paramCount()) {
+                        this.defineVar(new VarSymbol(mSym.paramNames[pi], mSym.paramTypes[pi], false, member.span));
+                        pi = pi + 1;
+                    }
+                }
+
+                if (member.childCount() > 0) {
+                    AstNode body = member.getChild(member.childCount() - 1);
+                    if (body.kind == "Block") {
+                        this.checkBlock(body);
+                    }
+                }
+                this.exitScope();
+            } else if (member.kind == "VarDecl") {
+                this.checkVarDecl(member);
+            }
+            i = i + 1;
+        }
+
+        this.currentClassName = "";
+    }
+
+    /// Checks a block statement in an isolated child scope.
+    ///
+    /// @param blockNode The `Block` AST node.
+    /// @since v0.1.0
+    func checkBlock(AstNode blockNode) {
+        this.enterScope();
+        int i = 0;
+        while (i < blockNode.childCount()) {
+            this.checkStatement(blockNode.getChild(i));
+            i = i + 1;
+        }
+        this.exitScope();
+    }
+
+    /// Dispatches checking of an individual AST statement.
+    ///
+    /// @param stmt The statement AST node.
+    /// @since v0.1.0
+    func checkStatement(AstNode stmt) {
+        if (stmt.kind == "VarDecl") {
+            this.checkVarDecl(stmt);
+        } else if (stmt.kind == "IfStmt") {
+            this.checkIfStmt(stmt);
+        } else if (stmt.kind == "WhileStmt") {
+            this.checkWhileStmt(stmt);
+        } else if (stmt.kind == "ReturnStmt") {
+            this.checkReturnStmt(stmt);
+        } else if (stmt.kind == "Block") {
+            this.checkBlock(stmt);
+        } else if (stmt.kind == "ExprStmt") {
+            if (stmt.childCount() > 0) {
+                this.checkExpression(stmt.getChild(0));
+            }
+        }
+    }
+
+    /// Checks a variable declaration, ensuring initial value is assignable to declared type.
+    ///
+    /// @param varNode The `VarDecl` AST node.
+    /// @since v0.1.0
+    func checkVarDecl(AstNode varNode) {
+        Type declaredTy = Type.Unknown();
+        if (varNode.childCount() > 0 && varNode.getChild(0).kind == "Type") {
+            declaredTy = this.parseType(varNode.getChild(0).name);
+        }
+
+        if (varNode.childCount() > 1) {
+            Type initTy = this.checkExpression(varNode.getChild(1));
+            if (initTy.isAssignableTo(declaredTy) == false) {
+                this.error("Cannot assign value of type '" + initTy.toString() + "' to variable '" + varNode.name + "' of type '" + declaredTy.toString() + "'", varNode.span);
+            }
+        }
+
+        this.defineVar(new VarSymbol(varNode.name, declaredTy, false, varNode.span));
+    }
+
+    /// Checks an `if` conditional statement, asserting condition expression evaluates to `bool`.
+    ///
+    /// @param ifNode The `IfStmt` AST node.
+    /// @since v0.1.0
+    func checkIfStmt(AstNode ifNode) {
+        if (ifNode.childCount() > 0) {
+            Type condTy = this.checkExpression(ifNode.getChild(0));
+            if (condTy.isBool() == false && condTy.kind != "unknown") {
+                this.error("Condition in 'if' statement must evaluate to bool, got '" + condTy.toString() + "'", ifNode.span);
+            }
+        }
+        if (ifNode.childCount() > 1) {
+            this.checkStatement(ifNode.getChild(1));
+        }
+        if (ifNode.childCount() > 2) {
+            this.checkStatement(ifNode.getChild(2));
+        }
+    }
+
+    /// Checks a `while` loop statement, asserting loop condition evaluates to `bool`.
+    ///
+    /// @param whileNode The `WhileStmt` AST node.
+    /// @since v0.1.0
+    func checkWhileStmt(AstNode whileNode) {
+        if (whileNode.childCount() > 0) {
+            Type condTy = this.checkExpression(whileNode.getChild(0));
+            if (condTy.isBool() == false && condTy.kind != "unknown") {
+                this.error("Condition in 'while' statement must evaluate to bool, got '" + condTy.toString() + "'", whileNode.span);
+            }
+        }
+        if (whileNode.childCount() > 1) {
+            this.checkStatement(whileNode.getChild(1));
+        }
+    }
+
+    /// Checks a `return` statement, validating returned expression against enclosing function return type.
+    ///
+    /// @param retNode The `ReturnStmt` AST node.
+    /// @since v0.1.0
+    func checkReturnStmt(AstNode retNode) {
+        Type returnValTy = Type.Void();
+        if (retNode.childCount() > 0) {
+            returnValTy = this.checkExpression(retNode.getChild(0));
+        }
+
+        if (returnValTy.isAssignableTo(this.currentReturnType) == false) {
+            this.error("Return value of type '" + returnValTy.toString() + "' does not match function return type '" + this.currentReturnType.toString() + "'", retNode.span);
+        }
+    }
+
+    // --- Expression Type Inference & Validation ---
+
+    /// Performs type inference and validation on an arbitrary AST expression node.
+    ///
+    /// Evaluates literals, identifiers, assignments, binary operators, member accesses, method calls, and array indexing.
+    ///
+    /// @param expr The expression AST node to validate.
+    /// @returns The inferred `Type` of the expression.
+    /// @since v0.1.0
+    func checkExpression(AstNode expr): Type {
+        if (expr.kind == "IntLit") {
+            return Type.Int();
+        }
+        if (expr.kind == "StringLit") {
+            return Type.String();
+        }
+        if (expr.kind == "BoolLit") {
+            return Type.Bool();
+        }
+
+        if (expr.kind == "Identifier") {
+            if (this.hasVar(expr.name)) {
+                return this.lookupVar(expr.name).ty;
+            }
+            if (this.hasFunction(expr.name)) {
+                return this.getFunction(expr.name).returnType;
+            }
+            if (this.hasClass(expr.name)) {
+                return Type.Class(expr.name);
+            }
+            this.error("Undefined variable or symbol '" + expr.name + "'", expr.span);
+            return Type.Unknown();
+        }
+
+        if (expr.kind == "ThisExpr") {
+            if (this.currentClassName.length() > 0) {
+                return Type.Class(this.currentClassName);
+            }
+            this.error("'this' cannot be used outside of a class method or constructor", expr.span);
+            return Type.Unknown();
+        }
+
+        if (expr.kind == "Assignment") {
+            if (expr.childCount() >= 2) {
+                AstNode target = expr.getChild(0);
+                AstNode valExpr = expr.getChild(1);
+                Type targetTy = this.checkExpression(target);
+                Type valTy = this.checkExpression(valExpr);
+                if (valTy.isAssignableTo(targetTy) == false) {
+                    this.error("Cannot assign value of type '" + valTy.toString() + "' to target of type '" + targetTy.toString() + "'", expr.span);
+                }
+                return targetTy;
+            }
+            return Type.Unknown();
+        }
+
+        if (expr.kind == "BinaryExpr") {
+            if (expr.childCount() >= 2) {
+                Type lTy = this.checkExpression(expr.getChild(0));
+                Type rTy = this.checkExpression(expr.getChild(1));
+                string op = expr.name;
+
+                // String concatenation
+                if (op == "+" && (lTy.isString() || rTy.isString())) {
+                    return Type.String();
+                }
+
+                // Arithmetic (+, -, *, /, %)
+                if (op == "+" || op == "-" || op == "*" || op == "/" || op == "%") {
+                    if (lTy.isNumeric() == false || rTy.isNumeric() == false) {
+                        if (lTy.kind != "unknown" && rTy.kind != "unknown") {
+                            this.error("Operator '" + op + "' requires numeric operands, got '" + lTy.toString() + "' and '" + rTy.toString() + "'", expr.span);
+                        }
+                    }
+                    return Type.Int();
+                }
+
+                // Comparisons (<, <=, >, >=)
+                if (op == "<" || op == "<=" || op == ">" || op == ">=") {
+                    if (lTy.isNumeric() == false || rTy.isNumeric() == false) {
+                        if (lTy.kind != "unknown" && rTy.kind != "unknown") {
+                            this.error("Relational operator '" + op + "' requires numeric operands, got '" + lTy.toString() + "' and '" + rTy.toString() + "'", expr.span);
+                        }
+                    }
+                    return Type.Bool();
+                }
+
+                // Equality (==, !=)
+                if (op == "==" || op == "!=") {
+                    if (lTy.isAssignableTo(rTy) == false && rTy.isAssignableTo(lTy) == false) {
+                        this.error("Cannot compare distinct types '" + lTy.toString() + "' and '" + rTy.toString() + "'", expr.span);
+                    }
+                    return Type.Bool();
+                }
+
+                // Logical (&&, ||)
+                if (op == "&&" || op == "||") {
+                    if (lTy.isBool() == false || rTy.isBool() == false) {
+                        if (lTy.kind != "unknown" && rTy.kind != "unknown") {
+                            this.error("Logical operator '" + op + "' requires boolean operands", expr.span);
+                        }
+                    }
+                    return Type.Bool();
+                }
+            }
+            return Type.Unknown();
+        }
+
+        if (expr.kind == "UnaryExpr") {
+            if (expr.childCount() >= 1) {
+                Type inner = this.checkExpression(expr.getChild(0));
+                if (expr.name == "!" && inner.isBool() == false && inner.kind != "unknown") {
+                    this.error("Unary '!' requires boolean operand, got '" + inner.toString() + "'", expr.span);
+                }
+                return inner;
+            }
+            return Type.Unknown();
+        }
+
+        if (expr.kind == "CallExpr") {
+            if (expr.childCount() > 0) {
+                AstNode callee = expr.getChild(0);
+
+                if (callee.kind == "Identifier") {
+                    string fnName = callee.name;
+                    if (this.hasFunction(fnName)) {
+                        FnSymbol fnSym = this.getFunction(fnName);
+                        int argCount = expr.childCount() - 1;
+                        if (fnSym.paramCount() != argCount && fnSym.name != "print" && fnSym.name != "println") {
+                            this.error("Function '" + fnName + "' expects " + fnSym.paramCount() + " argument(s), got " + argCount, expr.span);
+                        } else {
+                            int a = 0;
+                            while (a < argCount && a < fnSym.paramCount()) {
+                                Type argTy = this.checkExpression(expr.getChild(a + 1));
+                                Type expectedTy = fnSym.paramTypes[a];
+                                if (argTy.isAssignableTo(expectedTy) == false) {
+                                    this.error("Argument " + (a + 1) + " of function '" + fnName + "' expects '" + expectedTy.toString() + "', found '" + argTy.toString() + "'", expr.span);
+                                }
+                                a = a + 1;
+                            }
+                        }
+                        return fnSym.returnType;
+                    }
+                } else if (callee.kind == "MemberAccess") {
+                    AstNode objNode = callee.getChild(0);
+                    string memberName = callee.name;
+
+                    if (objNode.kind == "Identifier") {
+                        string prefix = objNode.name;
+                        string nsFn = prefix + "_" + memberName;
+                        if (this.hasFunction(nsFn)) {
+                            FnSymbol m = this.getFunction(nsFn);
+                            return m.returnType;
+                        }
+                        if (this.hasFunction(memberName) && this.hasClass(prefix) == false) {
+                            FnSymbol m = this.getFunction(memberName);
+                            return m.returnType;
+                        }
+                        if (prefix == "Math") {
+                            return Type.Int();
+                        }
+                        if (prefix == "File") {
+                            if (memberName == "exists" || memberName == "writeText" || memberName == "delete") {
+                                return Type.Bool();
+                            }
+                            if (memberName == "size") {
+                                return Type.Int();
+                            }
+                            return Type.String();
+                        }
+                        if (prefix == "System") {
+                            if (memberName == "args") {
+                                Type arr = Type.String();
+                                arr.isArray = true;
+                                return arr;
+                            }
+                            if (memberName == "timeMs" || memberName == "exec") {
+                                return Type.Int();
+                            }
+                            if (memberName == "getEnv") {
+                                return Type.String();
+                            }
+                            return Type.Void();
+                        }
+                    }
+
+                    Type objTy = this.checkExpression(objNode);
+
+                    if (objTy.kind == "class") {
+                        ClassSymbol cls = this.getClass(objTy.name);
+                        if (cls.hasMethod(memberName)) {
+                            FnSymbol m = cls.getMethod(memberName);
+                            return m.returnType;
+                        }
+                    } else if (objTy.isString()) {
+                        if (memberName == "length" || memberName == "len" || memberName == "indexOf" || memberName == "charCodeAt") {
+                            return Type.Int();
+                        }
+                        if (memberName == "substring" || memberName == "slice" || memberName == "trim" || memberName == "charAt") {
+                            return Type.String();
+                        }
+                        if (memberName == "contains" || memberName == "startsWith" || memberName == "endsWith") {
+                            return Type.Bool();
+                        }
+                    } else if (objTy.isArray) {
+                        if (memberName == "length" || memberName == "len" || memberName == "push") {
+                            return Type.Int();
+                        }
+                    }
+                }
+            }
+            return Type.Unknown();
+        }
+
+        if (expr.kind == "MemberAccess") {
+            if (expr.childCount() > 0) {
+                AstNode obj = expr.getChild(0);
+                string member = expr.name;
+                Type objTy = this.checkExpression(obj);
+
+                if (objTy.isString() && (member == "length" || member == "len")) {
+                    return Type.Int();
+                }
+                if (objTy.isArray && (member == "length" || member == "len")) {
+                    return Type.Int();
+                }
+                if (objTy.kind == "class") {
+                    ClassSymbol cls = this.getClass(objTy.name);
+                    if (cls.hasField(member)) {
+                        return cls.getFieldType(member);
+                    }
+                    if (cls.hasMethod(member)) {
+                        return cls.getMethod(member).returnType;
+                    }
+                }
+            }
+            return Type.Unknown();
+        }
+
+        if (expr.kind == "IndexExpr") {
+            if (expr.childCount() >= 2) {
+                Type arrTy = this.checkExpression(expr.getChild(0));
+                Type idxTy = this.checkExpression(expr.getChild(1));
+
+                if (idxTy.kind != "int" && idxTy.kind != "unknown") {
+                    this.error("Array index must evaluate to int, found '" + idxTy.toString() + "'", expr.span);
+                }
+
+                if (arrTy.isArray) {
+                    return new Type(arrTy.kind, arrTy.name, false);
+                }
+            }
+            return Type.Unknown();
+        }
+
+        if (expr.kind == "NewExpr") {
+            string clsName = expr.name;
+            if (this.hasClass(clsName) == false && clsName != "Arena") {
+                this.error("Cannot instantiate undeclared class '" + clsName + "'", expr.span);
+            }
+            return Type.Class(clsName);
+        }
+
+        if (expr.kind == "ArrayLit") {
+            Type elemTy = Type.Unknown();
+            int e = 0;
+            while (e < expr.childCount()) {
+                Type t = this.checkExpression(expr.getChild(e));
+                if (e == 0) {
+                    elemTy = t;
+                }
+                e = e + 1;
+            }
+            return Type.Array(elemTy);
+        }
+
+        return Type.Unknown();
+    }
+}

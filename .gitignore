@@ -1,12 +1,88 @@
-/target
+# ==============================================================================
+# Rust / Cargo Build Artifacts
+# ==============================================================================
+/target/
+Cargo.lock.bak
+**/*.rs.bk
+
+# ==============================================================================
+# Native Binaries, Objects & Dynamic Libraries
+# ==============================================================================
+/bin/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+*.bin
+*.out
+
+# Local test / compiled scratch binaries
+hello
+hello_native
+hello_opt
+control_flow
+opt_test
+
+# ==============================================================================
+# Syntra Toolchain Runtime, Cache & Lockfiles
+# ==============================================================================
+/.syntra/
+*.synlock
+*.synlock.bak
+Package.lock
+syntra.lock
+
+# ==============================================================================
+# Benchmarks Scratch & Interpose Artifacts
+# ==============================================================================
+benchmarks/bin_*
+benchmarks/*.dylib
+benchmarks/*.so
+benchmarks/test_*.syn
+benchmarks/*_tmp.syn
+benchmarks/*_temp.syn
+benchmarks/interpose.c
+
+# ==============================================================================
+# VS Code Extension Build & Dependency Artifacts
+# ==============================================================================
+editors/vscode/syntra-lang/node_modules/
+editors/vscode/syntra-lang/out/
+editors/vscode/syntra-lang/*.vsix
+editors/vscode/syntra-lang/.vscode-test/
+
+# ==============================================================================
+# Ephemeral Test & Audit Scratch
+# ==============================================================================
+audit_output/scratch/
+remediation_output/scratch/
+scratch/
+*.log
+
+# ==============================================================================
+# Operating System & Filesystem Junk
+# ==============================================================================
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+
+# ==============================================================================
+# Editor / IDE Caches (Personal developer preferences)
+# ==============================================================================
+.idea/
+*.sublime-project
+*.sublime-workspace
 *.swp
+*.swo
 *~
-.env
-.env.local
-node_modules
-build
-dist
-.turbo
-.parcel-cache
-.next
+.agents/
+
+benchmarks/
+audit_output/
+

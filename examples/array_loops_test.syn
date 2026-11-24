@@ -1,0 +1,29 @@
+func main(): int {
+    int[] numbers = [10, 20, 30, 40, 50];
+    println("Original array length: " + numbers.length);
+    println("Element at index 2: " + numbers[2]);
+
+    numbers[2] = 99;
+    println("Modified element at index 2: " + numbers[2]);
+
+    int sum = 0;
+    for (int i = 0; i < numbers.length; i = i + 1) {
+        sum = sum + numbers[i];
+    }
+    println("Sum via indexed for loop: " + sum);
+
+    int for_in_sum = 0;
+    for x in numbers {
+        for_in_sum = for_in_sum + x;
+    }
+    println("Sum via for-in loop: " + for_in_sum);
+
+    int minimum = Math.min(15, 42, 10, 8);
+    int maximum = Math.max(15, 42, 99, 7);
+    int absolute = Math.abs(-77);
+    println("Math.min(15, 42, 10, 8) = " + minimum);
+    println("Math.max(15, 42, 99, 7) = " + maximum);
+    println("Math.abs(-77) = " + absolute);
+
+    return for_in_sum;
+}

@@ -1,11 +1,11 @@
 [package]
-name = "aether_air"
+name = "syntra_air"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
-aether_diagnostics.workspace = true
-aether_syntax.workspace = true
-aether_frontend.workspace = true
+syntra_diagnostics.workspace = true
+syntra_syntax.workspace = true
+syntra_frontend.workspace = true
 thiserror.workspace = true

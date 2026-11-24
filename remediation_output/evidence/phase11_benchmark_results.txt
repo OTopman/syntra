@@ -1,0 +1,54 @@
+==============================================================================
+🚀 RUNNING EMPIRICAL MULTI-LANGUAGE BENCHMARK SUITE
+Languages: C++17 (Clang -O3), Rust 1.88 (-O3), Go 1.25, Syntra Native, Node.js v22
+==============================================================================
+
+▶ Benchmarking: C++ (Clang -O3)...
+  ✓ Cold startup latency: 9.39 ms
+  ✓ SHA-256: 14.3 ms
+  ✓ MIME:    21.0 ms
+  ✓ Router:  2194.0 ms
+  ✓ Peak RSS: 0.98 MB
+
+▶ Benchmarking: Rust (rustc -O3)...
+  ✓ Cold startup latency: 12.88 ms
+  ✓ SHA-256: 13.3 ms
+  ✓ MIME:    13.7 ms
+  ✓ Router:  1505.7 ms
+  ✓ Peak RSS: 0.95 MB
+
+▶ Benchmarking: Go (go 1.25)...
+  ✓ Cold startup latency: 14.95 ms
+  ✓ SHA-256: 28.3 ms
+  ✓ MIME:    15.3 ms
+  ✓ Router:  1595.0 ms
+  ✓ Peak RSS: 8.33 MB
+
+▶ Benchmarking: Syntra (Native)...
+  ✓ Cold startup latency: 12.06 ms
+  ✓ SHA-256: 15.7 ms
+  ✓ MIME:    20.7 ms
+  ✓ Router:  287.0 ms
+  ✓ Peak RSS: 0.75 MB
+
+▶ Benchmarking: Node.js (v22.22)...
+  ✓ Cold startup latency: 191.02 ms
+  ✓ SHA-256: 52.0 ms
+  ✓ MIME:    13.3 ms
+  ✓ Router:  626.0 ms
+  ✓ Peak RSS: 44.66 MB
+
+▶ Benchmarking: Syntra (Bytecode VM)...
+  ✓ Cold startup latency: 14.18 ms
+
+==============================================================================
+📊 BENCHMARK SUMMARY REPORT
+==============================================================================
+Runtime / Language     | Cold Start | SHA-256 (10k) | MIME (10k) | Router (100k) | Peak RSS 
+--------------------------------------------------------------------------------------------
+C++ (Clang -O3)        |    9.39 ms |       14.3 ms |    21.0 ms |     2194.0 ms |    1.0 MB
+Rust (rustc -O3)       |   12.88 ms |       13.3 ms |    13.7 ms |     1505.7 ms |    1.0 MB
+Go (go 1.25)           |   14.95 ms |       28.3 ms |    15.3 ms |     1595.0 ms |    8.3 MB
+Syntra (Native)        |   12.06 ms |       15.7 ms |    20.7 ms |      287.0 ms |    0.8 MB
+Node.js (v22.22)       |  191.02 ms |       52.0 ms |    13.3 ms |      626.0 ms |   44.7 MB
+Syntra (Bytecode VM)   |   14.18 ms |           N/A |        N/A |           N/A |       N/A

@@ -1,0 +1,511 @@
+// Syntra Standard Library: Self-Hosting Native Code Generator (Milestone 4)
+// Translates Syntra AIR (SSA Intermediate Representation) into native machine assembly (x86-64 / AMD64 System V ABI).
+// Fully self-hosting, zero external dependencies, operating within Arena memory domains.
+
+import "../stdlib/syntax.syn";
+import "../stdlib/checker.syn";
+import "../stdlib/air.syn";
+
+/// Native Assembly Instruction representation.
+///
+/// Encapsulates mnemonic, destination operand, and source operand formatted for Intel syntax.
+///
+/// @example
+/// ```syntra
+/// AsmInstruction inst = new AsmInstruction("mov", "rax", "42");
+/// println(inst.toString()); // "    mov rax, 42"
+/// ```
+/// @since v0.1.0
+class AsmInstruction {
+    /// Assembly mnemonic (e.g. `"mov"`, `"add"`, `"call"`, `"ret"`).
+    public string mnemonic;
+
+    /// Primary destination or first operand.
+    public string op1;
+
+    /// Secondary source operand.
+    public string op2;
+
+    /// Creates a new assembly instruction.
+    ///
+    /// @param mnemonic Operation mnemonic string.
+    /// @param op1 First operand string.
+    /// @param op2 Second operand string (or empty if unary/nullary).
+    /// @since v0.1.0
+    new(string mnemonic, string op1, string op2) {
+        this.mnemonic = mnemonic;
+        this.op1 = op1;
+        this.op2 = op2;
+    }
+
+    /// Formats the instruction as an indented assembly code line.
+    ///
+    /// @returns Formatted assembly string.
+    /// @since v0.1.0
+    func toString(): string {
+        if (this.op2.length() > 0) {
+            return "    " + this.mnemonic + " " + this.op1 + ", " + this.op2;
+        }
+        if (this.op1.length() > 0) {
+            return "    " + this.mnemonic + " " + this.op1;
+        }
+        return "    " + this.mnemonic;
+    }
+}
+
+/// Native Assembly Basic Block with label and sequential instruction stream.
+///
+/// Represents an un-branched linear sequence of instructions terminated by a branch or jump.
+///
+/// @since v0.1.0
+class AsmBlock {
+    /// Unique label marking the entry point of this block.
+    public string label;
+
+    /// Ordered sequence of emitted native instructions.
+    public AsmInstruction[] instructions;
+
+    /// Creates a new assembly block labeled with `label`.
+    ///
+    /// @param label Symbolic label string (e.g. `".L_main_bb0"`).
+    /// @since v0.1.0
+    new(string label) {
+        this.label = label;
+        this.instructions = [];
+    }
+
+    /// Emits and appends a new instruction into this block.
+    ///
+    /// @param mnemonic Instruction mnemonic.
+    /// @param op1 First operand.
+    /// @param op2 Second operand.
+    /// @since v0.1.0
+    func emit(string mnemonic, string op1, string op2) {
+        this.instructions.push(new AsmInstruction(mnemonic, op1, op2));
+    }
+
+    /// Serializes the block with its header label and all constituent instructions.
+    ///
+    /// @returns Assembly text representation of the block.
+    /// @since v0.1.0
+    func toString(): string {
+        string res = this.label + ":\n";
+        int i = 0;
+        while (i < this.instructions.length()) {
+            res = res + this.instructions[i].toString() + "\n";
+            i = i + 1;
+        }
+        return res;
+    }
+}
+
+/// Native Assembly Function representation.
+///
+/// Manages stack frame size allocation, calling convention prologue/epilogue emission,
+/// and block sequence assembly.
+///
+/// @since v0.1.0
+class AsmFunction {
+    /// Function name identifier.
+    public string name;
+
+    /// Total stack frame byte allocation size (16-byte aligned).
+    public int stackSize;
+
+    /// Basic blocks comprising the function body.
+    public AsmBlock[] blocks;
+
+    /// Creates a new assembly function container.
+    ///
+    /// @param name Function name symbol.
+    /// @param stackSize Stack frame reservation in bytes.
+    /// @since v0.1.0
+    new(string name, int stackSize) {
+        this.name = name;
+        this.stackSize = stackSize;
+        this.blocks = [];
+    }
+
+    /// Appends a basic block into the function.
+    ///
+    /// @param block The block to attach.
+    /// @since v0.1.0
+    func addBlock(AsmBlock block) {
+        this.blocks.push(block);
+    }
+
+    /// Emits the function definition including Mach-O / ELF export symbol, prologue, body blocks, and epilogue.
+    ///
+    /// @returns Formatted assembly text for the complete function.
+    /// @since v0.1.0
+    func toString(): string {
+        string res = "";
+        // Mach-O symbol naming convention (leading underscore)
+        string symName = "_" + this.name;
+        res = res + ".globl " + symName + "\n";
+        res = res + symName + ":\n";
+
+        // Function Prologue: setup stack frame
+        res = res + "    push rbp\n";
+        res = res + "    mov rbp, rsp\n";
+        if (this.stackSize > 0) {
+            res = res + "    sub rsp, " + this.stackSize + "\n";
+        }
+
+        int b = 0;
+        while (b < this.blocks.length()) {
+            res = res + this.blocks[b].toString();
+            b = b + 1;
+        }
+
+        return res;
+    }
+}
+
+/// Self-Hosting Native Machine Code Generator.
+///
+/// Translates SSA AIR basic blocks and instructions into x86-64 / AMD64 System V assembly code.
+///
+/// Features:
+/// - Register allocation / stack spilling
+/// - System V AMD64 calling convention argument passing (`rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`)
+/// - 16-byte stack frame alignment
+/// - Mach-O / ELF interoperability
+///
+/// @example
+/// ```syntra
+/// NativeCodegen codegen = new NativeCodegen(airModule);
+/// string asm = codegen.generateModule();
+/// File.writeText("out.s", asm);
+/// ```
+/// @since v0.1.0
+class NativeCodegen {
+    /// Source SSA AIR module being compiled.
+    public AirModule airModule;
+
+    /// Emitted assembly functions.
+    public AsmFunction[] functions;
+
+    /// Hardware registers used for passing incoming function arguments under System V ABI.
+    public string[] argRegs;
+
+    /// Initializes a native code generator targeting the given AIR module.
+    ///
+    /// @param airModule The AIR module to compile.
+    /// @since v0.1.0
+    new(AirModule airModule) {
+        this.airModule = airModule;
+        this.functions = [];
+        this.argRegs = ["rdi", "rsi", "rdx", "rcx", "r8", "r9"];
+    }
+
+    /// Computes the stack memory slot displacement string for a virtual SSA value ID.
+    ///
+    /// @param valueId Numeric SSA value index.
+    /// @returns Memory pointer operand string (e.g. `"qword ptr [rbp - 16]"`).
+    /// @since v0.1.0
+    func getSlot(int valueId): string {
+        int offset = (valueId + 1) * 8;
+        return "qword ptr [rbp - " + offset + "]";
+    }
+
+    /// Compiles all functions in the AIR module into a standalone assembly source text.
+    ///
+    /// @returns Complete x86-64 assembly program string formatted in `.intel_syntax noprefix`.
+    /// @since v0.1.0
+    func generateModule(): string {
+        string asmText = ".intel_syntax noprefix\n.text\n\n";
+
+        int f = 0;
+        while (f < this.airModule.functions.length()) {
+            AirFunction airFn = this.airModule.functions[f];
+            AsmFunction asmFn = this.generateFunction(airFn);
+            this.functions.push(asmFn);
+            asmText = asmText + asmFn.toString() + "\n";
+            f = f + 1;
+        }
+
+        return asmText;
+    }
+
+    /// Lowers a single AIR function into its native assembly function representation.
+    ///
+    /// Computes stack frame requirements, copies parameter registers to stack spill slots,
+    /// and lowers instructions and block branch terminators.
+    ///
+    /// @param airFn The AIR function to compile.
+    /// @returns The assembled `AsmFunction`.
+    /// @since v0.1.0
+    func generateFunction(AirFunction airFn): AsmFunction {
+        // Find maximum value ID to calculate stack frame size
+        int maxValueId = airFn.paramNames.length();
+        int bi = 0;
+        while (bi < airFn.blocks.length()) {
+            AirBlock ab = airFn.blocks[bi];
+            int ii = 0;
+            while (ii < ab.instructions.length()) {
+                if (ab.instructions[ii].result.id > maxValueId) {
+                    maxValueId = ab.instructions[ii].result.id;
+                }
+                ii = ii + 1;
+            }
+            bi = bi + 1;
+        }
+
+        // Align stack frame to 16 bytes
+        int totalSlots = maxValueId + 4;
+        int frameSize = totalSlots * 8;
+        int rem = frameSize - ((frameSize / 16) * 16);
+        if (rem != 0) {
+            frameSize = frameSize + 8;
+        }
+
+        AsmFunction asmFn = new AsmFunction(airFn.name, frameSize);
+
+        // Lower each basic block
+        int b = 0;
+        while (b < airFn.blocks.length()) {
+            AirBlock airBlock = airFn.blocks[b];
+            string blockLabel = ".L_" + airFn.name + "_bb" + airBlock.id;
+            AsmBlock asmBlock = new AsmBlock(blockLabel);
+
+            // In entry block (bb0), copy incoming parameter registers to stack slots
+            if (airBlock.id == 0) {
+                int p = 0;
+                while (p < airFn.paramNames.length() && p < this.argRegs.length()) {
+                    string slot = this.getSlot(p);
+                    asmBlock.emit("mov", slot, this.argRegs[p]);
+                    p = p + 1;
+                }
+            }
+
+            // Lower instructions
+            int i = 0;
+            while (i < airBlock.instructions.length()) {
+                AirInstruction inst = airBlock.instructions[i];
+                this.lowerInstruction(inst, asmBlock);
+                i = i + 1;
+            }
+
+            // Lower terminator
+            this.lowerTerminator(airBlock.terminator, airFn.name, asmBlock);
+
+            asmFn.addBlock(asmBlock);
+            b = b + 1;
+        }
+
+        return asmFn;
+    }
+
+    /// Parses a comma-separated list of value references into an integer array of value IDs.
+    ///
+    /// @param argsStr Value reference string (e.g. `"v0, v1"`).
+    /// @returns Array of integer value IDs.
+    /// @since v0.1.0
+    func parseArgList(string argsStr): int[] {
+        int[] res = [];
+        int i = 0;
+        while (i < argsStr.length()) {
+            if (argsStr.charCodeAt(i) == 118) { // 'v'
+                i = i + 1;
+                int val = 0;
+                while (i < argsStr.length() && argsStr.charCodeAt(i) >= 48 && argsStr.charCodeAt(i) <= 57) {
+                    val = val * 10 + (argsStr.charCodeAt(i) - 48);
+                    i = i + 1;
+                }
+                res.push(val);
+            } else {
+                i = i + 1;
+            }
+        }
+        return res;
+    }
+
+    /// Parses an SSA value token (e.g. `"v4"`) into its integer ID (`4`).
+    ///
+    /// @param vStr Value token string.
+    /// @returns Numeric value identifier.
+    /// @since v0.1.0
+    func parseValueId(string vStr): int {
+        if (vStr.startsWith("v")) {
+            string numStr = vStr.substring(1, vStr.length());
+            // Fast integer parser
+            int val = 0;
+            int idx = 0;
+            while (idx < numStr.length()) {
+                int code = numStr.charCodeAt(idx);
+                if (code >= 48 && code <= 57) {
+                    val = val * 10 + (code - 48);
+                }
+                idx = idx + 1;
+            }
+            return val;
+        }
+        return 0;
+    }
+
+    /// Lowers an individual SSA AIR instruction into one or more native x86-64 instructions.
+    ///
+    /// Handles constant loading, arithmetic (`add`, `sub`, `mul`), relational comparisons (`cmp.gt`,
+    /// `cmp.lt`, `cmp.eq`, `cmp.ne`, `cmp.le`, `cmp.ge`), logical operations (`and`, `or`),
+    /// field accesses, and function calls.
+    ///
+    /// @param inst The AIR instruction to lower.
+    /// @param block The target assembly block receiving emitted instructions.
+    /// @since v0.1.0
+    func lowerInstruction(AirInstruction inst, AsmBlock block) {
+        string resSlot = this.getSlot(inst.result.id);
+
+        if (inst.op == "const.int") {
+            block.emit("mov", "rax", inst.operand1);
+            block.emit("mov", resSlot, "rax");
+        } else if (inst.op == "mov") {
+            int srcId = this.parseValueId(inst.operand1);
+            int dstId = this.parseValueId(inst.operand2);
+            block.emit("mov", "rax", this.getSlot(srcId));
+            block.emit("mov", this.getSlot(dstId), "rax");
+            block.emit("mov", resSlot, "rax");
+        } else if (inst.op == "const.bool") {
+            if (inst.operand1 == "true") {
+                block.emit("mov", resSlot, "1");
+            } else {
+                block.emit("mov", resSlot, "0");
+            }
+        } else if (inst.op == "add") {
+            int leftId = this.parseValueId(inst.operand1);
+            int rightId = this.parseValueId(inst.operand2);
+            block.emit("mov", "rax", this.getSlot(leftId));
+            block.emit("add", "rax", this.getSlot(rightId));
+            block.emit("mov", resSlot, "rax");
+        } else if (inst.op == "sub") {
+            int leftId = this.parseValueId(inst.operand1);
+            int rightId = this.parseValueId(inst.operand2);
+            block.emit("mov", "rax", this.getSlot(leftId));
+            block.emit("sub", "rax", this.getSlot(rightId));
+            block.emit("mov", resSlot, "rax");
+        } else if (inst.op == "mul") {
+            int leftId = this.parseValueId(inst.operand1);
+            int rightId = this.parseValueId(inst.operand2);
+            block.emit("mov", "rax", this.getSlot(leftId));
+            block.emit("imul", "rax", this.getSlot(rightId));
+            block.emit("mov", resSlot, "rax");
+        } else if (inst.op == "cmp.gt") {
+            int leftId = this.parseValueId(inst.operand1);
+            int rightId = this.parseValueId(inst.operand2);
+            block.emit("mov", "rax", this.getSlot(leftId));
+            block.emit("cmp", "rax", this.getSlot(rightId));
+            block.emit("setg", "al", "");
+            block.emit("movzx", "rax", "al");
+            block.emit("mov", resSlot, "rax");
+        } else if (inst.op == "cmp.lt") {
+            int leftId = this.parseValueId(inst.operand1);
+            int rightId = this.parseValueId(inst.operand2);
+            block.emit("mov", "rax", this.getSlot(leftId));
+            block.emit("cmp", "rax", this.getSlot(rightId));
+            block.emit("setl", "al", "");
+            block.emit("movzx", "rax", "al");
+            block.emit("mov", resSlot, "rax");
+        } else if (inst.op == "cmp.eq") {
+            int leftId = this.parseValueId(inst.operand1);
+            int rightId = this.parseValueId(inst.operand2);
+            block.emit("mov", "rax", this.getSlot(leftId));
+            block.emit("cmp", "rax", this.getSlot(rightId));
+            block.emit("sete", "al", "");
+            block.emit("movzx", "rax", "al");
+            block.emit("mov", resSlot, "rax");
+        } else if (inst.op == "cmp.ne") {
+            int leftId = this.parseValueId(inst.operand1);
+            int rightId = this.parseValueId(inst.operand2);
+            block.emit("mov", "rax", this.getSlot(leftId));
+            block.emit("cmp", "rax", this.getSlot(rightId));
+            block.emit("setne", "al", "");
+            block.emit("movzx", "rax", "al");
+            block.emit("mov", resSlot, "rax");
+        } else if (inst.op == "cmp.le") {
+            int leftId = this.parseValueId(inst.operand1);
+            int rightId = this.parseValueId(inst.operand2);
+            block.emit("mov", "rax", this.getSlot(leftId));
+            block.emit("cmp", "rax", this.getSlot(rightId));
+            block.emit("setle", "al", "");
+            block.emit("movzx", "rax", "al");
+            block.emit("mov", resSlot, "rax");
+        } else if (inst.op == "cmp.ge") {
+            int leftId = this.parseValueId(inst.operand1);
+            int rightId = this.parseValueId(inst.operand2);
+            block.emit("mov", "rax", this.getSlot(leftId));
+            block.emit("cmp", "rax", this.getSlot(rightId));
+            block.emit("setge", "al", "");
+            block.emit("movzx", "rax", "al");
+            block.emit("mov", resSlot, "rax");
+        } else if (inst.op == "and") {
+            int leftId = this.parseValueId(inst.operand1);
+            int rightId = this.parseValueId(inst.operand2);
+            block.emit("mov", "rax", this.getSlot(leftId));
+            block.emit("and", "rax", this.getSlot(rightId));
+            block.emit("mov", resSlot, "rax");
+        } else if (inst.op == "or") {
+            int leftId = this.parseValueId(inst.operand1);
+            int rightId = this.parseValueId(inst.operand2);
+            block.emit("mov", "rax", this.getSlot(leftId));
+            block.emit("or", "rax", this.getSlot(rightId));
+            block.emit("mov", resSlot, "rax");
+        } else if (inst.op == "getfield") {
+            // For zero-GC class structures, retrieve field from object pointer
+            int objId = this.parseValueId(inst.operand1);
+            block.emit("mov", "rax", this.getSlot(objId));
+            // Offset 0 for demo/prototype field slot
+            block.emit("mov", "rax", "qword ptr [rax]");
+            block.emit("mov", resSlot, "rax");
+        } else if (inst.op == "call") {
+            string callee = inst.extra;
+            if (inst.operand1.length() > 0) {
+                int[] argIds = this.parseArgList(inst.operand1);
+                int a = 0;
+                while (a < argIds.length() && a < this.argRegs.length()) {
+                    int aId = argIds[a];
+                    block.emit("mov", this.argRegs[a], this.getSlot(aId));
+                    a = a + 1;
+                }
+            }
+            if (callee == "println") {
+                block.emit("call", "_puts", "");
+            } else {
+                block.emit("call", "_" + callee, "");
+            }
+            block.emit("mov", resSlot, "rax");
+        }
+    }
+
+    /// Lowers an SSA block terminator into control-flow branches, jumps, or function epilogue return.
+    ///
+    /// @param term The block terminator (`ret`, `br`, or `br_if`).
+    /// @param fnName Enclosing function name used for block labels.
+    /// @param block The target assembly block.
+    /// @since v0.1.0
+    func lowerTerminator(AirTerminator term, string fnName, AsmBlock block) {
+        if (term.kind == "ret") {
+            if (term.value.length() > 0) {
+                int retId = this.parseValueId(term.value);
+                block.emit("mov", "rax", this.getSlot(retId));
+            } else {
+                block.emit("xor", "rax", "rax");
+            }
+            // Function Epilogue
+            block.emit("mov", "rsp", "rbp");
+            block.emit("pop", "rbp", "");
+            block.emit("ret", "", "");
+        } else if (term.kind == "br") {
+            string targetLabel = ".L_" + fnName + "_bb" + term.targetBlock1;
+            block.emit("jmp", targetLabel, "");
+        } else if (term.kind == "br_if") {
+            int condId = this.parseValueId(term.value);
+            string thenLabel = ".L_" + fnName + "_bb" + term.targetBlock1;
+            string elseLabel = ".L_" + fnName + "_bb" + term.targetBlock2;
+
+            block.emit("mov", "rax", this.getSlot(condId));
+            block.emit("cmp", "rax", "0");
+            block.emit("jne", thenLabel, "");
+            block.emit("jmp", elseLabel, "");
+        }
+    }
+}

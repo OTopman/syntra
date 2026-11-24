@@ -1,0 +1,20 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.10s
+     Running tests/test_self_hosting.rs (target/debug/deps/test_self_hosting-341c3199ff584f6b)
+
+running 1 test
+🔨 Building native binary for '/Users/Topman/Documents/Projects/aether/crates/cli/../../src/syn_self.syn' (target: x86_64-apple-darwin)...
+🎯 Approved Strategy: Consuming '.syntra/approved_strategy.json' (Candidate: 'cand_3_aeeeaf69', Policy: 'DeveloperExplicitApproval')
+⚡ Optimization pipeline applied 1 pass(es) with verified invariants.
+🔒 Build Identity Manifest: cfd08340a07bf354
+✅ Successfully compiled native executable: /var/folders/kw/h2cdwpyn47l1l59p95j3mbdh0000gp/T/syntra_self_host_38070/syn_self_test
+🚀 Run it directly: .//var/folders/kw/h2cdwpyn47l1l59p95j3mbdh0000gp/T/syntra_self_host_38070/syn_self_test
+⚡ Syntra Self-Hosting Compiler (syn-self)
+   Target Source: /Users/Topman/Documents/Projects/aether/crates/cli/../../examples/control_flow_test.syn
+📝 Emitted native assembly: /var/folders/kw/h2cdwpyn47l1l59p95j3mbdh0000gp/T/syntra_self_host_38070/cf_via_self.s (2759 bytes)
+🔨 Linking native executable: /var/folders/kw/h2cdwpyn47l1l59p95j3mbdh0000gp/T/syntra_self_host_38070/cf_via_self
+✅ Successfully built standalone native executable: /var/folders/kw/h2cdwpyn47l1l59p95j3mbdh0000gp/T/syntra_self_host_38070/cf_via_self
+♻️  Arena domain recycled: 3584 bytes (0ms pause).
+test test_self_hosting_loop_variable_codegen_and_execution ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.50s
+

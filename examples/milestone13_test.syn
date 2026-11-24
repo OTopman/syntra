@@ -1,0 +1,121 @@
+// Milestone 13 Verification Test
+// Covers:
+// 1. Map<K, V> - set, get, has, remove, len, size, clear, index access
+// 2. Built-in Json subsystem - Json.parse, Json.stringify
+// 3. Functional array methods with lambdas - map, filter, reduce, forEach
+// 4. Parametric Generics - class Box<T>, generic methods, generic instantiation
+// 5. Standard library imports - import map; import json;
+
+import map;
+import json;
+
+class Box<T> {
+    T value;
+
+    constructor(T value) {
+        this.value = value;
+    }
+
+    func get(): T {
+        return this.value;
+    }
+
+    func set(T value): void {
+        this.value = value;
+    }
+}
+
+func main(): int {
+    println("=== Milestone 13: Syntra Subsystems Verification ===");
+
+    // 1. Generic Class & Methods
+    println("[1] Testing Generics (Box<T>)...");
+    Box<int> intBox = new Box<int>(42);
+    int initialVal = intBox.get();
+    intBox.set(100);
+    int updatedVal = intBox.get();
+    println($"Box initial: {initialVal}, updated: {updatedVal}");
+    if (initialVal != 42 || updatedVal != 100) {
+        println("FAILED: Generic Box test");
+        return 1;
+    }
+
+    // 2. Map<K, V> Operations
+    println("[2] Testing Key-Value Map<string, int>...");
+    Map<string, int> scores = new Map<string, int>();
+    scores.set("alice", 90);
+    scores.set("bob", 85);
+    scores["charlie"] = 95;
+
+    int a = scores.get("alice");
+    int b = scores["bob"];
+    int c = scores.get("charlie");
+    int mapSize = scores.len();
+    println($"Scores: alice={a}, bob={b}, charlie={c}, size={mapSize}");
+
+    bool hasBob = scores.has("bob");
+    scores.remove("bob");
+    bool hasBobAfter = scores.has("bob");
+    int sizeAfterRemove = scores.size();
+    println($"hasBob: {hasBob}, after remove: {hasBobAfter}, new size: {sizeAfterRemove}");
+
+    scores.clear();
+    int sizeAfterClear = scores.len();
+    println($"size after clear: {sizeAfterClear}");
+
+    if (a != 90 || b != 85 || c != 95 || mapSize != 3 || hasBob != true || hasBobAfter != false || sizeAfterRemove != 2 || sizeAfterClear != 0) {
+        println("FAILED: Map operations test");
+        return 2;
+    }
+
+    // 3. Built-in JSON Subsystem
+    println("[3] Testing JSON parse & stringify...");
+    string jsonInput = "{\"host\": \"localhost\", \"port\": 8080}";
+    Map<string, string> config = Json.parse(jsonInput);
+    string host = config.get("host");
+    println($"Parsed host: {host}");
+
+    string serialized = Json.stringify(config);
+    println($"Serialized JSON: {serialized}");
+
+    // Standard library JsonHelper test
+    Map<string, string> helperParsed = JsonHelper.parseMap("{\"status\": \"ok\"}");
+    string status = helperParsed.get("status");
+    println($"JsonHelper parsed status: {status}");
+
+    // Standard library MapEntry test
+    MapEntry<string, int> entry = new MapEntry<string, int>("syntra", 2026);
+    println($"MapEntry: {entry.getKey()} -> {entry.getValue()}");
+
+    // 4. Functional Lambdas and Array Methods
+    println("[4] Testing Functional Array Methods (map, filter, reduce, forEach)...");
+    int[] numbers = [1, 2, 3, 4, 5, 6];
+
+    // map: double each element -> [2, 4, 6, 8, 10, 12]
+    int[] doubled = numbers.map(x => x * 2);
+    int d0 = doubled[0];
+    int d5 = doubled[5];
+    println($"doubled[0]={d0}, doubled[5]={d5}");
+
+    // filter: keep elements > 6 -> [8, 10, 12]
+    int[] filtered = doubled.filter(x => x > 6);
+    int fLen = filtered.len();
+    int f0 = filtered[0];
+    println($"filtered len={fLen}, filtered[0]={f0}");
+
+    // reduce: sum elements -> 8 + 10 + 12 = 30
+    int total = filtered.reduce((acc, x) => acc + x, 0);
+    println($"reduced total={total}");
+
+    // forEach: traverse and print
+    println("Executing forEach on doubled array:");
+    doubled.forEach(item => println($"  item: {item}"));
+
+    if (d0 != 2 || d5 != 12 || fLen != 3 || f0 != 8 || total != 30) {
+        println("FAILED: Functional array methods test");
+        return 4;
+    }
+
+    println("=== ALL MILESTONE 13 SUBSYSTEMS PASSED! ===");
+    return 0;
+}

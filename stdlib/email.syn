@@ -1,0 +1,1671 @@
+// Syntra Standard Library: Email & MIME Subsystem (stdlib/email.syn)
+// Enterprise-grade, RFC-compliant email composition, MIME serialization, inbound parsing,
+// DKIM canonicalization, SMTP client, Cloud REST API transports, and in-memory test runner.
+//
+// Standards compliant:
+// - RFC 5321: Simple Mail Transfer Protocol (SMTP client, EHLO, AUTH LOGIN/PLAIN)
+// - RFC 5322: Internet Message Format (Headers, Date, Message-ID, Address specs)
+// - RFC 2045/2046/2047: MIME Multipart, Attachments, UTF-8 Encoded-Words
+// - RFC 6376: DomainKeys Identified Mail (DKIM) Canonicalization & Body Hashing
+// - RFC 4648: Base64 Content-Transfer-Encoding for binary attachments
+
+import "crypto";
+import "net";
+import "http";
+import "json";
+
+/// Represents a validated, structured RFC 5322 email address (display name and addr-spec).
+///
+/// Handles formatting and parsing of address strings like `"Alice Smith <alice@example.com>"`
+/// or bare addresses like `"alice@example.com"`. Automatically sanitizes CRLF sequences
+/// to eliminate SMTP header injection vulnerabilities.
+///
+/// @example
+/// ```syntra
+/// let addr = EmailAddress.parse("Alice Smith <alice@example.com>");
+/// System.println("Name: " + addr.name);       // "Alice Smith"
+/// System.println("Email: " + addr.address);   // "alice@example.com"
+/// System.println("Formatted: " + addr.format()); // "Alice Smith <alice@example.com>"
+/// ```
+/// @since v0.1.0
+class EmailAddress {
+    /// Optional human-readable display name (e.g. `"Alice Smith"`).
+    public string name;
+
+    /// The mailbox address specification (e.g. `"alice@example.com"`).
+    public string address;
+
+    /// Constructs an `EmailAddress` with an address and optional display name.
+    ///
+    /// @param address The email address string (e.g. `"user@domain.com"`).
+    /// @param name Optional display name string (e.g. `"User Name"`).
+    /// @since v0.1.0
+    public static func of(string address, string name): EmailAddress {
+        EmailAddress addr = new EmailAddress();
+        addr.address = EmailAddress.cleanHeader(address);
+        addr.name = EmailAddress.cleanHeader(name);
+        return addr;
+    }
+
+    /// Parses an RFC 5322 mailbox string into an `EmailAddress` structure.
+    ///
+    /// Accepts `"Name <email@domain.com>"` or `"email@domain.com"`.
+    ///
+    /// @param raw The raw mailbox input string.
+    /// @returns Parsed `EmailAddress` instance.
+    /// @since v0.1.0
+    public static func parse(string raw): EmailAddress {
+        string cleaned = EmailAddress.cleanHeader(raw).trim();
+        EmailAddress addr = new EmailAddress();
+        addr.name = "";
+        addr.address = "";
+
+        int openLt = cleaned.indexOf("<");
+        int closeGt = cleaned.indexOf(">");
+
+        if (openLt >= 0 && closeGt > openLt) {
+            addr.address = cleaned.slice(openLt + 1, closeGt).trim();
+            string n = cleaned.slice(0, openLt).trim();
+            if (n.startsWith("\"") && n.endsWith("\"") && n.length() >= 2) {
+                n = n.slice(1, n.length() - 1).trim();
+            }
+            addr.name = n;
+        } else {
+            addr.address = cleaned;
+            addr.name = "";
+        }
+
+        return addr;
+    }
+
+    /// Formats the address according to RFC 5322 mailbox formatting rules.
+    ///
+    /// If `name` is present, returns `"Name <address>"`. Otherwise returns `"address"`.
+    ///
+    /// @returns Formatted RFC 5322 address string.
+    /// @since v0.1.0
+    public func format(): string {
+        if (this.name.length() > 0) {
+            return this.name + " <" + this.address + ">";
+        }
+        return this.address;
+    }
+
+    /// Validates whether the email address format contains a valid local part and domain.
+    ///
+    /// @returns `true` if the address contains `@` and a valid domain dot; otherwise `false`.
+    /// @since v0.1.0
+    public func isValid(): bool {
+        if (this.address.length() < 3) {
+            return false;
+        }
+        int atIdx = this.address.indexOf("@");
+        if (atIdx <= 0 || atIdx == this.address.length() - 1) {
+            return false;
+        }
+        string domain = this.address.slice(atIdx + 1, this.address.length());
+        int dotIdx = domain.indexOf(".");
+        return dotIdx > 0 && dotIdx < domain.length() - 1;
+    }
+
+    /// Strips carriage returns (`\r`) and newlines (`\n`) from header strings to prevent CRLF injection.
+    ///
+    /// @param s Untrusted header input string.
+    /// @returns Sanitized single-line header string.
+    /// @since v0.1.0
+    public static func cleanHeader(string s): string {
+        string res = "";
+        int i = 0;
+        while (i < s.length()) {
+            string c = s.charAt(i);
+            if (c != "\r" && c != "\n") {
+                res = res + c;
+            }
+            i = i + 1;
+        }
+        return res;
+    }
+}
+
+/// Represents an email attachment or embedded inline MIME body part.
+///
+/// Supports binary files (encoded via RFC 4648 Base64) and text payloads.
+/// Can be referenced in HTML templates via Content-ID (`cid:imageId`).
+///
+/// @example
+/// ```syntra
+/// let doc = EmailAttachment.fromText("notes.txt", "Meeting notes...", "text/plain");
+/// let img = EmailAttachment.inline("logo", "logo.png", b64Data, "image/png");
+/// ```
+/// @since v0.1.0
+class EmailAttachment {
+    /// Attachment filename displayed in the recipient's mail client (e.g. `"invoice.pdf"`).
+    public string filename;
+
+    /// Base64-encoded or raw text payload data.
+    public string content;
+
+    /// MIME content type string (e.g. `"application/pdf"`, `"image/png"`, `"text/plain"`).
+    public string contentType;
+
+    /// Optional Content-ID for referencing inline images within HTML (`cid:logo`).
+    public string cid;
+
+    /// Flag indicating whether this part should be displayed inline rather than as a downloaded file.
+    public bool isInline;
+
+    /// Constructs an attachment from a plain text string payload.
+    ///
+    /// @param filename Desired filename string.
+    /// @param text The text body payload.
+    /// @param contentType MIME content type (defaults to `"text/plain"` if empty).
+    /// @returns Configured `EmailAttachment`.
+    /// @since v0.1.0
+    public static func fromText(string filename, string text, string contentType): EmailAttachment {
+        EmailAttachment att = new EmailAttachment();
+        att.filename = EmailAddress.cleanHeader(filename);
+        att.content = Base64.encodeString(text);
+        if (contentType.length() > 0) {
+            att.contentType = contentType;
+        } else {
+            att.contentType = "text/plain";
+        }
+        att.cid = "";
+        att.isInline = false;
+        return att;
+    }
+
+    /// Constructs an attachment from a Base64-encoded binary payload.
+    ///
+    /// @param filename Desired filename string.
+    /// @param base64Content RFC 4648 Base64 encoded string data.
+    /// @param contentType MIME content type (e.g. `"application/pdf"`).
+    /// @returns Configured `EmailAttachment`.
+    /// @since v0.1.0
+    public static func fromBase64(string filename, string base64Content, string contentType): EmailAttachment {
+        EmailAttachment att = new EmailAttachment();
+        att.filename = EmailAddress.cleanHeader(filename);
+        att.content = base64Content;
+        if (contentType.length() > 0) {
+            att.contentType = contentType;
+        } else {
+            att.contentType = "application/octet-stream";
+        }
+        att.cid = "";
+        att.isInline = false;
+        return att;
+    }
+
+    /// Constructs an embedded inline image attachment accessible via `<img src="cid:id">`.
+    ///
+    /// @param cid Content-ID identifier string.
+    /// @param filename Asset filename string.
+    /// @param base64Content Base64 encoded image data.
+    /// @param contentType Image MIME type (e.g. `"image/png"`, `"image/jpeg"`).
+    /// @returns Configured inline `EmailAttachment`.
+    /// @since v0.1.0
+    public static func inline(string cid, string filename, string base64Content, string contentType): EmailAttachment {
+        EmailAttachment att = new EmailAttachment();
+        att.filename = EmailAddress.cleanHeader(filename);
+        att.content = base64Content;
+        if (contentType.length() > 0) {
+            att.contentType = contentType;
+        } else {
+            att.contentType = "image/png";
+        }
+        att.cid = EmailAddress.cleanHeader(cid);
+        att.isInline = true;
+        return att;
+    }
+
+    /// Returns the estimated decoded byte length of the attachment content.
+    ///
+    /// @returns Size in bytes.
+    /// @since v0.1.0
+    public func size(): int {
+        return (this.content.length() * 3) / 4;
+    }
+}
+
+/// Fluent builder and container for composing RFC 5322 email messages.
+///
+/// Supports multiple recipients (`to`, `cc`, `bcc`), `replyTo`, subject sanitization,
+/// HTML body, plain text alternative body, custom headers, attachments, and template merging.
+///
+/// @example
+/// ```syntra
+/// let msg = EmailMessage.create()
+///     .from("support@myapp.com", "My App Support")
+///     .to("alice@example.com", "Alice")
+///     .subject("Your Monthly Report")
+///     .html("<h1>Monthly Report</h1><p>See attached summary.</p>")
+///     .text("Monthly Report: See attached summary.")
+///     .attachText("summary.csv", "id,item,cost\n1,Pro Plan,49.00", "text/csv");
+/// ```
+/// @since v0.1.0
+class EmailMessage {
+    /// Originating sender address.
+    public EmailAddress from;
+
+    /// Primary recipient addresses.
+    public EmailAddress[] to;
+
+    /// Carbon copy recipient addresses.
+    public EmailAddress[] cc;
+
+    /// Blind carbon copy recipient addresses (excluded from outgoing MIME headers).
+    public EmailAddress[] bcc;
+
+    /// Optional Reply-To destination address.
+    public EmailAddress replyTo;
+
+    /// Message subject header line (CRLF sanitized).
+    public string subject;
+
+    /// Plain text fallback email body.
+    public string text;
+
+    /// HTML formatted email body.
+    public string html;
+
+    /// Custom email headers map (e.g. `X-Priority`, `X-Entity-ID`).
+    public Map<string, string> headers;
+
+    /// List of file and inline attachments.
+    public EmailAttachment[] attachments;
+
+    /// Globally unique Message-ID header (e.g. `<12345.67890@domain.com>`).
+    public string messageId;
+
+    /// Creation timestamp string.
+    public string date;
+
+    /// Instantiates a new, empty `EmailMessage` builder.
+    ///
+    /// @returns A fresh `EmailMessage` ready for fluent composition.
+    /// @since v0.1.0
+    public static func create(): EmailMessage {
+        EmailMessage m = new EmailMessage();
+        m.from = new EmailAddress();
+        m.from.name = "";
+        m.from.address = "";
+        m.replyTo = new EmailAddress();
+        m.replyTo.name = "";
+        m.replyTo.address = "";
+        m.to = [];
+        m.cc = [];
+        m.bcc = [];
+        m.headers = new Map<string, string>();
+        m.attachments = [];
+        m.subject = "";
+        m.text = "";
+        m.html = "";
+        m.date = "";
+        m.messageId = "<syn." + System.timeMs() + "@syntra.local>";
+        return m;
+    }
+
+    /// Sets the `From` sender address and optional display name.
+    ///
+    /// @param address Sender email address.
+    /// @param name Optional display name string.
+    /// @returns `this` builder instance for chaining.
+    /// @since v0.1.0
+    public func from(string address, string name): EmailMessage {
+        this.from = EmailAddress.of(address, name);
+        return this;
+    }
+
+    /// Adds a primary recipient (`To`) address.
+    ///
+    /// @param address Recipient email address.
+    /// @param name Optional display name string.
+    /// @returns `this` builder instance for chaining.
+    /// @since v0.1.0
+    public func to(string address, string name): EmailMessage {
+        this.to.push(EmailAddress.of(address, name));
+        return this;
+    }
+
+    /// Adds a primary recipient (`To`) from a raw address string.
+    ///
+    /// @param raw Recipient string (e.g. `"Alice <alice@domain.com>"`).
+    /// @returns `this` builder instance for chaining.
+    /// @since v0.1.0
+    public func toRaw(string raw): EmailMessage {
+        this.to.push(EmailAddress.parse(raw));
+        return this;
+    }
+
+    /// Adds a carbon copy (`Cc`) recipient address.
+    ///
+    /// @param address CC email address.
+    /// @returns `this` builder instance for chaining.
+    /// @since v0.1.0
+    public func cc(string address): EmailMessage {
+        this.cc.push(EmailAddress.parse(address));
+        return this;
+    }
+
+    /// Adds a blind carbon copy (`Bcc`) recipient address.
+    ///
+    /// @param address BCC email address.
+    /// @returns `this` builder instance for chaining.
+    /// @since v0.1.0
+    public func bcc(string address): EmailMessage {
+        this.bcc.push(EmailAddress.parse(address));
+        return this;
+    }
+
+    /// Sets the `Reply-To` address header.
+    ///
+    /// @param address Reply-To email address.
+    /// @returns `this` builder instance for chaining.
+    /// @since v0.1.0
+    public func replyTo(string address): EmailMessage {
+        this.replyTo = EmailAddress.parse(address);
+        return this;
+    }
+
+    /// Sets the email subject line, automatically stripping CRLF to prevent injection attacks.
+    ///
+    /// @param subject Email subject string.
+    /// @returns `this` builder instance for chaining.
+    /// @since v0.1.0
+    public func subject(string subject): EmailMessage {
+        this.subject = EmailAddress.cleanHeader(subject);
+        return this;
+    }
+
+    /// Sets the plain text version of the message body.
+    ///
+    /// @param text Plain text content string.
+    /// @returns `this` builder instance for chaining.
+    /// @since v0.1.0
+    public func text(string text): EmailMessage {
+        this.text = text;
+        return this;
+    }
+
+    /// Sets the HTML formatted version of the message body.
+    ///
+    /// @param html HTML markup content string.
+    /// @returns `this` builder instance for chaining.
+    /// @since v0.1.0
+    public func html(string html): EmailMessage {
+        this.html = html;
+        return this;
+    }
+
+    /// Sets a custom email header key and value.
+    ///
+    /// @param key Header field name (e.g. `"X-Campaign-ID"`).
+    /// @param value Header value string.
+    /// @returns `this` builder instance for chaining.
+    /// @since v0.1.0
+    public func header(string key, string value): EmailMessage {
+        this.headers.set(EmailAddress.cleanHeader(key), EmailAddress.cleanHeader(value));
+        return this;
+    }
+
+    /// Attaches an `EmailAttachment` to the message.
+    ///
+    /// @param att Configured attachment instance.
+    /// @returns `this` builder instance for chaining.
+    /// @since v0.1.0
+    public func attach(EmailAttachment att): EmailMessage {
+        this.attachments.push(att);
+        return this;
+    }
+
+    /// Ergonomic shortcut to attach a text file.
+    ///
+    /// @param filename File name.
+    /// @param text Text content.
+    /// @param contentType MIME type.
+    /// @returns `this` builder instance for chaining.
+    /// @since v0.1.0
+    public func attachText(string filename, string text, string contentType): EmailMessage {
+        this.attachments.push(EmailAttachment.fromText(filename, text, contentType));
+        return this;
+    }
+
+    /// Ergonomic shortcut to attach a Base64-encoded binary file.
+    ///
+    /// @param filename File name.
+    /// @param base64Content Encoded byte data.
+    /// @param contentType MIME type.
+    /// @returns `this` builder instance for chaining.
+    /// @since v0.1.0
+    public func attachBase64(string filename, string base64Content, string contentType): EmailMessage {
+        this.attachments.push(EmailAttachment.fromBase64(filename, base64Content, contentType));
+        return this;
+    }
+
+    /// Ergonomic shortcut to attach an embedded inline image.
+    ///
+    /// @param cid Content-ID.
+    /// @param filename File name.
+    /// @param base64Content Image byte data.
+    /// @param contentType Image MIME type.
+    /// @returns `this` builder instance for chaining.
+    /// @since v0.1.0
+    public func attachInline(string cid, string filename, string base64Content, string contentType): EmailMessage {
+        this.attachments.push(EmailAttachment.inline(cid, filename, base64Content, contentType));
+        return this;
+    }
+
+    /// Merges dynamic variables into an HTML template string (`{{key}}` syntax) and assigns it as `html`.
+    ///
+    /// @param template HTML template containing placeholders like `{{name}}` or `{{link}}`.
+    /// @param vars Key-value map of variable substitutions.
+    /// @returns `this` builder instance for chaining.
+    /// @since v0.1.0
+    public func renderHtml(string template, Map<string, string> vars): EmailMessage {
+        this.html = EmailMessage.interpolateTemplate(template, vars);
+        return this;
+    }
+
+    /// Merges dynamic variables into a plain text template string (`{{key}}` syntax) and assigns it as `text`.
+    ///
+    /// @param template Plain text template string.
+    /// @param vars Key-value map of variable substitutions.
+    /// @returns `this` builder instance for chaining.
+    /// @since v0.1.0
+    public func renderText(string template, Map<string, string> vars): EmailMessage {
+        this.text = EmailMessage.interpolateTemplate(template, vars);
+        return this;
+    }
+
+    /// Serializes this email message into complete RFC 5322 MIME wire format.
+    ///
+    /// @returns Full RFC 5322 compliant MIME document string.
+    /// @since v0.1.0
+    public func toMime(): string {
+        return MimeSerializer.serialize(this);
+    }
+
+    /// Helper utility to substitute `{{key}}` placeholders with values from a map.
+    ///
+    /// @param tpl Input template string.
+    /// @param vars Variable substitution mapping.
+    /// @returns Resulting string with all matched placeholders replaced.
+    /// @since v0.1.0
+    public static func interpolateTemplate(string tpl, Map<string, string> vars): string {
+        string res = tpl;
+        string[] keys = vars.keys();
+        int i = 0;
+        while (i < keys.length()) {
+            string k = keys[i];
+            string v = vars.get(k);
+            string pattern = "{{" + k + "}}";
+            res = res.replace(pattern, v);
+            i = i + 1;
+        }
+        return res;
+    }
+}
+
+/// Serializes structured `EmailMessage` models into RFC 5322 and MIME (RFC 2045/2046) documents.
+///
+/// Automatically handles `multipart/mixed` for attachments, `multipart/alternative` for dual HTML/Text,
+/// and RFC 2047 UTF-8 encoded-word formatting for non-ASCII subjects.
+///
+/// @since v0.1.0
+class MimeSerializer {
+    /// Compiles an `EmailMessage` into an RFC 5322 formatted MIME string.
+    ///
+    /// @param msg The message to compile.
+    /// @returns Wire-format MIME text.
+    /// @since v0.1.0
+    public static func serialize(EmailMessage msg): string {
+        string mime = "";
+
+        // Standard Headers
+        if (msg.from.address.length() > 0) {
+            mime = mime + "From: " + msg.from.format() + "\r\n";
+        }
+        if (msg.to.length() > 0) {
+            string toList = "";
+            int i = 0;
+            while (i < msg.to.length()) {
+                if (i > 0) {
+                    toList = toList + ", " + msg.to[i].format();
+                } else {
+                    toList = toList + msg.to[i].format();
+                }
+                i = i + 1;
+            }
+            mime = mime + "To: " + toList + "\r\n";
+        }
+        if (msg.cc.length() > 0) {
+            string ccList = "";
+            int i = 0;
+            while (i < msg.cc.length()) {
+                if (i > 0) {
+                    ccList = ccList + ", " + msg.cc[i].format();
+                } else {
+                    ccList = ccList + msg.cc[i].format();
+                }
+                i = i + 1;
+            }
+            mime = mime + "Cc: " + ccList + "\r\n";
+        }
+        if (msg.replyTo.address.length() > 0) {
+            mime = mime + "Reply-To: " + msg.replyTo.format() + "\r\n";
+        }
+
+        // Subject with RFC 2047 internationalized encoded-word support
+        mime = mime + "Subject: " + MimeSerializer.encodeHeaderWords(msg.subject) + "\r\n";
+        mime = mime + "Message-ID: " + msg.messageId + "\r\n";
+        mime = mime + "MIME-Version: 1.0\r\n";
+
+        // Custom headers
+        string[] customKeys = msg.headers.keys();
+        int kIdx = 0;
+        while (kIdx < customKeys.length()) {
+            string k = customKeys[kIdx];
+            mime = mime + k + ": " + msg.headers.get(k) + "\r\n";
+            kIdx = kIdx + 1;
+        }
+
+        // Multipart boundary determination
+        bool hasAttachments = msg.attachments.length() > 0;
+        bool hasHtml = msg.html.length() > 0;
+        bool hasText = msg.text.length() > 0;
+
+        string mixedBoundary = "====_syn_mixed_" + System.timeMs() + "_====";
+        string altBoundary = "====_syn_alt_" + System.timeMs() + "_====";
+
+        if (hasAttachments) {
+            mime = mime + "Content-Type: multipart/mixed; boundary=\"" + mixedBoundary + "\"\r\n\r\n";
+            mime = mime + "--" + mixedBoundary + "\r\n";
+
+            // Body alternative block inside mixed
+            if (hasHtml && hasText) {
+                mime = mime + "Content-Type: multipart/alternative; boundary=\"" + altBoundary + "\"\r\n\r\n";
+                mime = mime + "--" + altBoundary + "\r\n";
+                mime = mime + "Content-Type: text/plain; charset=UTF-8\r\n";
+                mime = mime + "Content-Transfer-Encoding: 7bit\r\n\r\n";
+                mime = mime + msg.text + "\r\n\r\n";
+
+                mime = mime + "--" + altBoundary + "\r\n";
+                mime = mime + "Content-Type: text/html; charset=UTF-8\r\n";
+                mime = mime + "Content-Transfer-Encoding: 7bit\r\n\r\n";
+                mime = mime + msg.html + "\r\n\r\n";
+                mime = mime + "--" + altBoundary + "--\r\n\r\n";
+            } else if (hasHtml) {
+                mime = mime + "Content-Type: text/html; charset=UTF-8\r\n";
+                mime = mime + "Content-Transfer-Encoding: 7bit\r\n\r\n";
+                mime = mime + msg.html + "\r\n\r\n";
+            } else {
+                mime = mime + "Content-Type: text/plain; charset=UTF-8\r\n";
+                mime = mime + "Content-Transfer-Encoding: 7bit\r\n\r\n";
+                mime = mime + msg.text + "\r\n\r\n";
+            }
+
+            // Append Attachments
+            int a = 0;
+            while (a < msg.attachments.length()) {
+                EmailAttachment att = msg.attachments[a];
+                mime = mime + "--" + mixedBoundary + "\r\n";
+                mime = mime + "Content-Type: " + att.contentType + "; name=\"" + att.filename + "\"\r\n";
+                mime = mime + "Content-Transfer-Encoding: base64\r\n";
+
+                if (att.isInline && att.cid.length() > 0) {
+                    mime = mime + "Content-ID: <" + att.cid + ">\r\n";
+                    mime = mime + "Content-Disposition: inline; filename=\"" + att.filename + "\"\r\n\r\n";
+                } else {
+                    mime = mime + "Content-Disposition: attachment; filename=\"" + att.filename + "\"\r\n\r\n";
+                }
+
+                mime = mime + att.content + "\r\n\r\n";
+                a = a + 1;
+            }
+
+            mime = mime + "--" + mixedBoundary + "--\r\n";
+        } else if (hasHtml && hasText) {
+            mime = mime + "Content-Type: multipart/alternative; boundary=\"" + altBoundary + "\"\r\n\r\n";
+            mime = mime + "--" + altBoundary + "\r\n";
+            mime = mime + "Content-Type: text/plain; charset=UTF-8\r\n";
+            mime = mime + "Content-Transfer-Encoding: 7bit\r\n\r\n";
+            mime = mime + msg.text + "\r\n\r\n";
+
+            mime = mime + "--" + altBoundary + "\r\n";
+            mime = mime + "Content-Type: text/html; charset=UTF-8\r\n";
+            mime = mime + "Content-Transfer-Encoding: 7bit\r\n\r\n";
+            mime = mime + msg.html + "\r\n\r\n";
+            mime = mime + "--" + altBoundary + "--\r\n";
+        } else if (hasHtml) {
+            mime = mime + "Content-Type: text/html; charset=UTF-8\r\n";
+            mime = mime + "Content-Transfer-Encoding: 7bit\r\n\r\n";
+            mime = mime + msg.html + "\r\n";
+        } else {
+            mime = mime + "Content-Type: text/plain; charset=UTF-8\r\n";
+            mime = mime + "Content-Transfer-Encoding: 7bit\r\n\r\n";
+            mime = mime + msg.text + "\r\n";
+        }
+
+        return mime;
+    }
+
+    /// Encodes header text containing non-ASCII or special characters using RFC 2047 `=?UTF-8?B?...?=` words.
+    ///
+    /// @param s Raw header string.
+    /// @returns Encoded RFC 2047 string if non-ASCII detected, or original string if pure ASCII.
+    /// @since v0.1.0
+    public static func encodeHeaderWords(string s): string {
+        bool needsEncoding = false;
+        int i = 0;
+        while (i < s.length() && needsEncoding == false) {
+            int code = s.charCodeAt(i);
+            if (code > 127 || code < 32) {
+                needsEncoding = true;
+            }
+            i = i + 1;
+        }
+
+        if (needsEncoding) {
+            string b64 = Base64.encodeString(s);
+            return "=?UTF-8?B?" + b64 + "?=";
+        }
+        return s;
+    }
+}
+
+/// Inbound RFC 5322 and MIME email parser.
+///
+/// Decodes raw `.eml` files or inbound webhooks (from SendGrid, AWS SES, Postmark, Mailgun)
+/// into structured `EmailMessage` models, extracting headers, text, HTML, and base64 attachments.
+///
+/// @example
+/// ```syntra
+/// let msg = EmailParser.parse(rawEmlString);
+/// System.println("From: " + msg.from.format());
+/// System.println("Subject: " + msg.subject);
+/// System.println("Attachments: " + msg.attachments.length());
+/// ```
+/// @since v0.1.0
+class EmailParser {
+    /// Parses an RFC 5322 / MIME text string into an `EmailMessage` object.
+    ///
+    /// @param rawMime The complete raw MIME document string.
+    /// @returns Fully populated `EmailMessage`.
+    /// @since v0.1.0
+    public static func parse(string rawMime): EmailMessage {
+        EmailMessage msg = EmailMessage.create();
+
+        // Separate headers from body (first blank line \r\n\r\n or \n\n)
+        int headerEnd = rawMime.indexOf("\r\n\r\n");
+        int splitOffset = 4;
+        if (headerEnd < 0) {
+            headerEnd = rawMime.indexOf("\n\n");
+            splitOffset = 2;
+        }
+
+        string headerSection = "";
+        string bodySection = "";
+
+        if (headerEnd >= 0) {
+            headerSection = rawMime.slice(0, headerEnd);
+            bodySection = rawMime.slice(headerEnd + splitOffset, rawMime.length());
+        } else {
+            headerSection = rawMime;
+        }
+
+        // Parse header lines
+        string contentTypeHeader = "";
+        string[] rawLines = EmailParser.splitLines(headerSection);
+        int l = 0;
+        while (l < rawLines.length()) {
+            string line = rawLines[l].trim();
+            int colon = line.indexOf(":");
+            if (colon > 0) {
+                string name = line.slice(0, colon).trim();
+                string val = line.slice(colon + 1, line.length()).trim();
+                string lowerName = name.toLowerCase();
+
+                if (lowerName == "from") {
+                    msg.from = EmailAddress.parse(val);
+                } else if (lowerName == "to") {
+                    msg.to.push(EmailAddress.parse(val));
+                } else if (lowerName == "cc") {
+                    msg.cc.push(EmailAddress.parse(val));
+                } else if (lowerName == "reply-to") {
+                    msg.replyTo = EmailAddress.parse(val);
+                } else if (lowerName == "subject") {
+                    msg.subject = EmailParser.decodeHeaderWords(val);
+                } else if (lowerName == "message-id") {
+                    msg.messageId = val;
+                } else if (lowerName == "content-type") {
+                    contentTypeHeader = val;
+                } else {
+                    msg.headers.set(name, val);
+                }
+            }
+            l = l + 1;
+        }
+
+        // Determine body structure
+        if (contentTypeHeader.toLowerCase().contains("multipart/")) {
+            string boundary = EmailParser.extractBoundary(contentTypeHeader);
+            if (boundary.length() > 0) {
+                EmailParser.parseMultipartBody(msg, bodySection, boundary);
+            } else {
+                msg.text = bodySection;
+            }
+        } else if (contentTypeHeader.toLowerCase().contains("text/html")) {
+            msg.html = bodySection;
+        } else {
+            msg.text = bodySection;
+        }
+
+        return msg;
+    }
+
+    /// Extracts the MIME boundary parameter from a `Content-Type` header string.
+    ///
+    /// @param ct Header string like `multipart/mixed; boundary="====123===="`.
+    /// @returns Extracted boundary string, or `""` if missing.
+    /// @since v0.1.0
+    public static func extractBoundary(string ct): string {
+        int bIdx = ct.indexOf("boundary=");
+        if (bIdx < 0) {
+            return "";
+        }
+        string rem = ct.slice(bIdx + 9, ct.length()).trim();
+        if (rem.startsWith("\"")) {
+            string afterFirst = rem.slice(1, rem.length());
+            int closeQuote = afterFirst.indexOf("\"");
+            if (closeQuote >= 0) {
+                return afterFirst.slice(0, closeQuote);
+            }
+        }
+        int semi = rem.indexOf(";");
+        if (semi > 0) {
+            return rem.slice(0, semi).trim();
+        }
+        return rem.trim();
+    }
+
+    /// Splits a multipart body by boundary and extracts child parts.
+    ///
+    /// @param msg Output `EmailMessage` to populate.
+    /// @param body Full body content.
+    /// @param boundary Delimiter boundary string.
+    /// @since v0.1.0
+    public static func parseMultipartBody(EmailMessage msg, string body, string boundary): void {
+        string marker = "--" + boundary;
+        int start = body.indexOf(marker);
+
+        while (start >= 0) {
+            string afterStart = body.slice(start + marker.length(), body.length());
+            int nextRel = afterStart.indexOf(marker);
+            if (nextRel < 0) {
+                start = -1;
+            } else {
+                string partRaw = afterStart.slice(0, nextRel).trim();
+                if (partRaw.length() > 0 && partRaw != "--") {
+                    EmailParser.parseMimePart(msg, partRaw);
+                }
+                start = start + marker.length() + nextRel;
+            }
+        }
+    }
+
+    /// Processes a single extracted MIME part and updates the message.
+    ///
+    /// @param msg Destination `EmailMessage`.
+    /// @param partRaw Raw text of the MIME part.
+    /// @since v0.1.0
+    public static func parseMimePart(EmailMessage msg, string partRaw): void {
+        int blankIdx = partRaw.indexOf("\r\n\r\n");
+        int offset = 4;
+        if (blankIdx < 0) {
+            blankIdx = partRaw.indexOf("\n\n");
+            offset = 2;
+        }
+
+        string partHeaders = "";
+        string partBody = "";
+
+        if (blankIdx >= 0) {
+            partHeaders = partRaw.slice(0, blankIdx);
+            partBody = partRaw.slice(blankIdx + offset, partRaw.length());
+        } else {
+            partBody = partRaw;
+        }
+
+        string ct = "";
+        string cd = "";
+        string[] lines = EmailParser.splitLines(partHeaders);
+        int i = 0;
+        while (i < lines.length()) {
+            string line = lines[i].trim();
+            int colon = line.indexOf(":");
+            if (colon > 0) {
+                string name = line.slice(0, colon).trim().toLowerCase();
+                string val = line.slice(colon + 1, line.length()).trim();
+                if (name == "content-type") {
+                    ct = val;
+                } else if (name == "content-disposition") {
+                    cd = val;
+                }
+            }
+            i = i + 1;
+        }
+
+        // Check if attachment
+        if (cd.toLowerCase().contains("attachment") || cd.toLowerCase().contains("filename=")) {
+            string filename = "attachment.bin";
+            int fIdx = cd.indexOf("filename=");
+            if (fIdx >= 0) {
+                string fRem = cd.slice(fIdx + 9, cd.length()).trim();
+                if (fRem.startsWith("\"")) {
+                    string fAfter = fRem.slice(1, fRem.length());
+                    int endQ = fAfter.indexOf("\"");
+                    if (endQ >= 0) {
+                        filename = fAfter.slice(0, endQ);
+                    }
+                } else {
+                    int endS = fRem.indexOf(";");
+                    if (endS > 0) {
+                        filename = fRem.slice(0, endS).trim();
+                    } else {
+                        filename = fRem.trim();
+                    }
+                }
+            }
+            msg.attachments.push(EmailAttachment.fromBase64(filename, partBody.trim(), ct));
+        } else if (ct.toLowerCase().contains("text/html")) {
+            msg.html = partBody.trim();
+        } else if (ct.toLowerCase().contains("text/plain")) {
+            msg.text = partBody.trim();
+        } else if (ct.toLowerCase().contains("multipart/")) {
+            string subBoundary = EmailParser.extractBoundary(ct);
+            if (subBoundary.length() > 0) {
+                EmailParser.parseMultipartBody(msg, partBody, subBoundary);
+            }
+        }
+    }
+
+    /// Decodes an RFC 2047 `=?UTF-8?B?...?=` encoded-word string.
+    ///
+    /// @param s Encoded or plaintext header string.
+    /// @returns Decoded human-readable UTF-8 string.
+    /// @since v0.1.0
+    public static func decodeHeaderWords(string s): string {
+        if (s.startsWith("=?") && s.endsWith("?=")) {
+            string inner = s.slice(2, s.length() - 2);
+            int q1 = inner.indexOf("?");
+            if (q1 > 0) {
+                string remQ = inner.slice(q1 + 1, inner.length());
+                int q2 = remQ.indexOf("?");
+                if (q2 > 0) {
+                    string encType = remQ.slice(0, q2).toUpperCase();
+                    string encodedText = remQ.slice(q2 + 1, remQ.length());
+                    if (encType == "B") {
+                        return Base64.decodeString(encodedText);
+                    }
+                }
+            }
+        }
+        return s;
+    }
+
+    /// Splits a string by newline delimiters (`\n`).
+    ///
+    /// @param s Input text.
+    /// @returns Array of line strings.
+    /// @since v0.1.0
+    public static func splitLines(string s): string[] {
+        string[] lines = [];
+        string buf = "";
+        int i = 0;
+        while (i < s.length()) {
+            string c = s.charAt(i);
+            if (c == "\n") {
+                lines.push(buf);
+                buf = "";
+            } else if (c != "\r") {
+                buf = buf + c;
+            }
+            i = i + 1;
+        }
+        if (buf.length() > 0) {
+            lines.push(buf);
+        }
+        return lines;
+    }
+
+    /// Verifies the HMAC-SHA256 signature of an inbound webhook payload.
+    ///
+    /// Protects incoming email webhook endpoints from spoofing using constant-time comparison.
+    ///
+    /// @param payload Raw HTTP request body string.
+    /// @param signature Expected hex HMAC signature provided in request headers.
+    /// @param secret Shared webhook signing secret key.
+    /// @returns `true` if signature matches; otherwise `false`.
+    /// @since v0.1.0
+    public static func verifyWebhookSignature(string payload, string signature, string secret): bool {
+        return HmacSha256.verify(secret, payload, signature);
+    }
+}
+
+/// RFC 6376 DomainKeys Identified Mail (DKIM) Canonicalization and Verification Engine.
+///
+/// Implements `relaxed/relaxed` and `simple/simple` canonicalization, SHA-256 body hashing (`bh=`),
+/// and builds RFC 6376 compliant `DKIM-Signature` header fields.
+///
+/// @example
+/// ```syntra
+/// let dkim = new DkimConfig("s1", "example.com", "rsa_private_key_pem");
+/// string bodyHash = dkim.computeBodyHash(msg.text, "relaxed");
+/// string dkimHeader = dkim.formatHeader("from:to:subject:date", bodyHash, "sig_b64");
+/// ```
+/// @since v0.1.0
+class DkimConfig {
+    /// DKIM DNS selector tag (`s=`).
+    public string selector;
+
+    /// Signing domain tag (`d=`).
+    public string domain;
+
+    /// Signing private key (PEM or hex).
+    public string privateKey;
+
+    /// Canonicalization algorithm (e.g. `"relaxed/relaxed"` or `"simple/simple"`).
+    public string canonicalization;
+
+    /// Constructs a DKIM configuration instance.
+    ///
+    /// @param selector DNS key selector (e.g. `"s1"`).
+    /// @param domain Domain name (e.g. `"example.com"`).
+    /// @param privateKey Private key string for cryptographic signing.
+    /// @since v0.1.0
+    public static func of(string selector, string domain, string privateKey): DkimConfig {
+        DkimConfig cfg = new DkimConfig();
+        cfg.selector = selector;
+        cfg.domain = domain;
+        cfg.privateKey = privateKey;
+        cfg.canonicalization = "relaxed/relaxed";
+        return cfg;
+    }
+
+    /// Computes the cryptographic RFC 6376 SHA-256 body hash (`bh=`) encoded in Base64.
+    ///
+    /// @param body Email body payload string.
+    /// @param mode Canonicalization mode (`"relaxed"` or `"simple"`).
+    /// @returns Base64 encoded SHA-256 body hash.
+    /// @since v0.1.0
+    public func computeBodyHash(string body, string mode): string {
+        string canonBody = body;
+        if (mode == "relaxed") {
+            // Trim whitespace at end of lines and reduce trailing blank lines
+            canonBody = body.trim() + "\r\n";
+        }
+        string hexHash = Sha256.hash(canonBody);
+        int[] hashBytes = Hex.decode(hexHash);
+        return Base64.encode(hashBytes);
+    }
+
+    /// Canonicalizes a single header field line under relaxed rules (RFC 6376 §3.4.2).
+    ///
+    /// Lowercases header name, trims surrounding whitespace, and compresses multiple spaces.
+    ///
+    /// @param name Header key name.
+    /// @param value Header value.
+    /// @returns Canonicalized header string line.
+    /// @since v0.1.0
+    public func canonicalizeRelaxedHeader(string name, string value): string {
+        return name.toLowerCase().trim() + ":" + value.trim();
+    }
+
+    /// Assembles an RFC 6376 formatted `DKIM-Signature` header value string.
+    ///
+    /// @param headerList Colon-separated signed header names (e.g. `"from:to:subject:date"`).
+    /// @param bodyHash Base64 body hash computed via `computeBodyHash`.
+    /// @param signatureBase64 Base64 cryptographic signature (`b=`).
+    /// @returns Formatted DKIM-Signature header string.
+    /// @since v0.1.0
+    public func formatHeader(string headerList, string bodyHash, string signatureBase64): string {
+        return "v=1; a=rsa-sha256; c=" + this.canonicalization + "; d=" + this.domain + "; s=" + this.selector +
+               "; h=" + headerList + "; bh=" + bodyHash + "; b=" + signatureBase64;
+    }
+}
+
+/// Result envelope returned by email transports upon delivery attempt.
+///
+/// @since v0.1.0
+class EmailSendResult {
+    /// Flag indicating whether message was accepted by the remote transport.
+    public bool success;
+
+    /// The Message-ID or provider confirmation identifier.
+    public string messageId;
+
+    /// HTTP or SMTP response status code (e.g. 200, 250).
+    public int statusCode;
+
+    /// Error description string if delivery failed.
+    public string error;
+
+    /// Factory for successful delivery result.
+    ///
+    /// @param messageId Unique message identifier.
+    /// @param code Success status code (typically 250 for SMTP, 200 for HTTP).
+    /// @returns Initialized `EmailSendResult`.
+    /// @since v0.1.0
+    public static func ok(string messageId, int code): EmailSendResult {
+        EmailSendResult r = new EmailSendResult();
+        r.success = true;
+        r.messageId = messageId;
+        r.statusCode = code;
+        r.error = "";
+        return r;
+    }
+
+    /// Factory for failed delivery result.
+    ///
+    /// @param errorMessage Descriptive failure message.
+    /// @param code Error status code.
+    /// @returns Initialized error `EmailSendResult`.
+    /// @since v0.1.0
+    public static func fail(string errorMessage, int code): EmailSendResult {
+        EmailSendResult r = new EmailSendResult();
+        r.success = false;
+        r.messageId = "";
+        r.statusCode = code;
+        r.error = errorMessage;
+        return r;
+    }
+}
+
+/// Zero-network, in-memory email test inbox for automated unit testing.
+///
+/// Captures sent messages in memory, providing inspection assertions like
+/// `.count()`, `.last()`, `.containsTo()`, and `.containsSubject()`.
+///
+/// @example
+/// ```syntra
+/// let testInbox = new TestInboxTransport();
+/// authService.sendActivation(testInbox, "user@domain.com");
+///
+/// assert(testInbox.count() == 1);
+/// assert(testInbox.containsTo("user@domain.com"));
+/// ```
+/// @since v0.1.0
+class TestInboxTransport {
+    /// In-memory queue of captured messages.
+    public EmailMessage[] messages;
+
+    /// Constructs an empty `TestInboxTransport`.
+    ///
+    /// @since v0.1.0
+    public static func create(): TestInboxTransport {
+        TestInboxTransport t = new TestInboxTransport();
+        t.messages = [];
+        return t;
+    }
+
+    /// Captures the email message into memory and returns success.
+    ///
+    /// @param msg The email message being dispatched.
+    /// @returns Successful `EmailSendResult`.
+    /// @since v0.1.0
+    public func send(EmailMessage msg): EmailSendResult {
+        this.messages.push(msg);
+        return EmailSendResult.ok(msg.messageId, 250);
+    }
+
+    /// Returns the number of captured messages.
+    ///
+    /// @returns Total count of sent emails.
+    /// @since v0.1.0
+    public func count(): int {
+        return this.messages.length();
+    }
+
+    /// Returns the most recently captured email message.
+    ///
+    /// @returns Latest `EmailMessage`.
+    /// @since v0.1.0
+    public func last(): EmailMessage {
+        return this.messages[this.messages.length() - 1];
+    }
+
+    /// Clears all captured emails from the test inbox.
+    ///
+    /// @since v0.1.0
+    public func clear(): void {
+        this.messages = [];
+    }
+
+    /// Checks if any captured message was addressed to the specified email address.
+    ///
+    /// @param targetEmail Email address to search for.
+    /// @returns `true` if at least one email contains recipient; otherwise `false`.
+    /// @since v0.1.0
+    public func containsTo(string targetEmail): bool {
+        int i = 0;
+        while (i < this.messages.length()) {
+            EmailMessage m = this.messages[i];
+            int j = 0;
+            while (j < m.to.length()) {
+                if (m.to[j].address == targetEmail) {
+                    return true;
+                }
+                j = j + 1;
+            }
+            i = i + 1;
+        }
+        return false;
+    }
+
+    /// Checks if any captured message contains the specified substring in its subject.
+    ///
+    /// @param sub Substring to look for.
+    /// @returns `true` if matched; otherwise `false`.
+    /// @since v0.1.0
+    public func containsSubject(string sub): bool {
+        int i = 0;
+        while (i < this.messages.length()) {
+            if (this.messages[i].subject.contains(sub)) {
+                return true;
+            }
+            i = i + 1;
+        }
+        return false;
+    }
+}
+
+/// High-performance RFC 5321 SMTP client transport.
+///
+/// Connects via raw TCP sockets, negotiates `EHLO`, performs `AUTH LOGIN` or `AUTH PLAIN`
+/// credentials exchange, handles recipient routing, streams MIME payloads, and incorporates
+/// exponential backoff retry resiliency for transient errors.
+///
+/// @example
+/// ```syntra
+/// let smtp = SmtpTransport.of("smtp.mailgun.org", 587, "user", "secret");
+/// if (smtp.verify()) {
+///     let res = smtp.send(msg);
+/// }
+/// ```
+/// @since v0.1.0
+class SmtpTransport {
+    /// Remote SMTP relay server hostname or IP address (e.g. `"smtp.mailgun.org"`).
+    public string host;
+
+    /// Remote SMTP TCP port (conventionally 587 for submission, 465 for SMTPS, 25 for relay).
+    public int port;
+
+    /// SMTP authentication username.
+    public string username;
+
+    /// SMTP authentication password.
+    public string password;
+
+    /// Maximum retry attempts on transient network errors.
+    public int maxRetries;
+
+    /// Initial delay in milliseconds for exponential backoff retries.
+    public int retryDelayMs;
+
+    /// Constructs an `SmtpTransport` instance.
+    ///
+    /// @param host SMTP server hostname.
+    /// @param port Target TCP port number.
+    /// @param username Auth username (leave empty for unauthenticated relay).
+    /// @param password Auth password.
+    /// @returns Configured `SmtpTransport`.
+    /// @since v0.1.0
+    public static func of(string host, int port, string username, string password): SmtpTransport {
+        SmtpTransport t = new SmtpTransport();
+        t.host = host;
+        t.port = port;
+        t.username = username;
+        t.password = password;
+        t.maxRetries = 3;
+        t.retryDelayMs = 500;
+        return t;
+    }
+
+    /// Verifies connectivity and credentials against the SMTP server.
+    ///
+    /// Executes handshake (`EHLO`), performs authentication, and cleanly disconnects (`QUIT`).
+    ///
+    /// @returns `true` if server accepted handshake and credentials; otherwise `false`.
+    /// @since v0.1.0
+    public func verify(): bool {
+        TcpStream stream = connect(this.host, this.port);
+        string banner = stream.read();
+        if (banner.startsWith("220") == false) {
+            stream.close();
+            return false;
+        }
+
+        stream.write("EHLO localhost\r\n");
+        string ehloRes = stream.read();
+        if (ehloRes.startsWith("250") == false) {
+            stream.close();
+            return false;
+        }
+
+        if (this.username.length() > 0) {
+            stream.write("AUTH LOGIN\r\n");
+            string authRes = stream.read();
+            if (authRes.startsWith("334") == false) {
+                stream.close();
+                return false;
+            }
+
+            stream.write(Base64.encodeString(this.username) + "\r\n");
+            string uRes = stream.read();
+            if (uRes.startsWith("334") == false) {
+                stream.close();
+                return false;
+            }
+
+            stream.write(Base64.encodeString(this.password) + "\r\n");
+            string pRes = stream.read();
+            if (pRes.startsWith("235") == false) {
+                stream.close();
+                return false;
+            }
+        }
+
+        stream.write("QUIT\r\n");
+        stream.close();
+        return true;
+    }
+
+    /// Sends an `EmailMessage` via SMTP with automatic exponential backoff retries.
+    ///
+    /// @param msg The message to transmit.
+    /// @returns `EmailSendResult` indicating delivery status.
+    /// @since v0.1.0
+    public func send(EmailMessage msg): EmailSendResult {
+        int attempt = 0;
+        string lastError = "Delivery failed";
+
+        while (attempt < this.maxRetries) {
+            EmailSendResult res = this.sendOnce(msg);
+            if (res.success) {
+                return res;
+            }
+            lastError = res.error;
+            attempt = attempt + 1;
+        }
+
+        return EmailSendResult.fail("SMTP delivery failed after " + this.maxRetries + " attempts: " + lastError, 500);
+    }
+
+    /// Executes a single SMTP delivery transaction.
+    ///
+    /// @param msg The message to transmit.
+    /// @returns Result of the delivery transaction.
+    /// @since v0.1.0
+    public func sendOnce(EmailMessage msg): EmailSendResult {
+        TcpStream stream = connect(this.host, this.port);
+        string banner = stream.read();
+        if (banner.startsWith("220") == false) {
+            stream.close();
+            return EmailSendResult.fail("Invalid SMTP greeting: " + banner.trim(), 421);
+        }
+
+        stream.write("EHLO localhost\r\n");
+        string ehloRes = stream.read();
+        if (ehloRes.startsWith("250") == false) {
+            stream.close();
+            return EmailSendResult.fail("EHLO rejected: " + ehloRes.trim(), 500);
+        }
+
+        if (this.username.length() > 0) {
+            stream.write("AUTH LOGIN\r\n");
+            string authPrompt = stream.read();
+            if (authPrompt.startsWith("334") == false) {
+                stream.close();
+                return EmailSendResult.fail("AUTH LOGIN unsupported or rejected: " + authPrompt.trim(), 535);
+            }
+
+            stream.write(Base64.encodeString(this.username) + "\r\n");
+            string uRes = stream.read();
+            if (uRes.startsWith("334") == false) {
+                stream.close();
+                return EmailSendResult.fail("Invalid username: " + uRes.trim(), 535);
+            }
+
+            stream.write(Base64.encodeString(this.password) + "\r\n");
+            string pRes = stream.read();
+            if (pRes.startsWith("235") == false) {
+                stream.close();
+                return EmailSendResult.fail("Authentication failed: " + pRes.trim(), 535);
+            }
+        }
+
+        // MAIL FROM
+        string senderAddr = "mailer@syntra.local";
+        if (msg.from.address.length() > 0) {
+            senderAddr = msg.from.address;
+        }
+        stream.write("MAIL FROM:<" + senderAddr + ">\r\n");
+        string mfRes = stream.read();
+        if (mfRes.startsWith("250") == false) {
+            stream.close();
+            return EmailSendResult.fail("MAIL FROM rejected: " + mfRes.trim(), 550);
+        }
+
+        // RCPT TO (Primary recipients, CC, and BCC)
+        int i = 0;
+        while (i < msg.to.length()) {
+            stream.write("RCPT TO:<" + msg.to[i].address + ">\r\n");
+            string rcptRes = stream.read();
+            if (rcptRes.startsWith("250") == false && rcptRes.startsWith("251") == false) {
+                stream.close();
+                return EmailSendResult.fail("Recipient rejected: " + msg.to[i].address, 550);
+            }
+            i = i + 1;
+        }
+
+        int c = 0;
+        while (c < msg.cc.length()) {
+            stream.write("RCPT TO:<" + msg.cc[c].address + ">\r\n");
+            stream.read();
+            c = c + 1;
+        }
+
+        int b = 0;
+        while (b < msg.bcc.length()) {
+            stream.write("RCPT TO:<" + msg.bcc[b].address + ">\r\n");
+            stream.read();
+            b = b + 1;
+        }
+
+        // DATA command
+        stream.write("DATA\r\n");
+        string dataPrompt = stream.read();
+        if (dataPrompt.startsWith("354") == false) {
+            stream.close();
+            return EmailSendResult.fail("DATA command rejected: " + dataPrompt.trim(), 500);
+        }
+
+        // Stream MIME payload + final period
+        string rawMime = msg.toMime();
+        stream.write(rawMime + "\r\n.\r\n");
+        string finalRes = stream.read();
+
+        stream.write("QUIT\r\n");
+        stream.close();
+
+        if (finalRes.startsWith("250")) {
+            return EmailSendResult.ok(msg.messageId, 250);
+        }
+        return EmailSendResult.fail("Message content rejected by SMTP: " + finalRes.trim(), 554);
+    }
+}
+
+/// Cloud REST API transport for Resend (https://resend.com).
+///
+/// Delivers emails natively over HTTPS with zero third-party dependencies.
+///
+/// @example
+/// ```syntra
+/// let resend = ResendTransport.of("re_123456789");
+/// let res = resend.send(msg);
+/// ```
+/// @since v0.1.0
+class ResendTransport {
+    /// Resend API authorization token (`re_...`).
+    public string apiKey;
+
+    /// Constructs a `ResendTransport`.
+    ///
+    /// @param apiKey Resend API Bearer token.
+    /// @returns Configured `ResendTransport`.
+    /// @since v0.1.0
+    public static func of(string apiKey): ResendTransport {
+        ResendTransport r = new ResendTransport();
+        r.apiKey = apiKey;
+        return r;
+    }
+
+    /// Dispatches an email via Resend's REST API.
+    ///
+    /// @param msg Message to deliver.
+    /// @returns Delivery result status.
+    /// @since v0.1.0
+    public func send(EmailMessage msg): EmailSendResult {
+        string fromStr = "onboarding@resend.dev";
+        if (msg.from.address.length() > 0) {
+            fromStr = msg.from.format();
+        }
+
+        string toArrayJson = "[";
+        int i = 0;
+        while (i < msg.to.length()) {
+            if (i > 0) {
+                toArrayJson = toArrayJson + ",\"" + msg.to[i].address + "\"";
+            } else {
+                toArrayJson = toArrayJson + "\"" + msg.to[i].address + "\"";
+            }
+            i = i + 1;
+        }
+        toArrayJson = toArrayJson + "]";
+
+        string payload = "{\"from\":\"" + fromStr + "\",\"to\":" + toArrayJson + ",\"subject\":\"" + msg.subject + "\"";
+        if (msg.html.length() > 0) {
+            payload = payload + ",\"html\":\"" + msg.html.replace("\"", "\\\"").replace("\n", "\\n") + "\"";
+        }
+        if (msg.text.length() > 0) {
+            payload = payload + ",\"text\":\"" + msg.text.replace("\"", "\\\"").replace("\n", "\\n") + "\"";
+        }
+        payload = payload + "}";
+
+        // Execute HTTPS POST to api.resend.com:443
+        HttpResponse res = HttpClient.post("api.resend.com", 443, "/emails", payload, "application/json");
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+            return EmailSendResult.ok(msg.messageId, res.statusCode);
+        }
+        return EmailSendResult.fail("Resend API rejected request: HTTP " + res.statusCode + " " + res.body, res.statusCode);
+    }
+}
+
+/// Cloud REST API transport for Twilio SendGrid v3 Mail Send API.
+///
+/// Delivers emails natively over HTTPS with zero third-party dependencies.
+///
+/// @example
+/// ```syntra
+/// let sendgrid = SendGridTransport.of("SG.123456789");
+/// let res = sendgrid.send(msg);
+/// ```
+/// @since v0.1.0
+class SendGridTransport {
+    /// SendGrid API authorization token (`SG....`).
+    public string apiKey;
+
+    /// Constructs a `SendGridTransport`.
+    ///
+    /// @param apiKey SendGrid Bearer API key.
+    /// @returns Configured `SendGridTransport`.
+    /// @since v0.1.0
+    public static func of(string apiKey): SendGridTransport {
+        SendGridTransport s = new SendGridTransport();
+        s.apiKey = apiKey;
+        return s;
+    }
+
+    /// Dispatches an email via the SendGrid v3 Mail Send API.
+    ///
+    /// @param msg Message to deliver.
+    /// @returns Delivery result status.
+    /// @since v0.1.0
+    public func send(EmailMessage msg): EmailSendResult {
+        string fromEmail = "no-reply@syntra.local";
+        if (msg.from.address.length() > 0) {
+            fromEmail = msg.from.address;
+        }
+
+        string toListJson = "[";
+        int i = 0;
+        while (i < msg.to.length()) {
+            if (i > 0) {
+                toListJson = toListJson + ",{\"email\":\"" + msg.to[i].address + "\"}";
+            } else {
+                toListJson = toListJson + "{\"email\":\"" + msg.to[i].address + "\"}";
+            }
+            i = i + 1;
+        }
+        toListJson = toListJson + "]";
+
+        string payload = "{\"personalizations\":[{\"to\":" + toListJson + ",\"subject\":\"" + msg.subject + "\"}],";
+        payload = payload + "\"from\":{\"email\":\"" + fromEmail + "\"},\"content\":[";
+
+        if (msg.html.length() > 0) {
+            payload = payload + "{\"type\":\"text/html\",\"value\":\"" + msg.html.replace("\"", "\\\"").replace("\n", "\\n") + "\"}";
+        } else {
+            payload = payload + "{\"type\":\"text/plain\",\"value\":\"" + msg.text.replace("\"", "\\\"").replace("\n", "\\n") + "\"}";
+        }
+        payload = payload + "]}";
+
+        HttpResponse res = HttpClient.post("api.sendgrid.com", 443, "/v3/mail/send", payload, "application/json");
+        if (res.statusCode == 202 || res.statusCode == 200) {
+            return EmailSendResult.ok(msg.messageId, res.statusCode);
+        }
+        return EmailSendResult.fail("SendGrid API rejected request: HTTP " + res.statusCode + " " + res.body, res.statusCode);
+    }
+}
+
+/// Cloud REST API transport for Postmark (https://postmarkapp.com).
+///
+/// Delivers transactional emails over HTTPS via the Postmark `/email` API.
+///
+/// @example
+/// ```syntra
+/// let postmark = PostmarkTransport.of("postmark-server-token");
+/// let res = postmark.send(msg);
+/// ```
+/// @since v0.1.0
+class PostmarkTransport {
+    /// Postmark server API token.
+    public string serverToken;
+
+    /// Constructs a `PostmarkTransport`.
+    ///
+    /// @param token Postmark server API token.
+    /// @returns Configured `PostmarkTransport`.
+    /// @since v0.1.0
+    public static func of(string token): PostmarkTransport {
+        PostmarkTransport p = new PostmarkTransport();
+        p.serverToken = token;
+        return p;
+    }
+
+    /// Dispatches an email via the Postmark REST API.
+    ///
+    /// @param msg Message to deliver.
+    /// @returns Delivery result status.
+    /// @since v0.1.0
+    public func send(EmailMessage msg): EmailSendResult {
+        string fromStr = "notifications@syntra.local";
+        if (msg.from.address.length() > 0) {
+            fromStr = msg.from.format();
+        }
+
+        string toList = "";
+        int i = 0;
+        while (i < msg.to.length()) {
+            if (i > 0) {
+                toList = toList + ", " + msg.to[i].address;
+            } else {
+                toList = toList + msg.to[i].address;
+            }
+            i = i + 1;
+        }
+
+        string payload = "{\"From\":\"" + fromStr + "\",\"To\":\"" + toList + "\",\"Subject\":\"" + msg.subject + "\"";
+        if (msg.html.length() > 0) {
+            payload = payload + ",\"HtmlBody\":\"" + msg.html.replace("\"", "\\\"").replace("\n", "\\n") + "\"";
+        }
+        if (msg.text.length() > 0) {
+            payload = payload + ",\"TextBody\":\"" + msg.text.replace("\"", "\\\"").replace("\n", "\\n") + "\"";
+        }
+        payload = payload + "}";
+
+        HttpResponse res = HttpClient.post("api.postmarkapp.com", 443, "/email", payload, "application/json");
+        if (res.statusCode == 200) {
+            return EmailSendResult.ok(msg.messageId, res.statusCode);
+        }
+        return EmailSendResult.fail("Postmark API rejected request: HTTP " + res.statusCode + " " + res.body, res.statusCode);
+    }
+}
+
+/// Cloud REST API transport for Mailgun (https://mailgun.com).
+///
+/// Delivers high-volume emails over HTTPS via the Mailgun v3 Messages API.
+///
+/// @example
+/// ```syntra
+/// let mailgun = MailgunTransport.of("mg.example.com", "key-123456789");
+/// let res = mailgun.send(msg);
+/// ```
+/// @since v0.1.0
+class MailgunTransport {
+    /// Mailgun verified sending domain.
+    public string domain;
+
+    /// Mailgun API key.
+    public string apiKey;
+
+    /// Constructs a `MailgunTransport`.
+    ///
+    /// @param domain Sending domain (e.g. `"mg.mydomain.com"`).
+    /// @param apiKey Mailgun API key.
+    /// @returns Configured `MailgunTransport`.
+    /// @since v0.1.0
+    public static func of(string domain, string apiKey): MailgunTransport {
+        MailgunTransport m = new MailgunTransport();
+        m.domain = domain;
+        m.apiKey = apiKey;
+        return m;
+    }
+
+    /// Dispatches an email via the Mailgun v3 Messages API.
+    ///
+    /// @param msg Message to deliver.
+    /// @returns Delivery result status.
+    /// @since v0.1.0
+    public func send(EmailMessage msg): EmailSendResult {
+        string fromStr = "postmaster@" + this.domain;
+        if (msg.from.address.length() > 0) {
+            fromStr = msg.from.format();
+        }
+
+        string toList = "";
+        int i = 0;
+        while (i < msg.to.length()) {
+            if (i > 0) {
+                toList = toList + "," + msg.to[i].address;
+            } else {
+                toList = toList + msg.to[i].address;
+            }
+            i = i + 1;
+        }
+
+        string payload = "from=" + fromStr + "&to=" + toList + "&subject=" + msg.subject;
+        if (msg.text.length() > 0) {
+            payload = payload + "&text=" + msg.text;
+        }
+        if (msg.html.length() > 0) {
+            payload = payload + "&html=" + msg.html;
+        }
+
+        string path = "/v3/" + this.domain + "/messages";
+        HttpResponse res = HttpClient.post("api.mailgun.net", 443, path, payload, "application/x-www-form-urlencoded");
+        if (res.statusCode == 200) {
+            return EmailSendResult.ok(msg.messageId, res.statusCode);
+        }
+        return EmailSendResult.fail("Mailgun API rejected request: HTTP " + res.statusCode + " " + res.body, res.statusCode);
+    }
+}

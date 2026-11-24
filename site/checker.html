@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module: checker - Syntra Documentation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top-nav">
+<div class="nav-left">
+<button class="mobile-toggle" id="mobileToggle" aria-label="Toggle Navigation">☰</button>
+<a href="index.html" class="brand-link">
+<span class="brand-logo">🔮</span>
+<span class="brand-name">Syntra</span>
+<span class="brand-badge">Docs</span>
+</a>
+</div>
+<div class="nav-center">
+<div class="search-container">
+<span class="search-icon">🔍</span>
+<input type="text" id="searchInput" placeholder="Search in checker or all symbols... (/)" autocomplete="off">
+<span class="search-shortcut">/</span>
+<div id="searchResults" class="search-dropdown hidden"></div>
+</div>
+</div>
+<div class="nav-right">
+<a href="index.html" class="nav-link">Modules</a>
+<button id="themeToggle" class="theme-toggle" title="Toggle Dark / Light theme">🌙</button>
+</div>
+</header>
+<div class="layout-wrapper">
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-section">
+<h4 class="sidebar-title">Standard Library</h4>
+<ul class="sidebar-nav">
+<li><a href="air.html">air</a></li>
+<li><a href="checker.html" class="active">checker</a></li>
+<li><a href="codegen.html">codegen</a></li>
+<li><a href="concurrency.html">concurrency</a></li>
+<li><a href="crypto.html">crypto</a></li>
+<li><a href="email.html">email</a></li>
+<li><a href="file.html">file</a></li>
+<li><a href="http.html">http</a></li>
+<li><a href="io.html">io</a></li>
+<li><a href="json.html">json</a></li>
+<li><a href="loader.html">loader</a></li>
+<li><a href="map.html">map</a></li>
+<li><a href="net.html">net</a></li>
+<li><a href="syntax.html">syntax</a></li>
+<li><a href="system.html">system</a></li>
+<li><a href="web.html">web</a></li>
+</ul>
+</div>
+<div class="sidebar-section toc-section">
+<h4 class="sidebar-title">On This Page</h4>
+<ul class="sidebar-toc">
+<li><span class="toc-group">Classes</span><ul>
+<li><a href="#class-Type">Type</a></li>
+<li><a href="#class-Diagnostic">Diagnostic</a></li>
+<li><a href="#class-VarSymbol">VarSymbol</a></li>
+<li><a href="#class-FnSymbol">FnSymbol</a></li>
+<li><a href="#class-ClassSymbol">ClassSymbol</a></li>
+<li><a href="#class-Scope">Scope</a></li>
+<li><a href="#class-TypeChecker">TypeChecker</a></li>
+</ul></li>
+</ul>
+</div>
+</aside>
+<main class="content-main">
+<nav class="breadcrumbs">
+<a href="index.html">Home</a> &gt; <a href="index.html#modules">Standard Library</a> &gt; <span class="current">checker</span>
+</nav>
+<header class="page-header">
+<div class="page-title-row">
+<span class="header-icon">🔍</span>
+<h1>checker</h1>
+<span class="badge category">Type Checking & Semantics</span>
+</div>
+<div class="module-lead"><p>Provides a zero-GC self-hosting Type Checker, Symbol Table, and Scope Analyzer in Syntra.</p>
+</div>
+</header>
+<section id="class-Type" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>Type</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Type representation in the Syntra semantic model.</p>
+<p>Encapsulates primitive types (<code class="inline-code">int</code>, <code class="inline-code">float</code>, <code class="inline-code">bool</code>, <code class="inline-code">string</code>, <code class="inline-code">void</code>), user-defined class references, array dimensions (<code class="inline-code">T[]</code>), and subtyping compatibility checks.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">Type intTy = Type.Int();
+Type arrTy = Type.Array(intTy);
+println(arrTy.toString()); // &quot;int[]&quot;</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Type discriminator kind (<code class="inline-code">&quot;int&quot;</code>, <code class="inline-code">&quot;float&quot;</code>, <code class="inline-code">&quot;bool&quot;</code>, <code class="inline-code">&quot;string&quot;</code>, <code class="inline-code">&quot;void&quot;</code>, <code class="inline-code">&quot;class&quot;</code>, or <code class="inline-code">&quot;unknown&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Class symbol name if kind is <code class="inline-code">&quot;class&quot;</code>, otherwise empty string.</td>
+</tr>
+<tr>
+<td><code>isArray</code></td>
+<td><span class="type-pill">bool</span></td>
+<td><span class="badge pub">public</span></td>
+<td>True if this represents an array collection type: <code class="inline-code">T[]</code>.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-Type-isNumeric" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Type-isNumeric" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">isNumeric</span>() -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks if this type represents a scalar numeric type (<code class="inline-code">int</code> or <code class="inline-code">float</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if numeric; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="method-Type-isBool" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Type-isBool" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">isBool</span>() -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks if this type represents a scalar boolean type.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if boolean; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="method-Type-isString" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Type-isString" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">isString</span>() -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks if this type represents a string.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if string; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="method-Type-isVoid" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Type-isVoid" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">isVoid</span>() -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks if this type represents the <code class="inline-code">void</code> return type.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if void; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="method-Type-isAssignableTo" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Type-isAssignableTo" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">isAssignableTo</span>(<span class="param-type">Type</span> <span class="param-name">target</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Determines whether this type is assignable to the target type under Syntra typing rules.</p>
+<p>Allows implicit assignment if either type is <code class="inline-code">unknown</code>, checks array flag parity, and verifies class nominal equivalence.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>target</code></td>
+<td><span class="type-pill">Type</span></td>
+<td>The target variable or parameter type.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if assignable; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="method-Type-toString" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Type-toString" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">toString</span>() -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Formats the type into canonical Syntra type syntax (e.g. <code class="inline-code">&quot;int&quot;</code>, <code class="inline-code">&quot;string[]&quot;</code>, <code class="inline-code">&quot;Context&quot;</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Text representation of the type.</p>
+</div>
+</div>
+<div id="method-Type-Int" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Type-Int" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">Int</span>() -&gt; <span class="return-type">Type</span>
+</div>
+<div class="doc-text"><p>Constructs the scalar integer type (<code class="inline-code">int</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Type</span> &mdash; <code class="inline-code">Type</code> instance for integer.</p>
+</div>
+</div>
+<div id="method-Type-Float" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Type-Float" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">Float</span>() -&gt; <span class="return-type">Type</span>
+</div>
+<div class="doc-text"><p>Constructs the scalar floating-point type (<code class="inline-code">float</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Type</span> &mdash; <code class="inline-code">Type</code> instance for float.</p>
+</div>
+</div>
+<div id="method-Type-Bool" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Type-Bool" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">Bool</span>() -&gt; <span class="return-type">Type</span>
+</div>
+<div class="doc-text"><p>Constructs the scalar boolean type (<code class="inline-code">bool</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Type</span> &mdash; <code class="inline-code">Type</code> instance for boolean.</p>
+</div>
+</div>
+<div id="method-Type-String" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Type-String" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">String</span>() -&gt; <span class="return-type">Type</span>
+</div>
+<div class="doc-text"><p>Constructs the UTF-8 string type (<code class="inline-code">string</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Type</span> &mdash; <code class="inline-code">Type</code> instance for string.</p>
+</div>
+</div>
+<div id="method-Type-Void" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Type-Void" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">Void</span>() -&gt; <span class="return-type">Type</span>
+</div>
+<div class="doc-text"><p>Constructs the unit/void type (<code class="inline-code">void</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Type</span> &mdash; <code class="inline-code">Type</code> instance for void.</p>
+</div>
+</div>
+<div id="method-Type-Unknown" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Type-Unknown" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">Unknown</span>() -&gt; <span class="return-type">Type</span>
+</div>
+<div class="doc-text"><p>Constructs an un-inferred placeholder type (<code class="inline-code">unknown</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Type</span> &mdash; <code class="inline-code">Type</code> instance for unknown.</p>
+</div>
+</div>
+<div id="method-Type-Class" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Type-Class" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">Class</span>(<span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">Type</span>
+</div>
+<div class="doc-text"><p>Constructs a nominal user-defined class type reference.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Class identifier name.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Type</span> &mdash; <code class="inline-code">Type</code> instance for the named class.</p>
+</div>
+</div>
+<div id="method-Type-Array" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Type-Array" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">Array</span>(<span class="param-type">Type</span> <span class="param-name">elem</span>) -&gt; <span class="return-type">Type</span>
+</div>
+<div class="doc-text"><p>Constructs a 1-dimensional array type of the given element type.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>elem</code></td>
+<td><span class="type-pill">Type</span></td>
+<td>Element type.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Type</span> &mdash; <code class="inline-code">Type</code> instance representing an array of <code class="inline-code">elem</code>.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-Diagnostic" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>Diagnostic</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Structured semantic diagnostic emitted during type checking.</p>
+<p>Contains error code (e.g. <code class="inline-code">&quot;LANG-020&quot;</code>), descriptive error message, and source span.</p>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>code</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Standard error rule code identifier.</td>
+</tr>
+<tr>
+<td><code>message</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Human-readable diagnostic explanation.</td>
+</tr>
+<tr>
+<td><code>span</code></td>
+<td><span class="type-pill">Span</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Source location span where the violation occurred.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-Diagnostic-toString" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Diagnostic-toString" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">toString</span>() -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Formats the diagnostic into a compiler error message line.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Formatted diagnostic string.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-VarSymbol" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>VarSymbol</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Variable symbol in lexical scope.</p>
+<p>Tracks identifier name, semantic type, mutability (<code class="inline-code">isConst</code>), and declaration span.</p>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Variable identifier name.</td>
+</tr>
+<tr>
+<td><code>ty</code></td>
+<td><span class="type-pill">Type</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Resolved semantic type.</td>
+</tr>
+<tr>
+<td><code>isConst</code></td>
+<td><span class="type-pill">bool</span></td>
+<td><span class="badge pub">public</span></td>
+<td>True if declared as an immutable constant.</td>
+</tr>
+<tr>
+<td><code>span</code></td>
+<td><span class="type-pill">Span</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Declaration source span.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="class-FnSymbol" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>FnSymbol</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Function symbol record with parameter signatures and return type.</p>
+<p>Tracks function name, formal parameter names, parameter types, return type, and span.</p>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Function identifier name.</td>
+</tr>
+<tr>
+<td><code>paramNames</code></td>
+<td><span class="type-pill">string[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Parameter names list.</td>
+</tr>
+<tr>
+<td><code>paramTypes</code></td>
+<td><span class="type-pill">Type[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Parameter types list.</td>
+</tr>
+<tr>
+<td><code>returnType</code></td>
+<td><span class="type-pill">Type</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Declared return type.</td>
+</tr>
+<tr>
+<td><code>span</code></td>
+<td><span class="type-pill">Span</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Definition source span.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-FnSymbol-addParam" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-FnSymbol-addParam" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">addParam</span>(<span class="param-type">string</span> <span class="param-name">name</span>, <span class="param-type">Type</span> <span class="param-name">ty</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Registers a formal parameter on this function.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Parameter name string.</td>
+</tr>
+<tr>
+<td><code>ty</code></td>
+<td><span class="type-pill">Type</span></td>
+<td>Parameter type.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-FnSymbol-paramCount" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-FnSymbol-paramCount" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">paramCount</span>() -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>Returns the total formal parameter count.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Number of parameters.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-ClassSymbol" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>ClassSymbol</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Class symbol table entry tracking fields and methods.</p>
+<p>Encapsulates class name, field names, field types, and member method symbols.</p>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Class identifier name.</td>
+</tr>
+<tr>
+<td><code>fieldNames</code></td>
+<td><span class="type-pill">string[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Ordered field names list.</td>
+</tr>
+<tr>
+<td><code>fieldTypes</code></td>
+<td><span class="type-pill">Type[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Ordered field types list.</td>
+</tr>
+<tr>
+<td><code>methods</code></td>
+<td><span class="type-pill">FnSymbol[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Member method symbols list.</td>
+</tr>
+<tr>
+<td><code>span</code></td>
+<td><span class="type-pill">Span</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Class declaration source span.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-ClassSymbol-addField" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ClassSymbol-addField" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">addField</span>(<span class="param-type">string</span> <span class="param-name">name</span>, <span class="param-type">Type</span> <span class="param-name">ty</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Adds a typed field member to the class.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Field identifier name.</td>
+</tr>
+<tr>
+<td><code>ty</code></td>
+<td><span class="type-pill">Type</span></td>
+<td>Field type.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-ClassSymbol-addMethod" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ClassSymbol-addMethod" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">addMethod</span>(<span class="param-type">FnSymbol</span> <span class="param-name">method</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Adds a member method symbol to the class.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>method</code></td>
+<td><span class="type-pill">FnSymbol</span></td>
+<td>Member method symbol.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-ClassSymbol-getFieldType" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ClassSymbol-getFieldType" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">getFieldType</span>(<span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">Type</span>
+</div>
+<div class="doc-text"><p>Retrieves the type of a declared field by name.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Field identifier name.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Type</span> &mdash; The resolved field type, or <code class="inline-code">Type.Unknown()</code> if not declared.</p>
+</div>
+</div>
+<div id="method-ClassSymbol-hasField" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ClassSymbol-hasField" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">hasField</span>(<span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks if a field exists on this class.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Field identifier name.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if declared; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="method-ClassSymbol-getMethod" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ClassSymbol-getMethod" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">getMethod</span>(<span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">FnSymbol</span>
+</div>
+<div class="doc-text"><p>Retrieves a member method symbol by name.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Method name string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">FnSymbol</span> &mdash; The resolved <code class="inline-code">FnSymbol</code>, or an empty symbol if not found.</p>
+</div>
+</div>
+<div id="method-ClassSymbol-hasMethod" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ClassSymbol-hasMethod" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">hasMethod</span>(<span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks if a method exists on this class.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Method name string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if declared; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-Scope" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>Scope</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Nested lexical scope frame for variable resolution and shadowing.</p>
+<p>Implements standard innermost-first scope resolution.</p>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>symbols</code></td>
+<td><span class="type-pill">VarSymbol[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Variables declared within this specific scope block.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-Scope-define" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Scope-define" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">define</span>(<span class="param-type">VarSymbol</span> <span class="param-name">sym</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Declares a variable symbol in this scope frame.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>sym</code></td>
+<td><span class="type-pill">VarSymbol</span></td>
+<td>Variable symbol record.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-Scope-lookup" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Scope-lookup" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">lookup</span>(<span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">VarSymbol</span>
+</div>
+<div class="doc-text"><p>Looks up a variable by name within this scope frame (innermost-first).</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Variable identifier name.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">VarSymbol</span> &mdash; The found <code class="inline-code">VarSymbol</code>, or an empty symbol if not found in this frame.</p>
+</div>
+</div>
+<div id="method-Scope-contains" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Scope-contains" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">contains</span>(<span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks if a variable name is defined in this scope frame.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Variable identifier name.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if present; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-TypeChecker" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>TypeChecker</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Syntra Self-Hosting Type Checker and Semantic Analyzer (Specification 01: LANG-020).</p>
+<p>Executes two-pass semantic analysis:</p>
+<ul class="doc-list">
+<li>Pass 1 (<code class="inline-code">collectSymbols</code>): Discovers and registers global functions, classes, and fields.</li>
+<li>Pass 2 (<code class="inline-code">checkProgram</code>): Type checks statements, expressions, control flow, assignments, and returns.</li>
+</ul>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">TypeChecker checker = new TypeChecker();
+checker.checkProgram(ast);
+if (checker.hasErrors()) {
+    println(&quot;Errors: &quot; + checker.errorCount());
+}</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>scopeStack</code></td>
+<td><span class="type-pill">Scope[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Active lexical scope stack frames.</td>
+</tr>
+<tr>
+<td><code>functions</code></td>
+<td><span class="type-pill">FnSymbol[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Global functions registry.</td>
+</tr>
+<tr>
+<td><code>classes</code></td>
+<td><span class="type-pill">ClassSymbol[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Global classes registry.</td>
+</tr>
+<tr>
+<td><code>diagnostics</code></td>
+<td><span class="type-pill">Diagnostic[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Diagnostic errors accumulated during analysis.</td>
+</tr>
+<tr>
+<td><code>currentReturnType</code></td>
+<td><span class="type-pill">Type</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Expected return type of the function currently being checked.</td>
+</tr>
+<tr>
+<td><code>currentClassName</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Name of the class currently being checked, or empty if in global scope.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-TypeChecker-registerBuiltins" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-registerBuiltins" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">registerBuiltins</span>() -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Registers intrinsic compiler built-in symbols into the symbol table.</p>
+<p>Registers:</p>
+<ul class="doc-list">
+<li><code class="inline-code">print(msg)</code></li>
+<li><code class="inline-code">println(msg)</code></li>
+<li><code class="inline-code">class Arena</code> with <code class="inline-code">alloc</code>, <code class="inline-code">reset</code>, <code class="inline-code">destroy</code>, <code class="inline-code">allocatedBytes</code></li>
+</ul>
+</div>
+</div>
+<div id="method-TypeChecker-enterScope" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-enterScope" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">enterScope</span>() -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Pushes a new lexical scope frame onto the scope stack.</p>
+</div>
+</div>
+<div id="method-TypeChecker-exitScope" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-exitScope" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">exitScope</span>() -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Pops the active lexical scope frame off the scope stack.</p>
+</div>
+</div>
+<div id="method-TypeChecker-defineVar" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-defineVar" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">defineVar</span>(<span class="param-type">VarSymbol</span> <span class="param-name">sym</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Defines a variable symbol in the topmost lexical scope frame.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>sym</code></td>
+<td><span class="type-pill">VarSymbol</span></td>
+<td>Variable symbol record.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-TypeChecker-lookupVar" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-lookupVar" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">lookupVar</span>(<span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">VarSymbol</span>
+</div>
+<div class="doc-text"><p>Resolves a variable symbol by searching from topmost to outermost scope frame.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Variable identifier name.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">VarSymbol</span> &mdash; The found <code class="inline-code">VarSymbol</code>, or an empty symbol if not found.</p>
+</div>
+</div>
+<div id="method-TypeChecker-hasVar" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-hasVar" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">hasVar</span>(<span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks whether a variable is visible in any active lexical scope frame.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Variable identifier name.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if defined; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="method-TypeChecker-getFunction" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-getFunction" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">getFunction</span>(<span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">FnSymbol</span>
+</div>
+<div class="doc-text"><p>Looks up a registered function symbol by name.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Function identifier name.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">FnSymbol</span> &mdash; The found <code class="inline-code">FnSymbol</code>, or an empty symbol if not found.</p>
+</div>
+</div>
+<div id="method-TypeChecker-hasFunction" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-hasFunction" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">hasFunction</span>(<span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks if a global function is declared.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Function identifier name.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if declared; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="method-TypeChecker-getClass" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-getClass" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">getClass</span>(<span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">ClassSymbol</span>
+</div>
+<div class="doc-text"><p>Looks up a registered class symbol by name.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Class identifier name.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">ClassSymbol</span> &mdash; The found <code class="inline-code">ClassSymbol</code>, or an empty symbol if not declared.</p>
+</div>
+</div>
+<div id="method-TypeChecker-hasClass" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-hasClass" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">hasClass</span>(<span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks if a class is declared.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Class identifier name.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if declared; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="method-TypeChecker-error" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-error" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">error</span>(<span class="param-type">string</span> <span class="param-name">msg</span>, <span class="param-type">Span</span> <span class="param-name">span</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Emits a diagnostic error record with standard error code <code class="inline-code">&quot;LANG-020&quot;</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>msg</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Diagnostic explanation string.</td>
+</tr>
+<tr>
+<td><code>span</code></td>
+<td><span class="type-pill">Span</span></td>
+<td>Source location span.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-TypeChecker-errorCount" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-errorCount" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">errorCount</span>() -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>Returns the total number of diagnostic errors recorded.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Diagnostic count.</p>
+</div>
+</div>
+<div id="method-TypeChecker-hasErrors" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-hasErrors" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">hasErrors</span>() -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks if any diagnostic errors were encountered during checking.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if errors exist; <code class="inline-code">false</code> if clean.</p>
+</div>
+</div>
+<div id="method-TypeChecker-parseType" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-parseType" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseType</span>(<span class="param-type">string</span> <span class="param-name">typeStr</span>) -&gt; <span class="return-type">Type</span>
+</div>
+<div class="doc-text"><p>Parses a textual type string into a semantic <code class="inline-code">Type</code> instance.</p>
+<p>Handles array brackets <code class="inline-code">[]</code>, scalar types (<code class="inline-code">int</code>, <code class="inline-code">float</code>, <code class="inline-code">bool</code>, <code class="inline-code">string</code>, <code class="inline-code">void</code>), and user class names.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>typeStr</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Type annotation string (e.g. <code class="inline-code">&quot;int[]&quot;</code>, <code class="inline-code">&quot;string&quot;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Type</span> &mdash; The constructed <code class="inline-code">Type</code> instance.</p>
+</div>
+</div>
+<div id="method-TypeChecker-collectSymbols" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-collectSymbols" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">collectSymbols</span>(<span class="param-type">AstNode</span> <span class="param-name">program</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Scans the root program AST and populates symbol tables for functions, classes, and namespaces.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>program</code></td>
+<td><span class="type-pill">AstNode</span></td>
+<td>The root <code class="inline-code">Program</code> AST node.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-TypeChecker-checkProgram" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-checkProgram" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">checkProgram</span>(<span class="param-type">AstNode</span> <span class="param-name">program</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Executes complete semantic validation over an AST program tree.</p>
+<p>Runs symbol collection followed by recursive declaration, statement, and expression checking.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>program</code></td>
+<td><span class="type-pill">AstNode</span></td>
+<td>The root <code class="inline-code">Program</code> AST node.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-TypeChecker-checkFunctionDecl" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-checkFunctionDecl" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">checkFunctionDecl</span>(<span class="param-type">AstNode</span> <span class="param-name">funcNode</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Checks a function declaration, binding its formal parameters into scope and verifying its body.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>funcNode</code></td>
+<td><span class="type-pill">AstNode</span></td>
+<td>The <code class="inline-code">FunctionDecl</code> AST node.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-TypeChecker-checkClassDecl" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-checkClassDecl" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">checkClassDecl</span>(<span class="param-type">AstNode</span> <span class="param-name">classNode</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Checks a class declaration, verifying fields, constructors, and methods with bound <code class="inline-code">this</code> references.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>classNode</code></td>
+<td><span class="type-pill">AstNode</span></td>
+<td>The <code class="inline-code">ClassDecl</code> AST node.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-TypeChecker-checkBlock" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-checkBlock" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">checkBlock</span>(<span class="param-type">AstNode</span> <span class="param-name">blockNode</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Checks a block statement in an isolated child scope.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>blockNode</code></td>
+<td><span class="type-pill">AstNode</span></td>
+<td>The <code class="inline-code">Block</code> AST node.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-TypeChecker-checkStatement" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-checkStatement" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">checkStatement</span>(<span class="param-type">AstNode</span> <span class="param-name">stmt</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Dispatches checking of an individual AST statement.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>stmt</code></td>
+<td><span class="type-pill">AstNode</span></td>
+<td>The statement AST node.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-TypeChecker-checkVarDecl" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-checkVarDecl" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">checkVarDecl</span>(<span class="param-type">AstNode</span> <span class="param-name">varNode</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Checks a variable declaration, ensuring initial value is assignable to declared type.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>varNode</code></td>
+<td><span class="type-pill">AstNode</span></td>
+<td>The <code class="inline-code">VarDecl</code> AST node.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-TypeChecker-checkIfStmt" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-checkIfStmt" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">checkIfStmt</span>(<span class="param-type">AstNode</span> <span class="param-name">ifNode</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Checks an <code class="inline-code">if</code> conditional statement, asserting condition expression evaluates to <code class="inline-code">bool</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>ifNode</code></td>
+<td><span class="type-pill">AstNode</span></td>
+<td>The <code class="inline-code">IfStmt</code> AST node.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-TypeChecker-checkWhileStmt" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-checkWhileStmt" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">checkWhileStmt</span>(<span class="param-type">AstNode</span> <span class="param-name">whileNode</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Checks a <code class="inline-code">while</code> loop statement, asserting loop condition evaluates to <code class="inline-code">bool</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>whileNode</code></td>
+<td><span class="type-pill">AstNode</span></td>
+<td>The <code class="inline-code">WhileStmt</code> AST node.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-TypeChecker-checkReturnStmt" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-checkReturnStmt" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">checkReturnStmt</span>(<span class="param-type">AstNode</span> <span class="param-name">retNode</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Checks a <code class="inline-code">return</code> statement, validating returned expression against enclosing function return type.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>retNode</code></td>
+<td><span class="type-pill">AstNode</span></td>
+<td>The <code class="inline-code">ReturnStmt</code> AST node.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-TypeChecker-checkExpression" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TypeChecker-checkExpression" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">checkExpression</span>(<span class="param-type">AstNode</span> <span class="param-name">expr</span>) -&gt; <span class="return-type">Type</span>
+</div>
+<div class="doc-text"><p>Performs type inference and validation on an arbitrary AST expression node.</p>
+<p>Evaluates literals, identifiers, assignments, binary operators, member accesses, method calls, and array indexing.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>expr</code></td>
+<td><span class="type-pill">AstNode</span></td>
+<td>The expression AST node to validate.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Type</span> &mdash; The inferred <code class="inline-code">Type</code> of the expression.</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<footer class="site-footer">
+<div class="footer-inner">
+<p>Built with ❤️ by the Syntra Language Team • Version 0.1.0 • Spec 2026</p>
+<p class="footer-sub">High-performance Whole-Program Adaptive Programming Platform</p>
+</div>
+</footer>
+<script src="search.js"></script>
+</body>
+</html>

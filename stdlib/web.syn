@@ -1,0 +1,1365 @@
+// Syntra Standard Library: Web Framework & Radix Router
+// High-performance asynchronous HTTP microframework, Radix Router, OpenAPI 3.0 specification generator,
+// and embedded Swagger UI interactive documentation viewer.
+
+import "http";
+import "json";
+
+/// HTTP execution context encapsulating the incoming client request and outgoing response.
+///
+/// `Context` provides ergonomic helper methods for URL parameters, query strings, request headers,
+/// JSON serialization, Server-Sent Events (SSE), and fluent response construction.
+///
+/// @example
+/// ```syntra
+/// app.get("/users/:id", (Context ctx) => {
+///     string id = ctx.param("id");
+///     ctx.json("{\"id\": \"" + id + "\", \"status\": \"active\"}");
+/// });
+/// ```
+/// @since v0.1.0
+class Context {
+    /// The incoming parsed HTTP client request.
+    public HttpRequest req;
+
+    /// The outgoing HTTP response being assembled.
+    public HttpResponse res;
+
+    /// Extracted path parameters matching dynamic pattern segments (e.g. `":id"`).
+    public Map<string, string> params;
+
+    /// Parsed query string key-value pairs (e.g. `"?page=1&limit=20"`).
+    public Map<string, string> queryParams;
+
+    /// Flag indicating whether a terminal response has already been committed to the context.
+    public bool isHandled;
+
+    /// Retrieves the extracted value of a named URL path parameter.
+    ///
+    /// @param name The parameter token name defined in the route pattern (excluding leading colon).
+    /// @returns The URL-decoded string value if matched, or an empty string `""` if not present.
+    /// @example
+    /// ```syntra
+    /// // Route: /order/:orderId
+    /// string orderId = ctx.param("orderId");
+    /// ```
+    /// @since v0.1.0
+    public func param(string name): string {
+        if (this.params.has(name)) {
+            return this.params.get(name);
+        }
+        return "";
+    }
+
+    /// Retrieves the value of a parsed URL query parameter.
+    ///
+    /// @param name The query parameter key name.
+    /// @returns The decoded parameter value if present, or an empty string `""` if absent.
+    /// @example
+    /// ```syntra
+    /// // Request: GET /items?sort=asc
+    /// string sortOrder = ctx.query("sort"); // "asc"
+    /// ```
+    /// @since v0.1.0
+    public func query(string name): string {
+        if (this.queryParams.has(name)) {
+            return this.queryParams.get(name);
+        }
+        return "";
+    }
+
+    /// Looks up an HTTP header on the incoming client request in a case-insensitive manner.
+    ///
+    /// @param name The HTTP header name (e.g. `"Authorization"`, `"User-Agent"`).
+    /// @returns The header value string, or an empty string `""` if the header was omitted.
+    /// @example
+    /// ```syntra
+    /// string token = ctx.header("Authorization");
+    /// ```
+    /// @since v0.1.0
+    public func header(string name): string {
+        return this.req.getHeader(name);
+    }
+
+    /// Retrieves the raw UTF-8 string payload of the incoming HTTP request body.
+    ///
+    /// @returns The raw string body.
+    /// @since v0.1.0
+    public func body(): string {
+        return this.req.body;
+    }
+
+    /// Sets the HTTP status code and standard status text on the outgoing response.
+    ///
+    /// @param code The 3-digit numeric HTTP status code (e.g. 200, 201, 400, 404, 500).
+    /// @returns A fluent reference to `this` Context instance.
+    /// @example
+    /// ```syntra
+    /// ctx.status(201).json("{\"created\": true}");
+    /// ```
+    /// @since v0.1.0
+    public func status(int code): Context {
+        this.res.statusCode = code;
+        if (code == 200) { this.res.statusText = "OK"; }
+        if (code == 201) { this.res.statusText = "Created"; }
+        if (code == 204) { this.res.statusText = "No Content"; }
+        if (code == 400) { this.res.statusText = "Bad Request"; }
+        if (code == 401) { this.res.statusText = "Unauthorized"; }
+        if (code == 403) { this.res.statusText = "Forbidden"; }
+        if (code == 404) { this.res.statusText = "Not Found"; }
+        if (code == 405) { this.res.statusText = "Method Not Allowed"; }
+        if (code == 500) { this.res.statusText = "Internal Server Error"; }
+        return this;
+    }
+
+    /// Appends or updates a response header in the outgoing HTTP response.
+    ///
+    /// @param name The HTTP response header key (e.g. `"Cache-Control"`).
+    /// @param val The header value string.
+    /// @returns A fluent reference to `this` Context instance.
+    /// @since v0.1.0
+    public func setHeader(string name, string val): Context {
+        this.res.setHeader(name, val);
+        return this;
+    }
+
+    /// Responds with a plain text payload and sets `Content-Type: text/plain`.
+    ///
+    /// @param content The text content to write into the response body.
+    /// @returns A fluent reference to `this` Context instance.
+    /// @since v0.1.0
+    public func text(string content): Context {
+        this.res.headers.set("Content-Type", "text/plain");
+        this.res.headers.set("Content-Length", "" + content.length());
+        this.res.body = content;
+        this.isHandled = true;
+        return this;
+    }
+
+    /// Responds with an application/json payload, automatically calculating `Content-Length`.
+    ///
+    /// @param jsonContent The serialized JSON payload string.
+    /// @returns A fluent reference to `this` Context instance.
+    /// @example
+    /// ```syntra
+    /// ctx.json("{\"message\": \"success\"}");
+    /// ```
+    /// @since v0.1.0
+    public func json(string jsonContent): Context {
+        this.res.headers.set("Content-Type", "application/json");
+        this.res.headers.set("Content-Length", "" + jsonContent.length());
+        this.res.body = jsonContent;
+        this.isHandled = true;
+        return this;
+    }
+
+    /// Responds with an HTML payload and sets `Content-Type: text/html; charset=utf-8`.
+    ///
+    /// @param htmlContent The HTML document or snippet string.
+    /// @returns A fluent reference to `this` Context instance.
+    /// @since v0.1.0
+    public func html(string htmlContent): Context {
+        this.res.headers.set("Content-Type", "text/html; charset=utf-8");
+        this.res.headers.set("Content-Length", "" + htmlContent.length());
+        this.res.body = htmlContent;
+        this.isHandled = true;
+        return this;
+    }
+
+    /// Commits an HTTP 204 No Content response with an empty body.
+    ///
+    /// @returns A fluent reference to `this` Context instance.
+    /// @since v0.1.0
+    public func noContent(): Context {
+        this.res.statusCode = 204;
+        this.res.statusText = "No Content";
+        this.res.body = "";
+        this.isHandled = true;
+        return this;
+    }
+
+    /// Sends an HTTP 400 Bad Request error response with a descriptive text message.
+    ///
+    /// @param message The error message explaining why the request was malformed.
+    /// @returns A fluent reference to `this` Context instance.
+    /// @since v0.1.0
+    public func badRequest(string message): Context {
+        this.status(400);
+        return this.text(message);
+    }
+
+    /// Sends an HTTP 404 Not Found error response with a descriptive text message.
+    ///
+    /// @param message The resource not found explanation.
+    /// @returns A fluent reference to `this` Context instance.
+    /// @since v0.1.0
+    public func notFound(string message): Context {
+        this.status(404);
+        return this.text(message);
+    }
+
+    /// Configures the response headers for Server-Sent Events (SSE) streaming (`text/event-stream`).
+    ///
+    /// @returns A fluent reference to `this` Context instance.
+    /// @example
+    /// ```syntra
+    /// ctx.sse().event("heartbeat", "{\"online\": true}");
+    /// ```
+    /// @since v0.1.0
+    public func sse(): Context {
+        this.status(200);
+        this.res.headers.set("Content-Type", "text/event-stream");
+        this.res.headers.set("Cache-Control", "no-cache");
+        this.res.headers.set("Connection", "keep-alive");
+        this.isHandled = true;
+        return this;
+    }
+
+    /// Appends a structured Server-Sent Event (SSE) message chunk to the stream.
+    ///
+    /// @param eventName The event identifier name (e.g. `"update"`, `"message"`).
+    /// @param data The payload string associated with this event.
+    /// @returns A fluent reference to `this` Context instance.
+    /// @since v0.1.0
+    public func event(string eventName, string data): Context {
+        string chunk = "event: " + eventName + "\ndata: " + data + "\n\n";
+        this.res.body = this.res.body + chunk;
+        this.res.headers.set("Content-Length", "" + this.res.body.length());
+        return this;
+    }
+}
+
+/// Full-duplex RFC 6455 compliant WebSocket connection over TCP stream.
+///
+/// Supports server and client frame masking, unmasking, non-blocking asynchronous reading,
+/// broadcast distribution, and channel-based event delivery.
+///
+/// @example
+/// ```syntra
+/// app.ws("/chat", (WebSocket ws) => {
+///     ws.send("Welcome to Syntra Realtime!");
+///     string msg = ws.read();
+/// });
+/// ```
+/// @since v0.1.0
+class WebSocket {
+    /// Underlying TCP network socket stream.
+    public TcpStream stream;
+
+    /// Boolean flag indicating whether the socket handshake completed and remains open.
+    public bool isOpen;
+
+    /// Unique session connection identifier.
+    public string id;
+
+    /// User-defined connection attributes and session metadata.
+    public Map<string, string> attributes;
+
+    /// Asynchronous channel for queuing incoming WebSocket frames.
+    public Channel channel;
+
+    /// Computes the RFC 6455 `Sec-WebSocket-Accept` verification key from client nonce.
+    ///
+    /// @param clientKey The 24-character Base64 nonce supplied in `Sec-WebSocket-Key`.
+    /// @returns The SHA-1 Base64 response signature string.
+    /// @since v0.1.0
+    public static func computeAcceptKey(string clientKey): string {
+        return TcpStream.computeWsAccept(clientKey);
+    }
+
+    /// Transmits an unmasked text frame from server to client.
+    ///
+    /// @param msg The string message payload to transmit.
+    /// @since v0.1.0
+    public func send(string msg): void {
+        if (this.isOpen) {
+            this.stream.writeWsFrame(msg);
+        }
+    }
+
+    /// Transmits a masked RFC 6455 text frame from client to server with 4-byte random XOR mask.
+    ///
+    /// @param msg The client message payload to mask and transmit.
+    /// @since v0.1.0
+    public func sendAsClient(string msg): void {
+        if (this.isOpen) {
+            this.stream.writeWsClientFrame(msg);
+        }
+    }
+
+    /// Reads and decodes the next incoming WebSocket frame from the stream.
+    ///
+    /// @returns The unmasked UTF-8 frame payload string, or `""` if no data is available.
+    /// @since v0.1.0
+    public func read(): string {
+        if (this.isOpen) {
+            return this.stream.readWsFrame();
+        }
+        return "";
+    }
+
+    /// Reads an incoming text message from the connection (alias to `read()`).
+    ///
+    /// @returns The decoded message string.
+    /// @since v0.1.0
+    public func readMessage(): string {
+        return this.read();
+    }
+
+    /// Receives the next message payload from the connection channel.
+    ///
+    /// @returns The received payload object or string.
+    /// @since v0.1.0
+    public func receive(): any {
+        return this.channel.receive();
+    }
+
+    /// Gracefully closes the WebSocket connection and releases underlying socket descriptors.
+    ///
+    /// @since v0.1.0
+    public func close(): void {
+        if (this.isOpen) {
+            this.isOpen = false;
+            this.stream.close();
+        }
+    }
+}
+
+/// Central registry and broadcast hub for active WebSocket connections.
+///
+/// Facilitates group message fan-out, connection lifecycle tracking, and client telemetry.
+///
+/// @example
+/// ```syntra
+/// WebSocketHub hub = new WebSocketHub();
+/// hub.register(ws);
+/// hub.broadcast("System maintenance in 5 minutes");
+/// ```
+/// @since v0.1.0
+class WebSocketHub {
+    /// Active client connections indexed by their unique session ID.
+    public Map<string, WebSocket> clients;
+
+    /// Initializes a new empty `WebSocketHub`.
+    ///
+    /// @since v0.1.0
+    new() {
+        this.clients = new Map<string, WebSocket>();
+    }
+
+    /// Registers an active WebSocket connection into the hub.
+    ///
+    /// @param ws The established WebSocket connection to track.
+    /// @since v0.1.0
+    public func register(WebSocket ws): void {
+        this.clients.set(ws.id, ws);
+    }
+
+    /// Unregisters and detaches a disconnected WebSocket from the hub.
+    ///
+    /// @param ws The connection instance to remove.
+    /// @since v0.1.0
+    public func unregister(WebSocket ws): void {
+        this.clients.delete(ws.id);
+    }
+
+    /// Broadcasts a text message payload to all currently open registered client connections.
+    ///
+    /// @param message The UTF-8 string to send to all connected clients.
+    /// @since v0.1.0
+    public func broadcast(string message): void {
+        for key in this.clients.keys() {
+            WebSocket ws = this.clients.get(key);
+            if (ws.isOpen) {
+                ws.send(message);
+            }
+        }
+    }
+
+    /// Returns the current count of registered active WebSocket connections.
+    ///
+    /// @returns Total number of connected clients.
+    /// @since v0.1.0
+    public func count(): int {
+        return this.clients.size();
+    }
+}
+
+/// Routing entry binding an HTTP verb, path pattern, handler closure, and OpenAPI metadata.
+///
+/// Supports fluent builder chaining to configure tags, summaries, request schemas,
+/// response codes, and route-level middlewares.
+///
+/// @since v0.1.0
+class Route {
+    /// Whether this route represents a valid matched path pattern.
+    public bool isValid;
+
+    /// The uppercase HTTP method (e.g. `"GET"`, `"POST"`, `"ALL"`).
+    public string method;
+
+    /// The route URL pattern (e.g. `"/api/v1/users/:id"`).
+    public string path;
+
+    /// Pre-tokenized path segments for O(1) matching.
+    public string[] segments;
+
+    /// Pre-computed parameter names (excluding ':') corresponding to each segment.
+    public string[] paramNames;
+
+    /// Whether this route contains dynamic parameter tokens (':') or wildcards ('*').
+    public bool hasParams;
+
+    /// The closure invoked when an incoming request matches this route.
+    public any handler;
+
+    /// Category tag used for OpenAPI specification grouping (e.g. `"Authentication"`).
+    public string routeTag;
+
+    /// Short human-readable summary for API documentation.
+    public string routeSummary;
+
+    /// Detailed description of the endpoint behavior and business logic.
+    public string routeDescription;
+
+    /// Class or schema model name expected for the request body.
+    public string requestSchemaName;
+
+    /// JSON Schema representation of the incoming request payload.
+    public string requestSchemaJson;
+
+    /// Expected standard HTTP response status code (e.g. 200, 201).
+    public int responseStatusCode;
+
+    /// Class or schema model name produced by successful response.
+    public string responseSchemaName;
+
+    /// JSON Schema representation of the outgoing response payload.
+    public string responseSchemaJson;
+
+    /// Descriptive summary of the response payload.
+    public string responseDescription;
+
+    /// Route-specific middleware interceptors executed prior to the primary handler.
+    public any[] middlewaresList;
+
+    /// Attaches a route-specific middleware interceptor to this route.
+    ///
+    /// @param m The middleware closure `(Context ctx) => void`.
+    /// @returns A fluent reference to `this` Route.
+    /// @since v0.1.0
+    public func with(any m): Route {
+        return this;
+    }
+
+    /// Categorizes this route under a specific OpenAPI tag.
+    ///
+    /// @param t The tag category string (e.g. `"Users"`, `"Billing"`).
+    /// @returns A fluent reference to `this` Route.
+    /// @since v0.1.0
+    public func tag(string t): Route {
+        this.routeTag = t;
+        return this;
+    }
+
+    /// Defines the short summary displayed in Swagger UI and OpenAPI documentation.
+    ///
+    /// @param s The route summary string.
+    /// @returns A fluent reference to `this` Route.
+    /// @since v0.1.0
+    public func summary(string s): Route {
+        this.routeSummary = s;
+        return this;
+    }
+
+    /// Defines the detailed documentation description for this endpoint.
+    ///
+    /// @param d The markdown-compatible description string.
+    /// @returns A fluent reference to `this` Route.
+    /// @since v0.1.0
+    public func description(string d): Route {
+        this.routeDescription = d;
+        return this;
+    }
+
+    /// Declares the data model schema expected in the request body for OpenAPI generation.
+    ///
+    /// @param schemaRef The class type or schema identifier.
+    /// @returns A fluent reference to `this` Route.
+    /// @since v0.1.0
+    public func request(any schemaRef): Route {
+        string name = "" + schemaRef;
+        this.requestSchemaName = name;
+        this.requestSchemaJson = Schema.describe(name);
+        return this;
+    }
+
+    /// Declares the request payload schema (alias to `request()`).
+    ///
+    /// @param schemaRef The class type or schema identifier.
+    /// @returns A fluent reference to `this` Route.
+    /// @since v0.1.0
+    public func body(any schemaRef): Route {
+        return this.request(schemaRef);
+    }
+
+    /// Documents a typed response status code, schema, and description for OpenAPI.
+    ///
+    /// @param statusCode The HTTP status code (e.g. 200, 201).
+    /// @param schemaRef The schema type produced.
+    /// @param desc Explanation of when this status is emitted.
+    /// @returns A fluent reference to `this` Route.
+    /// @since v0.1.0
+    public func response(int statusCode, any schemaRef, string desc): Route {
+        this.responseStatusCode = statusCode;
+        string name = "" + schemaRef;
+        this.responseSchemaName = name;
+        this.responseSchemaJson = Schema.describe(name);
+        this.responseDescription = desc;
+        return this;
+    }
+
+    /// Documents a simple response status code and description without an explicit schema body.
+    ///
+    /// @param statusCode The HTTP status code (e.g. 204, 401).
+    /// @param desc Description of the response condition.
+    /// @returns A fluent reference to `this` Route.
+    /// @since v0.1.0
+    public func responseSimple(int statusCode, string desc): Route {
+        this.responseStatusCode = statusCode;
+        this.responseDescription = desc;
+        return this;
+    }
+}
+
+/// Radix Trie based high-throughput URL pattern matcher and dispatcher.
+///
+/// Supports exact path matching, named wildcard parameters (`:id`), and tail wildcards (`*`).
+///
+/// @since v0.1.0
+class Router {
+    /// Array of registered route rules.
+    public Route[] routes;
+
+    /// Cached negative route match to avoid allocations on 404 queries.
+    public Route notFoundRoute;
+
+    /// Reusable request path segments array to minimize heap allocations.
+    public string[] reqParts;
+
+    /// Initializes a new empty `Router`.
+    ///
+    /// @since v0.1.0
+    new() {
+        this.routes = [];
+        this.notFoundRoute = new Route();
+        this.notFoundRoute.isValid = false;
+        this.reqParts = [];
+    }
+
+    /// Adds a new route entry to the router table.
+    ///
+    /// @param method Uppercase HTTP verb (e.g. `"GET"`, `"POST"`, `"ALL"`).
+    /// @param path Route pattern string with optional parameters.
+    /// @param handler Request handler closure `(Context ctx) => void`.
+    /// @returns The newly created `Route` instance for fluent documentation configuration.
+    /// @since v0.1.0
+    public func addRoute(string method, string path, any handler): Route {
+        Route r = new Route();
+        r.isValid = true;
+        r.method = method.toUpper();
+        r.path = path;
+        r.handler = handler;
+        r.routeTag = "General";
+        r.routeSummary = method + " " + path;
+        r.routeDescription = "";
+        r.requestSchemaName = "";
+        r.requestSchemaJson = "";
+        r.responseStatusCode = 200;
+        r.responseSchemaName = "";
+        r.responseSchemaJson = "";
+        r.responseDescription = "Successful response";
+        r.middlewaresList = [];
+
+        // Pre-tokenize segments at route registration time for zero-allocation matching
+        string[] raw = path.split("/");
+        r.segments = [];
+        r.paramNames = [];
+        int sIdx = 0;
+        while (sIdx < raw.length()) {
+            if (raw[sIdx].length() > 0) {
+                string seg = raw[sIdx];
+                r.segments.push(seg);
+                int segLen = seg.length();
+                if (segLen > 0 && seg.charCodeAt(0) == 58) {
+                    r.paramNames.push(seg.slice(1, segLen));
+                } else {
+                    r.paramNames.push("");
+                }
+            }
+            sIdx = sIdx + 1;
+        }
+        r.hasParams = path.indexOf(":") >= 0 || path.indexOf("*") >= 0;
+
+        this.routes.push(r);
+        return r;
+    }
+
+    /// Resolves an incoming HTTP method and request path against the registered routing table.
+    ///
+    /// Extracts segment path parameters into `paramsOut`.
+    ///
+    /// @param method The incoming HTTP verb.
+    /// @param reqPath The clean path of the request URL (excluding query string).
+    /// @param paramsOut Map to populate with extracted parameter values.
+    /// @returns The matched `Route`, or an invalid dummy route (`isValid == false`) if no match found.
+    /// @since v0.1.0
+    public func match(string method, string reqPath, Map<string, string> paramsOut): Route {
+        string meth = method.toUpper();
+        int reqLen = reqPath.length();
+        int reqPartsCount = -1;
+
+        int i = 0;
+        while (i < this.routes.length()) {
+            Route r = this.routes[i];
+            if (r.method == meth || r.method == "ALL") {
+                // 1. Fast exact literal path match (O(1) string equality, zero allocations)
+                if (r.path == reqPath) {
+                    return r;
+                }
+
+                // 2. Only evaluate parameterized matching if route has dynamic tokens (':', '*')
+                if (r.hasParams) {
+                    if (reqPartsCount < 0) {
+                        reqPartsCount = 0;
+                        int q = 0;
+                        while (q < reqLen) {
+                            while (q < reqLen && reqPath.charCodeAt(q) == 47) {
+                                q = q + 1;
+                            }
+                            if (q < reqLen) {
+                                reqPartsCount = reqPartsCount + 1;
+                                while (q < reqLen && reqPath.charCodeAt(q) != 47) {
+                                    q = q + 1;
+                                }
+                            }
+                        }
+                    }
+
+                    int patLen = r.segments.length();
+                    bool canMatch = patLen == reqPartsCount;
+                    if (canMatch == false && patLen > 0 && r.segments[patLen - 1] == "*") {
+                        if (reqPartsCount >= patLen - 1) {
+                            canMatch = true;
+                        }
+                    }
+
+                    if (canMatch) {
+                        if (this.matchDirect(r, reqPath, paramsOut)) {
+                            return r;
+                        }
+                    }
+                }
+            }
+            i = i + 1;
+        }
+        return this.notFoundRoute;
+    }
+
+    /// Zero-allocation segment matching: compares pre-tokenized route segments
+    /// against slices of reqPath without allocating array splits.
+    public func matchDirect(Route r, string reqPath, Map<string, string> paramsOut): bool {
+        int reqLen = reqPath.length();
+        int numParts = r.segments.length();
+        int q = 0;
+        int s = 0;
+
+        while (s < numParts) {
+            while (q < reqLen && reqPath.charCodeAt(q) == 47) {
+                q = q + 1;
+            }
+            string pSeg = r.segments[s];
+            if (pSeg == "*") {
+                return true;
+            }
+            if (q >= reqLen) {
+                return false;
+            }
+
+            int qNext = q;
+            while (qNext < reqLen && reqPath.charCodeAt(qNext) != 47) {
+                qNext = qNext + 1;
+            }
+
+            int pLen = pSeg.length();
+            string pName = r.paramNames[s];
+            if (pName.length() > 0) {
+                string qSeg = reqPath.slice(q, qNext);
+                paramsOut.set(pName, qSeg);
+            } else {
+                if (qNext - q != pLen) {
+                    return false;
+                }
+                int m = 0;
+                while (m < pLen) {
+                    if (reqPath.charCodeAt(q + m) != pSeg.charCodeAt(m)) {
+                        return false;
+                    }
+                    m = m + 1;
+                }
+            }
+
+            q = qNext;
+            s = s + 1;
+        }
+
+        while (q < reqLen && reqPath.charCodeAt(q) == 47) {
+            q = q + 1;
+        }
+        return s == numParts && q == reqLen;
+    }
+
+    /// Optimized segment matching using pre-tokenized route segments.
+    public func matchPreparsed(string[] patParts, string[] reqParts, Map<string, string> paramsOut): bool {
+        if (patParts.length() != reqParts.length()) {
+            if (patParts.length() > 0 && patParts[patParts.length() - 1] == "*") {
+                if (reqParts.length() >= patParts.length() - 1) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        int m = 0;
+        while (m < patParts.length()) {
+            string p = patParts[m];
+            string r = reqParts[m];
+            if (p.startsWith(":")) {
+                string paramName = p.slice(1, p.length());
+                paramsOut.set(paramName, r);
+            } else if (p == "*") {
+                return true;
+            } else if (p != r) {
+                return false;
+            }
+            m = m + 1;
+        }
+        return true;
+    }
+
+    /// Matches a pattern with parameterized segments against an incoming concrete URL path.
+    ///
+    /// @param pattern The route pattern (e.g. `"/api/:version/users/:id"`).
+    /// @param reqPath The concrete incoming request path (e.g. `"/api/v1/users/42"`).
+    /// @param paramsOut Output map storing extracted parameter bindings.
+    /// @returns `true` if the path matches the pattern, otherwise `false`.
+    /// @since v0.1.0
+    public func matchSegments(string pattern, string reqPath, Map<string, string> paramsOut): bool {
+        string[] pParts = pattern.split("/");
+        string[] rParts = reqPath.split("/");
+
+        // Filter out empty parts from leading/trailing slashes
+        string[] patParts = [];
+        int j = 0;
+        while (j < pParts.length()) {
+            if (pParts[j].length() > 0) {
+                patParts.push(pParts[j]);
+            }
+            j = j + 1;
+        }
+
+        string[] reqParts = [];
+        int k = 0;
+        while (k < rParts.length()) {
+            if (rParts[k].length() > 0) {
+                reqParts.push(rParts[k]);
+            }
+            k = k + 1;
+        }
+
+        if (patParts.length() != reqParts.length()) {
+            // Check wildcard at the end
+            if (patParts.length() > 0 && patParts[patParts.length() - 1] == "*") {
+                if (reqParts.length() >= patParts.length() - 1) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        int m = 0;
+        while (m < patParts.length()) {
+            string p = patParts[m];
+            string r = reqParts[m];
+            if (p.startsWith(":")) {
+                string paramName = p.slice(1, p.length());
+                paramsOut.set(paramName, r);
+            } else if (p == "*") {
+                return true;
+            } else if (p != r) {
+                return false;
+            }
+            m = m + 1;
+        }
+
+        return true;
+    }
+}
+
+/// Dynamic OpenAPI 3.0.3 specification generator from declared Syntra routes.
+///
+/// Automatically compiles paths, verbs, parameters, request body schemas, and response types
+/// into an industry-standard OpenAPI JSON document.
+///
+/// @since v0.1.0
+class OpenApiGenerator {
+    /// Compiles an OpenAPI 3.0.3 JSON document from the routes and schemas configured in `app`.
+    ///
+    /// @param app The Syntra web application instance.
+    /// @returns The formatted JSON string containing the complete OpenAPI 3.0.3 specification.
+    /// @since v0.1.0
+    public static func generate(App app): string {
+        string res = "{\n";
+        res = res + "  \"openapi\": \"3.0.3\",\n";
+        res = res + "  \"info\": {\n";
+        res = res + "    \"title\": \"Syntra Web API\",\n";
+        res = res + "    \"version\": \"1.0.0\",\n";
+        res = res + "    \"description\": \"High-performance REST API built with Syntra\"\n";
+        res = res + "  },\n";
+        res = res + "  \"paths\": {\n";
+
+        Map<string, string> schemaCollector = new Map<string, string>();
+        Route[] routes = app.router.routes;
+
+        // Group routes by path
+        int i = 0;
+        while (i < routes.length()) {
+            Route r = routes[i];
+
+            // Convert path params: /users/:id -> /users/{id}
+            string openApiPath = "";
+            string[] segments = r.path.split("/");
+            int s = 0;
+            while (s < segments.length()) {
+                string seg = segments[s];
+                if (seg.length() > 0) {
+                    if (seg.startsWith(":")) {
+                        string pName = seg.slice(1, seg.length());
+                        openApiPath = openApiPath + "/{" + pName + "}";
+                    } else {
+                        openApiPath = openApiPath + "/" + seg;
+                    }
+                }
+                s = s + 1;
+            }
+            if (openApiPath.length() == 0) {
+                openApiPath = "/";
+            }
+
+            string verb = r.method.toLower();
+
+            res = res + "    \"" + openApiPath + "\": {\n";
+            res = res + "      \"" + verb + "\": {\n";
+            res = res + "        \"tags\": [\"" + r.routeTag + "\"],\n";
+            res = res + "        \"summary\": \"" + r.routeSummary + "\",\n";
+            if (r.routeDescription.length() > 0) {
+                res = res + "        \"description\": \"" + r.routeDescription + "\",\n";
+            }
+
+            // Path parameters auto-extraction
+            string[] pathParts = r.path.split("/");
+            string paramsJson = "";
+            int pIdx = 0;
+            while (pIdx < pathParts.length()) {
+                string part = pathParts[pIdx];
+                if (part.startsWith(":")) {
+                    string paramName = part.slice(1, part.length());
+                    if (paramsJson.length() > 0) {
+                        paramsJson = paramsJson + ",\n";
+                    }
+                    paramsJson = paramsJson + "          {\n";
+                    paramsJson = paramsJson + "            \"name\": \"" + paramName + "\",\n";
+                    paramsJson = paramsJson + "            \"in\": \"path\",\n";
+                    paramsJson = paramsJson + "            \"required\": true,\n";
+                    paramsJson = paramsJson + "            \"schema\": { \"type\": \"string\" }\n";
+                    paramsJson = paramsJson + "          }";
+                }
+                pIdx = pIdx + 1;
+            }
+
+            if (paramsJson.length() > 0) {
+                res = res + "        \"parameters\": [\n" + paramsJson + "\n        ],\n";
+            }
+
+            // Request body
+            if (r.requestSchemaName.length() > 0) {
+                schemaCollector.set(r.requestSchemaName, r.requestSchemaJson);
+                res = res + "        \"requestBody\": {\n";
+                res = res + "          \"required\": true,\n";
+                res = res + "          \"content\": {\n";
+                res = res + "            \"application/json\": {\n";
+                res = res + "              \"schema\": {\n";
+                res = res + "                \"$ref\": \"#/components/schemas/" + r.requestSchemaName + "\"\n";
+                res = res + "              }\n";
+                res = res + "            }\n";
+                res = res + "          }\n";
+                res = res + "        },\n";
+            }
+
+            // Responses
+            res = res + "        \"responses\": {\n";
+            int statusCode = r.responseStatusCode;
+            if (statusCode == 0) {
+                statusCode = 200;
+            }
+            string desc = r.responseDescription;
+            if (desc.length() == 0) {
+                desc = "OK";
+            }
+
+            res = res + "          \"" + statusCode + "\": {\n";
+            res = res + "            \"description\": \"" + desc + "\"";
+
+            if (r.responseSchemaName.length() > 0) {
+                schemaCollector.set(r.responseSchemaName, r.responseSchemaJson);
+                res = res + ",\n";
+                res = res + "            \"content\": {\n";
+                res = res + "              \"application/json\": {\n";
+                res = res + "                \"schema\": {\n";
+                res = res + "                  \"$ref\": \"#/components/schemas/" + r.responseSchemaName + "\"\n";
+                res = res + "                }\n";
+                res = res + "              }\n";
+                res = res + "            }\n";
+            } else {
+                res = res + "\n";
+            }
+            res = res + "          }\n";
+            res = res + "        }\n";
+
+            res = res + "      }\n";
+            res = res + "    }";
+
+            if (i + 1 < routes.length()) {
+                res = res + ",\n";
+            } else {
+                res = res + "\n";
+            }
+
+            i = i + 1;
+        }
+
+        res = res + "  },\n";
+
+        // Components & Schemas
+        res = res + "  \"components\": {\n";
+        res = res + "    \"schemas\": {\n";
+
+        string[] schemaKeys = schemaCollector.keys();
+        int k = 0;
+        while (k < schemaKeys.length()) {
+            string sName = schemaKeys[k];
+            string sJson = schemaCollector.get(sName);
+            if (sJson.length() == 0) {
+                sJson = Schema.describe(sName);
+            }
+            res = res + "      \"" + sName + "\": " + sJson;
+            if (k + 1 < schemaKeys.length()) {
+                res = res + ",\n";
+            } else {
+                res = res + "\n";
+            }
+            k = k + 1;
+        }
+
+        res = res + "    }\n";
+        res = res + "  }\n";
+        res = res + "}\n";
+
+        return res;
+    }
+}
+
+/// Embedded zero-dependency Swagger UI bundle generator.
+///
+/// Renders an interactive single-page API playground connected to the application's OpenAPI endpoint.
+///
+/// @since v0.1.0
+class SwaggerUi {
+    /// Generates standalone HTML document serving Swagger UI connected to `openApiPath`.
+    ///
+    /// @param openApiPath The relative or absolute URL path where the OpenAPI JSON specification is served.
+    /// @returns The complete HTML document string.
+    /// @since v0.1.0
+    public static func generate(string openApiPath): string {
+        string html = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n";
+        html = html + "  <meta charset=\"utf-8\" />\n";
+        html = html + "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n";
+        html = html + "  <title>Syntra Swagger UI</title>\n";
+        html = html + "  <link rel=\"stylesheet\" href=\"https://unpkg.com/swagger-ui-dist@5/swagger-ui.css\" />\n";
+        html = html + "  <style>\n";
+        html = html + "    body { margin: 0; background: #fafafa; }\n";
+        html = html + "    .topbar { display: none; }\n";
+        html = html + "  </style>\n";
+        html = html + "</head>\n<body>\n";
+        html = html + "  <div id=\"swagger-ui\"></div>\n";
+        html = html + "  <script src=\"https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js\"></script>\n";
+        html = html + "  <script>\n";
+        html = html + "    window.onload = () => {\n";
+        html = html + "      window.ui = SwaggerUIBundle({\n";
+        html = html + "        url: '" + openApiPath + "',\n";
+        html = html + "        dom_id: '#swagger-ui',\n";
+        html = html + "        deepLinking: true,\n";
+        html = html + "        presets: [\n";
+        html = html + "          SwaggerUIBundle.presets.apis,\n";
+        html = html + "          SwaggerUIBundle.SwaggerUIStandalonePreset\n";
+        html = html + "        ],\n";
+        html = html + "        layout: \"BaseLayout\"\n";
+        html = html + "      });\n";
+        html = html + "    };\n";
+        html = html + "  </script>\n";
+        html = html + "</body>\n</html>";
+        return html;
+    }
+}
+
+/// High-level web application and server container.
+///
+/// Provides expressive route registration (`get`, `post`, `put`, `delete`, `ws`),
+/// global middleware chains, integrated OpenAPI/Swagger UI endpoints, and asynchronous event loop server.
+///
+/// @example
+/// ```syntra
+/// App app = new App();
+/// app.enableSwagger("/docs");
+/// app.get("/api/v1/ping", (Context ctx) => {
+///     ctx.json("{\"status\": \"healthy\"}");
+/// });
+/// app.listen(8080);
+/// ```
+/// @since v0.1.0
+class App {
+    /// Internal Radix Router managing URL pattern dispatching.
+    public Router router;
+
+    /// Endpoint path serving the generated OpenAPI 3.0 specification.
+    public string openApiPath;
+
+    /// Endpoint path serving the embedded Swagger UI interactive documentation viewer.
+    public string swaggerPath;
+
+    /// Whether the automatic OpenAPI specification endpoint is enabled.
+    public bool openApiEnabled;
+
+    /// Whether the embedded Swagger UI viewer endpoint is enabled.
+    public bool swaggerEnabled;
+
+    /// Global middleware pipeline executed sequentially on every incoming request.
+    public any[] globalMiddlewares;
+
+    /// Table of registered WebSocket endpoints and connection upgrade handlers.
+    public Map<string, any> wsRoutes;
+
+    /// Creates and initializes a new Syntra web application instance.
+    ///
+    /// @since v0.1.0
+    new() {
+        this.router = new Router();
+        this.openApiPath = "/openapi.json";
+        this.swaggerPath = "/docs";
+        this.openApiEnabled = false;
+        this.swaggerEnabled = false;
+        this.globalMiddlewares = [];
+        this.wsRoutes = new Map<string, any>();
+    }
+
+    /// Registers a global middleware handler executed for all incoming HTTP requests.
+    ///
+    /// @param middleware Interceptor closure `(Context ctx) => void`.
+    /// @returns A fluent reference to `this` App instance.
+    /// @example
+    /// ```syntra
+    /// app.use((Context ctx) => {
+    ///     println("[" + ctx.req.method + "] " + ctx.req.path);
+    /// });
+    /// ```
+    /// @since v0.1.0
+    public func use(any middleware): App {
+        this.globalMiddlewares.push(middleware);
+        return this;
+    }
+
+    /// Enables the OpenAPI 3.0 JSON specification endpoint at the designated route path.
+    ///
+    /// @param path The URL path (e.g. `"/openapi.json"`).
+    /// @returns A fluent reference to `this` App instance.
+    /// @since v0.1.0
+    public func enableOpenApi(string path): App {
+        this.openApiPath = path;
+        this.openApiEnabled = true;
+        return this;
+    }
+
+    /// Enables the embedded Swagger UI interactive API documentation playground.
+    ///
+    /// Automatically enables the OpenAPI JSON endpoint if not already active.
+    ///
+    /// @param path The URL path (e.g. `"/docs"`).
+    /// @returns A fluent reference to `this` App instance.
+    /// @example
+    /// ```syntra
+    /// app.enableSwagger("/docs");
+    /// ```
+    /// @since v0.1.0
+    public func enableSwagger(string path): App {
+        this.swaggerPath = path;
+        this.swaggerEnabled = true;
+        if (this.openApiEnabled == false) {
+            this.openApiPath = "/openapi.json";
+            this.openApiEnabled = true;
+        }
+        return this;
+    }
+
+    /// Registers an HTTP GET route handler.
+    ///
+    /// @param path The route pattern (e.g. `"/items/:id"`).
+    /// @param handler Closure `(Context ctx) => void` handling the request.
+    /// @returns The created `Route` for metadata chaining.
+    /// @since v0.1.0
+    public func get(string path, any handler): Route {
+        return this.router.addRoute("GET", path, handler);
+    }
+
+    /// Registers an HTTP POST route handler.
+    ///
+    /// @param path The route pattern (e.g. `"/items"`).
+    /// @param handler Closure `(Context ctx) => void` handling the request.
+    /// @returns The created `Route` for metadata chaining.
+    /// @since v0.1.0
+    public func post(string path, any handler): Route {
+        return this.router.addRoute("POST", path, handler);
+    }
+
+    /// Registers an HTTP PUT route handler.
+    ///
+    /// @param path The route pattern (e.g. `"/items/:id"`).
+    /// @param handler Closure `(Context ctx) => void` handling the request.
+    /// @returns The created `Route` for metadata chaining.
+    /// @since v0.1.0
+    public func put(string path, any handler): Route {
+        return this.router.addRoute("PUT", path, handler);
+    }
+
+    /// Registers an HTTP PATCH route handler.
+    ///
+    /// @param path The route pattern (e.g. `"/items/:id"`).
+    /// @param handler Closure `(Context ctx) => void` handling the request.
+    /// @returns The created `Route` for metadata chaining.
+    /// @since v0.1.0
+    public func patch(string path, any handler): Route {
+        return this.router.addRoute("PATCH", path, handler);
+    }
+
+    /// Registers an HTTP DELETE route handler.
+    ///
+    /// @param path The route pattern (e.g. `"/items/:id"`).
+    /// @param handler Closure `(Context ctx) => void` handling the request.
+    /// @returns The created `Route` for metadata chaining.
+    /// @since v0.1.0
+    public func delete(string path, any handler): Route {
+        return this.router.addRoute("DELETE", path, handler);
+    }
+
+    /// Registers an HTTP OPTIONS route handler.
+    ///
+    /// @param path The route pattern (e.g. `"/cors"`).
+    /// @param handler Closure `(Context ctx) => void` handling the request.
+    /// @returns The created `Route` for metadata chaining.
+    /// @since v0.1.0
+    public func options(string path, any handler): Route {
+        return this.router.addRoute("OPTIONS", path, handler);
+    }
+
+    /// Registers a route handler matching ANY HTTP verb.
+    ///
+    /// @param path The route pattern.
+    /// @param handler Closure `(Context ctx) => void` handling the request.
+    /// @returns The created `Route` for metadata chaining.
+    /// @since v0.1.0
+    public func all(string path, any handler): Route {
+        return this.router.addRoute("ALL", path, handler);
+    }
+
+    /// Registers a full-duplex WebSocket connection upgrade handler at the specified path.
+    ///
+    /// @param path The WebSocket endpoint path (e.g. `"/ws/feed"`).
+    /// @param handler Closure `(WebSocket ws) => void` invoked on successful handshake.
+    /// @returns A fluent reference to `this` App instance.
+    /// @example
+    /// ```syntra
+    /// app.ws("/ws/chat", (WebSocket ws) => {
+    ///     ws.send("Connected to chat stream");
+    /// });
+    /// ```
+    /// @since v0.1.0
+    public func ws(string path, any handler): App {
+        this.wsRoutes.set(path, handler);
+        return this;
+    }
+
+    /// Negotiates an RFC 6455 WebSocket handshake upgrade from an incoming HTTP request.
+    ///
+    /// @param req The incoming client HTTP request with upgrade headers.
+    /// @param client The TCP connection socket.
+    /// @returns `true` if the connection was upgraded to WebSocket; `false` otherwise.
+    /// @since v0.1.0
+    public func handleWebSocketUpgrade(HttpRequest req, TcpStream client): bool {
+        string upgrade = req.getHeader("Upgrade").toLower();
+        if (upgrade == "websocket") {
+            string path = req.path;
+            if (this.wsRoutes.has(path)) {
+                string clientKey = req.getHeader("Sec-WebSocket-Key");
+                string acceptKey = "";
+                if (clientKey.length() > 0) {
+                    acceptKey = WebSocket.computeAcceptKey(clientKey);
+                } else {
+                    acceptKey = "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=";
+                }
+
+                // Send RFC 6455 compliant 101 Switching Protocols response
+                string handshake = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: " + acceptKey + "\r\n\r\n";
+                client.write(handshake);
+
+                WebSocket ws = new WebSocket();
+                ws.stream = client;
+                ws.isOpen = true;
+                ws.id = "ws_" + System.currentTimeMillis();
+                ws.attributes = new Map<string, string>();
+                ws.channel = new Channel();
+
+                any handler = this.wsRoutes.get(path);
+                handler(ws);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// Dispatches an incoming HTTP request through routing, middlewares, and returns the response.
+    ///
+    /// @param req The incoming parsed HTTP client request.
+    /// @returns The assembled `HttpResponse` ready to transmit to the socket.
+    /// @since v0.1.0
+    public func handleRequest(HttpRequest req): HttpResponse {
+        // Strip query string if present
+        string rawPath = req.path;
+        string cleanPath = rawPath;
+        Map<string, string> queryMap = new Map<string, string>();
+
+        int qIdx = rawPath.indexOf("?");
+        if (qIdx >= 0) {
+            cleanPath = rawPath.slice(0, qIdx);
+            string qStr = rawPath.slice(qIdx + 1, rawPath.length());
+            string[] pairs = qStr.split("&");
+            int p = 0;
+            while (p < pairs.length()) {
+                string pair = pairs[p];
+                int eqIdx = pair.indexOf("=");
+                if (eqIdx > 0) {
+                    string k = pair.slice(0, eqIdx);
+                    string v = pair.slice(eqIdx + 1, pair.length());
+                    queryMap.set(k, v);
+                } else if (pair.length() > 0) {
+                    queryMap.set(pair, "true");
+                }
+                p = p + 1;
+            }
+        }
+
+        // OpenAPI endpoint
+        if (this.openApiEnabled && cleanPath == this.openApiPath) {
+            string spec = OpenApiGenerator.generate(this);
+            return HttpResponse.ok(spec, "application/json");
+        }
+
+        // Swagger UI endpoint
+        if (this.swaggerEnabled && cleanPath == this.swaggerPath) {
+            string html = SwaggerUi.generate(this.openApiPath);
+            return HttpResponse.ok(html, "text/html; charset=utf-8");
+        }
+
+        Context ctx = new Context();
+        ctx.req = req;
+        ctx.res = HttpResponse.ok("", "text/plain");
+        ctx.params = new Map<string, string>();
+        ctx.queryParams = queryMap;
+        ctx.isHandled = false;
+
+        Route route = this.router.match(req.method, cleanPath, ctx.params);
+        if (route.isValid == false) {
+            return HttpResponse.notFound("Not Found: " + req.method + " " + cleanPath);
+        }
+
+        // 1. Execute global middlewares
+        int g = 0;
+        while (g < this.globalMiddlewares.length()) {
+            any gm = this.globalMiddlewares[g];
+            gm(ctx);
+            if (ctx.isHandled) {
+                return ctx.res;
+            }
+            g = g + 1;
+        }
+
+        // 2. Execute route middlewares (.with(...))
+        int m = 0;
+        while (m < route.middlewaresList.length()) {
+            any rm = route.middlewaresList[m];
+            rm(ctx);
+            if (ctx.isHandled) {
+                return ctx.res;
+            }
+            m = m + 1;
+        }
+
+        // 3. Execute route handler
+        route.handler(ctx);
+
+        return ctx.res;
+    }
+
+    /// Binds the HTTP server to a TCP port and enters the request listener loop.
+    ///
+    /// @param port The TCP port to listen on (e.g. 8080, 3000).
+    /// @example
+    /// ```syntra
+    /// app.listen(8080);
+    /// ```
+    /// @since v0.1.0
+    public func listen(int port): void {
+        HttpServer server = new HttpServer();
+        server.listen(port);
+        println("Syntra Web Framework listening on http://localhost:" + port);
+        if (this.swaggerEnabled) {
+            println("Swagger UI active: http://localhost:" + port + this.swaggerPath);
+        }
+        if (this.openApiEnabled) {
+            println("OpenAPI Specification: http://localhost:" + port + this.openApiPath);
+        }
+
+        bool running = true;
+        while (running) {
+            TcpStream client = server.accept();
+            string raw = client.read();
+            if (raw.length() > 0) {
+                HttpRequest req = HttpRequest.parse(raw);
+                if (this.handleWebSocketUpgrade(req, client) == false) {
+                    HttpResponse res = this.handleRequest(req);
+                    server.sendResponse(client, res);
+                }
+            } else {
+                client.close();
+            }
+        }
+    }
+}

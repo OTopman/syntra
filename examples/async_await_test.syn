@@ -1,0 +1,52 @@
+async fn compute_double(int n): int {
+    return n * 2;
+}
+
+async fn greet_async(string name): string {
+    return "Hello, " + name + " from async!";
+}
+
+async fn calculate_sum(int a, int b): int {
+    return a + b;
+}
+
+class MathService {
+    public async func multiply(int x, int y): int {
+        return x * y;
+    }
+}
+
+fn main(): void {
+    System.println("--- Starting Async/Await Test ---");
+
+    // 1. Direct await on async function call
+    int r1 = await compute_double(21);
+    System.println("Direct await compute_double(21) = " + r1);
+
+    // 2. Direct await on async string function
+    string msg = await greet_async("Syntra");
+    System.println("Direct await greet_async = " + msg);
+
+    // 3. Task assignment and subsequent await
+    Task t1 = compute_double(50);
+    int r2 = await t1;
+    System.println("Task handle await = " + r2);
+
+    // 4. Concurrently spawned async tasks awaited together
+    Task a = compute_double(10);
+    Task b = compute_double(20);
+    int total = await a + await b;
+    System.println("Concurrent async sum (10*2 + 20*2) = " + total);
+
+    // 5. Method call syntax parity: task.await()
+    Task t2 = compute_double(100);
+    int r3 = t2.await();
+    System.println("Method syntax t2.await() = " + r3);
+
+    // 6. Async method on class instance
+    MathService svc = new MathService();
+    int prod = await svc.multiply(6, 7);
+    System.println("Async class method multiply(6, 7) = " + prod);
+
+    System.println("--- Async/Await Test Completed Successfully ---");
+}

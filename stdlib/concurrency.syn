@@ -1,0 +1,84 @@
+// Standard Library: Concurrency & Thread Synchronization
+// Provides Task, Channel, ThreadPool, and Select primitives
+
+/// Suspends execution of the current fiber or thread for the specified duration.
+///
+/// Yields CPU execution to other concurrent fibers during the sleep period.
+///
+/// ```syntra
+/// System.println("Pausing for 500ms...");
+/// sleepMs(500);
+/// System.println("Resumed.");
+/// ```
+///
+/// @param ms Sleep duration in milliseconds.
+/// @return void
+/// @since v0.1.0
+fn sleepMs(int ms): void {
+    Task.sleep(ms);
+}
+
+/// Creates a new unbounded FIFO synchronization channel for message passing.
+///
+/// Channels provide thread-safe communication between concurrent tasks without
+/// shared-memory synchronization locks.
+///
+/// ```syntra
+/// let ch = createChannel();
+/// Task.spawn(fn() {
+///     ch.send("Worker message");
+/// });
+/// let response = ch.recv();
+/// ```
+///
+/// @return A new `Channel` instance.
+/// @since v0.1.0
+fn createChannel(): Channel {
+    return new Channel();
+}
+
+/// Creates a bounded worker thread pool for parallel CPU-bound compute tasks.
+///
+/// Worker threads are pooled and reused across tasks, eliminating thread creation overhead.
+///
+/// ```syntra
+/// let pool = createThreadPool(4);
+/// for i in 0..10 {
+///     pool.submit(fn() {
+///         computeItem(i);
+///     });
+/// }
+/// pool.wait_idle();
+/// ```
+///
+/// @param workers Number of dedicated background execution threads.
+/// @return A new `ThreadPool` instance.
+/// @throws RuntimeException If workers is less than or equal to 0.
+/// @since v0.1.0
+fn createThreadPool(int workers): ThreadPool {
+    return new ThreadPool(workers);
+}
+
+/// Non-blocking multiplexer over an array of channels.
+///
+/// Inspects the provided channels and returns the zero-based integer index of the
+/// first channel that contains an available message ready for receiving.
+///
+/// ```syntra
+/// let ch1 = createChannel();
+/// let ch2 = createChannel();
+/// ch2.send("Alert");
+///
+/// let readyIndex = selectChannels([ch1, ch2]);
+/// if (readyIndex == 1) {
+///     let msg = ch2.recv();
+///     System.println("Received: " + msg);
+/// }
+/// ```
+///
+/// @param channels Array of `Channel` instances to poll.
+/// @return Zero-based index of the ready channel, or -1 if none ready.
+/// @since v0.1.0
+fn selectChannels(Channel[] channels): int {
+    return Channel.select(channels);
+}

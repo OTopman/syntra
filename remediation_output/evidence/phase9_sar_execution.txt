@@ -1,0 +1,23 @@
+⚡ [SAR] Initializing Self-Adapting Runtime Governor (Specification 06)...
+Original array length: 5
+Element at index 2: 30
+Modified element at index 2: 99
+Sum via indexed for loop: 219
+Sum via for-in loop: 219
+Math.min(15, 42, 10, 8) = 8
+Math.max(15, 42, 99, 7) = 99
+Math.abs(-77) = 77
+⚡ [SAR] Evaluated runtime adaptation: ScaleWorkers { target_workers: 4, reason: "Idle worker pool reduction (idle load detected)" }
+
+=== Syntra Self-Adapting Runtime (SAR) Report ===
+  Status:           Active (governed)
+  Worker Pool:      4 workers (min: 1, max: 16)
+  Heap Allocated:   64 KB
+  Recycle Pacing:   Every 10000 ops
+  Code Cache:       0 entries (0 bytes)
+  Deopt Events:     0
+  Adaptation Steps: 1
+    [1] ScaleWorkers { target_workers: 4, reason: "Idle worker pool reduction (idle load detected)" }
+
+
+[Program exited with code: 219]

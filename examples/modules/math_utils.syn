@@ -1,0 +1,9 @@
+/// Math helper functions for module test.
+
+func add(int a, int b): int {
+    return a + b;
+}
+
+func multiply(int a, int b): int {
+    return a * b;
+}

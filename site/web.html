@@ -1,0 +1,2111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module: web - Syntra Documentation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top-nav">
+<div class="nav-left">
+<button class="mobile-toggle" id="mobileToggle" aria-label="Toggle Navigation">☰</button>
+<a href="index.html" class="brand-link">
+<span class="brand-logo">🔮</span>
+<span class="brand-name">Syntra</span>
+<span class="brand-badge">Docs</span>
+</a>
+</div>
+<div class="nav-center">
+<div class="search-container">
+<span class="search-icon">🔍</span>
+<input type="text" id="searchInput" placeholder="Search in web or all symbols... (/)" autocomplete="off">
+<span class="search-shortcut">/</span>
+<div id="searchResults" class="search-dropdown hidden"></div>
+</div>
+</div>
+<div class="nav-right">
+<a href="index.html" class="nav-link">Modules</a>
+<button id="themeToggle" class="theme-toggle" title="Toggle Dark / Light theme">🌙</button>
+</div>
+</header>
+<div class="layout-wrapper">
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-section">
+<h4 class="sidebar-title">Standard Library</h4>
+<ul class="sidebar-nav">
+<li><a href="air.html">air</a></li>
+<li><a href="checker.html">checker</a></li>
+<li><a href="codegen.html">codegen</a></li>
+<li><a href="concurrency.html">concurrency</a></li>
+<li><a href="crypto.html">crypto</a></li>
+<li><a href="email.html">email</a></li>
+<li><a href="file.html">file</a></li>
+<li><a href="http.html">http</a></li>
+<li><a href="io.html">io</a></li>
+<li><a href="json.html">json</a></li>
+<li><a href="loader.html">loader</a></li>
+<li><a href="map.html">map</a></li>
+<li><a href="net.html">net</a></li>
+<li><a href="syntax.html">syntax</a></li>
+<li><a href="system.html">system</a></li>
+<li><a href="web.html" class="active">web</a></li>
+</ul>
+</div>
+<div class="sidebar-section toc-section">
+<h4 class="sidebar-title">On This Page</h4>
+<ul class="sidebar-toc">
+<li><span class="toc-group">Classes</span><ul>
+<li><a href="#class-Context">Context</a></li>
+<li><a href="#class-WebSocket">WebSocket</a></li>
+<li><a href="#class-WebSocketHub">WebSocketHub</a></li>
+<li><a href="#class-Route">Route</a></li>
+<li><a href="#class-Router">Router</a></li>
+<li><a href="#class-OpenApiGenerator">OpenApiGenerator</a></li>
+<li><a href="#class-SwaggerUi">SwaggerUi</a></li>
+<li><a href="#class-App">App</a></li>
+</ul></li>
+</ul>
+</div>
+</aside>
+<main class="content-main">
+<nav class="breadcrumbs">
+<a href="index.html">Home</a> &gt; <a href="index.html#modules">Standard Library</a> &gt; <span class="current">web</span>
+</nav>
+<header class="page-header">
+<div class="page-title-row">
+<span class="header-icon">🌐</span>
+<h1>web</h1>
+<span class="badge category">Web Framework</span>
+</div>
+<div class="module-lead"><p>High-performance asynchronous HTTP microframework, Radix Router, OpenAPI 3.0 specification generator, and embedded Swagger UI interactive documentation viewer.</p>
+</div>
+</header>
+<section id="class-Context" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>Context</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>HTTP execution context encapsulating the incoming client request and outgoing response.</p>
+<p><code class="inline-code">Context</code> provides ergonomic helper methods for URL parameters, query strings, request headers, JSON serialization, Server-Sent Events (SSE), and fluent response construction.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">app.get(&quot;/users/:id&quot;, (Context ctx) =&gt; {
+    string id = ctx.param(&quot;id&quot;);
+    ctx.json(&quot;{\&quot;id\&quot;: \&quot;&quot; + id + &quot;\&quot;, \&quot;status\&quot;: \&quot;active\&quot;}&quot;);
+});</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>req</code></td>
+<td><span class="type-pill">HttpRequest</span></td>
+<td><span class="badge pub">public</span></td>
+<td>The incoming parsed HTTP client request.</td>
+</tr>
+<tr>
+<td><code>res</code></td>
+<td><span class="type-pill">HttpResponse</span></td>
+<td><span class="badge pub">public</span></td>
+<td>The outgoing HTTP response being assembled.</td>
+</tr>
+<tr>
+<td><code>params</code></td>
+<td><span class="type-pill">Map</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Extracted path parameters matching dynamic pattern segments (e.g. <code class="inline-code">&quot;:id&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>queryParams</code></td>
+<td><span class="type-pill">Map</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Parsed query string key-value pairs (e.g. <code class="inline-code">&quot;?page=1&amp;limit=20&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>isHandled</code></td>
+<td><span class="type-pill">bool</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Flag indicating whether a terminal response has already been committed to the context.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-Context-param" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Context-param" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">param</span>(<span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Retrieves the extracted value of a named URL path parameter.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The parameter token name defined in the route pattern (excluding leading colon).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; The URL-decoded string value if matched, or an empty string <code class="inline-code">&quot;&quot;</code> if not present.</p>
+</div>
+<div class="example-box">
+<h5 class="sub-title">Example</h5>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">// Route: /order/:orderId
+string orderId = ctx.param(&quot;orderId&quot;);</code></pre>
+</div>
+</div>
+</div>
+<div id="method-Context-query" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Context-query" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">query</span>(<span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Retrieves the value of a parsed URL query parameter.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The query parameter key name.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; The decoded parameter value if present, or an empty string <code class="inline-code">&quot;&quot;</code> if absent.</p>
+</div>
+<div class="example-box">
+<h5 class="sub-title">Example</h5>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">// Request: GET /items?sort=asc
+string sortOrder = ctx.query(&quot;sort&quot;); // &quot;asc&quot;</code></pre>
+</div>
+</div>
+</div>
+<div id="method-Context-header" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Context-header" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">header</span>(<span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Looks up an HTTP header on the incoming client request in a case-insensitive manner.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The HTTP header name (e.g. <code class="inline-code">&quot;Authorization&quot;</code>, <code class="inline-code">&quot;User-Agent&quot;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; The header value string, or an empty string <code class="inline-code">&quot;&quot;</code> if the header was omitted.</p>
+</div>
+<div class="example-box">
+<h5 class="sub-title">Example</h5>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">string token = ctx.header(&quot;Authorization&quot;);</code></pre>
+</div>
+</div>
+</div>
+<div id="method-Context-body" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Context-body" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">body</span>() -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Retrieves the raw UTF-8 string payload of the incoming HTTP request body.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; The raw string body.</p>
+</div>
+</div>
+<div id="method-Context-status" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Context-status" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">status</span>(<span class="param-type">int</span> <span class="param-name">code</span>) -&gt; <span class="return-type">Context</span>
+</div>
+<div class="doc-text"><p>Sets the HTTP status code and standard status text on the outgoing response.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>code</code></td>
+<td><span class="type-pill">int</span></td>
+<td>The 3-digit numeric HTTP status code (e.g. 200, 201, 400, 404, 500).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Context</span> &mdash; A fluent reference to <code class="inline-code">this</code> Context instance.</p>
+</div>
+<div class="example-box">
+<h5 class="sub-title">Example</h5>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">ctx.status(201).json(&quot;{\&quot;created\&quot;: true}&quot;);</code></pre>
+</div>
+</div>
+</div>
+<div id="method-Context-setHeader" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Context-setHeader" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">setHeader</span>(<span class="param-type">string</span> <span class="param-name">name</span>, <span class="param-type">string</span> <span class="param-name">val</span>) -&gt; <span class="return-type">Context</span>
+</div>
+<div class="doc-text"><p>Appends or updates a response header in the outgoing HTTP response.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The HTTP response header key (e.g. <code class="inline-code">&quot;Cache-Control&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>val</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The header value string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Context</span> &mdash; A fluent reference to <code class="inline-code">this</code> Context instance.</p>
+</div>
+</div>
+<div id="method-Context-text" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Context-text" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">text</span>(<span class="param-type">string</span> <span class="param-name">content</span>) -&gt; <span class="return-type">Context</span>
+</div>
+<div class="doc-text"><p>Responds with a plain text payload and sets <code class="inline-code">Content-Type: text/plain</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>content</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The text content to write into the response body.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Context</span> &mdash; A fluent reference to <code class="inline-code">this</code> Context instance.</p>
+</div>
+</div>
+<div id="method-Context-json" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Context-json" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">json</span>(<span class="param-type">string</span> <span class="param-name">jsonContent</span>) -&gt; <span class="return-type">Context</span>
+</div>
+<div class="doc-text"><p>Responds with an application/json payload, automatically calculating <code class="inline-code">Content-Length</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>jsonContent</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The serialized JSON payload string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Context</span> &mdash; A fluent reference to <code class="inline-code">this</code> Context instance.</p>
+</div>
+<div class="example-box">
+<h5 class="sub-title">Example</h5>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">ctx.json(&quot;{\&quot;message\&quot;: \&quot;success\&quot;}&quot;);</code></pre>
+</div>
+</div>
+</div>
+<div id="method-Context-html" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Context-html" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">html</span>(<span class="param-type">string</span> <span class="param-name">htmlContent</span>) -&gt; <span class="return-type">Context</span>
+</div>
+<div class="doc-text"><p>Responds with an HTML payload and sets <code class="inline-code">Content-Type: text/html; charset=utf-8</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>htmlContent</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The HTML document or snippet string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Context</span> &mdash; A fluent reference to <code class="inline-code">this</code> Context instance.</p>
+</div>
+</div>
+<div id="method-Context-noContent" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Context-noContent" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">noContent</span>() -&gt; <span class="return-type">Context</span>
+</div>
+<div class="doc-text"><p>Commits an HTTP 204 No Content response with an empty body.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Context</span> &mdash; A fluent reference to <code class="inline-code">this</code> Context instance.</p>
+</div>
+</div>
+<div id="method-Context-badRequest" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Context-badRequest" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">badRequest</span>(<span class="param-type">string</span> <span class="param-name">message</span>) -&gt; <span class="return-type">Context</span>
+</div>
+<div class="doc-text"><p>Sends an HTTP 400 Bad Request error response with a descriptive text message.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>message</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The error message explaining why the request was malformed.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Context</span> &mdash; A fluent reference to <code class="inline-code">this</code> Context instance.</p>
+</div>
+</div>
+<div id="method-Context-notFound" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Context-notFound" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">notFound</span>(<span class="param-type">string</span> <span class="param-name">message</span>) -&gt; <span class="return-type">Context</span>
+</div>
+<div class="doc-text"><p>Sends an HTTP 404 Not Found error response with a descriptive text message.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>message</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The resource not found explanation.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Context</span> &mdash; A fluent reference to <code class="inline-code">this</code> Context instance.</p>
+</div>
+</div>
+<div id="method-Context-sse" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Context-sse" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">sse</span>() -&gt; <span class="return-type">Context</span>
+</div>
+<div class="doc-text"><p>Configures the response headers for Server-Sent Events (SSE) streaming (<code class="inline-code">text/event-stream</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Context</span> &mdash; A fluent reference to <code class="inline-code">this</code> Context instance.</p>
+</div>
+<div class="example-box">
+<h5 class="sub-title">Example</h5>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">ctx.sse().event(&quot;heartbeat&quot;, &quot;{\&quot;online\&quot;: true}&quot;);</code></pre>
+</div>
+</div>
+</div>
+<div id="method-Context-event" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Context-event" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">event</span>(<span class="param-type">string</span> <span class="param-name">eventName</span>, <span class="param-type">string</span> <span class="param-name">data</span>) -&gt; <span class="return-type">Context</span>
+</div>
+<div class="doc-text"><p>Appends a structured Server-Sent Event (SSE) message chunk to the stream.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>eventName</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The event identifier name (e.g. <code class="inline-code">&quot;update&quot;</code>, <code class="inline-code">&quot;message&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>data</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The payload string associated with this event.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Context</span> &mdash; A fluent reference to <code class="inline-code">this</code> Context instance.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-WebSocket" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>WebSocket</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Full-duplex RFC 6455 compliant WebSocket connection over TCP stream.</p>
+<p>Supports server and client frame masking, unmasking, non-blocking asynchronous reading, broadcast distribution, and channel-based event delivery.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">app.ws(&quot;/chat&quot;, (WebSocket ws) =&gt; {
+    ws.send(&quot;Welcome to Syntra Realtime!&quot;);
+    string msg = ws.read();
+});</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>stream</code></td>
+<td><span class="type-pill">TcpStream</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Underlying TCP network socket stream.</td>
+</tr>
+<tr>
+<td><code>isOpen</code></td>
+<td><span class="type-pill">bool</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Boolean flag indicating whether the socket handshake completed and remains open.</td>
+</tr>
+<tr>
+<td><code>id</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Unique session connection identifier.</td>
+</tr>
+<tr>
+<td><code>attributes</code></td>
+<td><span class="type-pill">Map</span></td>
+<td><span class="badge pub">public</span></td>
+<td>User-defined connection attributes and session metadata.</td>
+</tr>
+<tr>
+<td><code>channel</code></td>
+<td><span class="type-pill">Channel</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Asynchronous channel for queuing incoming WebSocket frames.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-WebSocket-computeAcceptKey" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-WebSocket-computeAcceptKey" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">computeAcceptKey</span>(<span class="param-type">string</span> <span class="param-name">clientKey</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Computes the RFC 6455 <code class="inline-code">Sec-WebSocket-Accept</code> verification key from client nonce.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>clientKey</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The 24-character Base64 nonce supplied in <code class="inline-code">Sec-WebSocket-Key</code>.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; The SHA-1 Base64 response signature string.</p>
+</div>
+</div>
+<div id="method-WebSocket-send" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-WebSocket-send" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">send</span>(<span class="param-type">string</span> <span class="param-name">msg</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Transmits an unmasked text frame from server to client.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>msg</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The string message payload to transmit.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-WebSocket-sendAsClient" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-WebSocket-sendAsClient" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">sendAsClient</span>(<span class="param-type">string</span> <span class="param-name">msg</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Transmits a masked RFC 6455 text frame from client to server with 4-byte random XOR mask.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>msg</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The client message payload to mask and transmit.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-WebSocket-read" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-WebSocket-read" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">read</span>() -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Reads and decodes the next incoming WebSocket frame from the stream.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; The unmasked UTF-8 frame payload string, or <code class="inline-code">&quot;&quot;</code> if no data is available.</p>
+</div>
+</div>
+<div id="method-WebSocket-readMessage" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-WebSocket-readMessage" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">readMessage</span>() -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Reads an incoming text message from the connection (alias to <code class="inline-code">read()</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; The decoded message string.</p>
+</div>
+</div>
+<div id="method-WebSocket-receive" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-WebSocket-receive" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">receive</span>() -&gt; <span class="return-type">any</span>
+</div>
+<div class="doc-text"><p>Receives the next message payload from the connection channel.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">any</span> &mdash; The received payload object or string.</p>
+</div>
+</div>
+<div id="method-WebSocket-close" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-WebSocket-close" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">close</span>() -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Gracefully closes the WebSocket connection and releases underlying socket descriptors.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-WebSocketHub" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>WebSocketHub</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Central registry and broadcast hub for active WebSocket connections.</p>
+<p>Facilitates group message fan-out, connection lifecycle tracking, and client telemetry.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">WebSocketHub hub = new WebSocketHub();
+hub.register(ws);
+hub.broadcast(&quot;System maintenance in 5 minutes&quot;);</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>clients</code></td>
+<td><span class="type-pill">Map</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Active client connections indexed by their unique session ID.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-WebSocketHub-register" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-WebSocketHub-register" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">register</span>(<span class="param-type">WebSocket</span> <span class="param-name">ws</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Registers an active WebSocket connection into the hub.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>ws</code></td>
+<td><span class="type-pill">WebSocket</span></td>
+<td>The established WebSocket connection to track.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-WebSocketHub-unregister" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-WebSocketHub-unregister" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">unregister</span>(<span class="param-type">WebSocket</span> <span class="param-name">ws</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Unregisters and detaches a disconnected WebSocket from the hub.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>ws</code></td>
+<td><span class="type-pill">WebSocket</span></td>
+<td>The connection instance to remove.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-WebSocketHub-broadcast" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-WebSocketHub-broadcast" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">broadcast</span>(<span class="param-type">string</span> <span class="param-name">message</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Broadcasts a text message payload to all currently open registered client connections.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>message</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The UTF-8 string to send to all connected clients.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-WebSocketHub-count" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-WebSocketHub-count" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">count</span>() -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>Returns the current count of registered active WebSocket connections.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Total number of connected clients.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-Route" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>Route</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Routing entry binding an HTTP verb, path pattern, handler closure, and OpenAPI metadata.</p>
+<p>Supports fluent builder chaining to configure tags, summaries, request schemas, response codes, and route-level middlewares.</p>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>isValid</code></td>
+<td><span class="type-pill">bool</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Whether this route represents a valid matched path pattern.</td>
+</tr>
+<tr>
+<td><code>method</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>The uppercase HTTP method (e.g. <code class="inline-code">&quot;GET&quot;</code>, <code class="inline-code">&quot;POST&quot;</code>, <code class="inline-code">&quot;ALL&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>The route URL pattern (e.g. <code class="inline-code">&quot;/api/v1/users/:id&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>handler</code></td>
+<td><span class="type-pill">any</span></td>
+<td><span class="badge pub">public</span></td>
+<td>The closure invoked when an incoming request matches this route.</td>
+</tr>
+<tr>
+<td><code>routeTag</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Category tag used for OpenAPI specification grouping (e.g. <code class="inline-code">&quot;Authentication&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>routeSummary</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Short human-readable summary for API documentation.</td>
+</tr>
+<tr>
+<td><code>routeDescription</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Detailed description of the endpoint behavior and business logic.</td>
+</tr>
+<tr>
+<td><code>requestSchemaName</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Class or schema model name expected for the request body.</td>
+</tr>
+<tr>
+<td><code>requestSchemaJson</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>JSON Schema representation of the incoming request payload.</td>
+</tr>
+<tr>
+<td><code>responseStatusCode</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Expected standard HTTP response status code (e.g. 200, 201).</td>
+</tr>
+<tr>
+<td><code>responseSchemaName</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Class or schema model name produced by successful response.</td>
+</tr>
+<tr>
+<td><code>responseSchemaJson</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>JSON Schema representation of the outgoing response payload.</td>
+</tr>
+<tr>
+<td><code>responseDescription</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Descriptive summary of the response payload.</td>
+</tr>
+<tr>
+<td><code>middlewaresList</code></td>
+<td><span class="type-pill">any[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Route-specific middleware interceptors executed prior to the primary handler.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-Route-with" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Route-with" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">with</span>(<span class="param-type">any</span> <span class="param-name">m</span>) -&gt; <span class="return-type">Route</span>
+</div>
+<div class="doc-text"><p>Attaches a route-specific middleware interceptor to this route.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>m</code></td>
+<td><span class="type-pill">any</span></td>
+<td>The middleware closure <code class="inline-code">(Context ctx) =&gt; void</code>.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Route</span> &mdash; A fluent reference to <code class="inline-code">this</code> Route.</p>
+</div>
+</div>
+<div id="method-Route-tag" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Route-tag" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">tag</span>(<span class="param-type">string</span> <span class="param-name">t</span>) -&gt; <span class="return-type">Route</span>
+</div>
+<div class="doc-text"><p>Categorizes this route under a specific OpenAPI tag.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>t</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The tag category string (e.g. <code class="inline-code">&quot;Users&quot;</code>, <code class="inline-code">&quot;Billing&quot;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Route</span> &mdash; A fluent reference to <code class="inline-code">this</code> Route.</p>
+</div>
+</div>
+<div id="method-Route-summary" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Route-summary" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">summary</span>(<span class="param-type">string</span> <span class="param-name">s</span>) -&gt; <span class="return-type">Route</span>
+</div>
+<div class="doc-text"><p>Defines the short summary displayed in Swagger UI and OpenAPI documentation.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>s</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The route summary string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Route</span> &mdash; A fluent reference to <code class="inline-code">this</code> Route.</p>
+</div>
+</div>
+<div id="method-Route-description" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Route-description" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">description</span>(<span class="param-type">string</span> <span class="param-name">d</span>) -&gt; <span class="return-type">Route</span>
+</div>
+<div class="doc-text"><p>Defines the detailed documentation description for this endpoint.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>d</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The markdown-compatible description string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Route</span> &mdash; A fluent reference to <code class="inline-code">this</code> Route.</p>
+</div>
+</div>
+<div id="method-Route-request" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Route-request" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">request</span>(<span class="param-type">any</span> <span class="param-name">schemaRef</span>) -&gt; <span class="return-type">Route</span>
+</div>
+<div class="doc-text"><p>Declares the data model schema expected in the request body for OpenAPI generation.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>schemaRef</code></td>
+<td><span class="type-pill">any</span></td>
+<td>The class type or schema identifier.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Route</span> &mdash; A fluent reference to <code class="inline-code">this</code> Route.</p>
+</div>
+</div>
+<div id="method-Route-body" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Route-body" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">body</span>(<span class="param-type">any</span> <span class="param-name">schemaRef</span>) -&gt; <span class="return-type">Route</span>
+</div>
+<div class="doc-text"><p>Declares the request payload schema (alias to <code class="inline-code">request()</code>).</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>schemaRef</code></td>
+<td><span class="type-pill">any</span></td>
+<td>The class type or schema identifier.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Route</span> &mdash; A fluent reference to <code class="inline-code">this</code> Route.</p>
+</div>
+</div>
+<div id="method-Route-response" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Route-response" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">response</span>(<span class="param-type">int</span> <span class="param-name">statusCode</span>, <span class="param-type">any</span> <span class="param-name">schemaRef</span>, <span class="param-type">string</span> <span class="param-name">desc</span>) -&gt; <span class="return-type">Route</span>
+</div>
+<div class="doc-text"><p>Documents a typed response status code, schema, and description for OpenAPI.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>statusCode</code></td>
+<td><span class="type-pill">int</span></td>
+<td>The HTTP status code (e.g. 200, 201).</td>
+</tr>
+<tr>
+<td><code>schemaRef</code></td>
+<td><span class="type-pill">any</span></td>
+<td>The schema type produced.</td>
+</tr>
+<tr>
+<td><code>desc</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Explanation of when this status is emitted.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Route</span> &mdash; A fluent reference to <code class="inline-code">this</code> Route.</p>
+</div>
+</div>
+<div id="method-Route-responseSimple" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Route-responseSimple" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">responseSimple</span>(<span class="param-type">int</span> <span class="param-name">statusCode</span>, <span class="param-type">string</span> <span class="param-name">desc</span>) -&gt; <span class="return-type">Route</span>
+</div>
+<div class="doc-text"><p>Documents a simple response status code and description without an explicit schema body.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>statusCode</code></td>
+<td><span class="type-pill">int</span></td>
+<td>The HTTP status code (e.g. 204, 401).</td>
+</tr>
+<tr>
+<td><code>desc</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Description of the response condition.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Route</span> &mdash; A fluent reference to <code class="inline-code">this</code> Route.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-Router" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>Router</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Radix Trie based high-throughput URL pattern matcher and dispatcher.</p>
+<p>Supports exact path matching, named wildcard parameters (<code class="inline-code">:id</code>), and tail wildcards (<code class="inline-code">*</code>).</p>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>routes</code></td>
+<td><span class="type-pill">Route[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Array of registered route rules.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-Router-addRoute" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Router-addRoute" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">addRoute</span>(<span class="param-type">string</span> <span class="param-name">method</span>, <span class="param-type">string</span> <span class="param-name">path</span>, <span class="param-type">any</span> <span class="param-name">handler</span>) -&gt; <span class="return-type">Route</span>
+</div>
+<div class="doc-text"><p>Adds a new route entry to the router table.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>method</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Uppercase HTTP verb (e.g. <code class="inline-code">&quot;GET&quot;</code>, <code class="inline-code">&quot;POST&quot;</code>, <code class="inline-code">&quot;ALL&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Route pattern string with optional parameters.</td>
+</tr>
+<tr>
+<td><code>handler</code></td>
+<td><span class="type-pill">any</span></td>
+<td>Request handler closure <code class="inline-code">(Context ctx) =&gt; void</code>.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Route</span> &mdash; The newly created <code class="inline-code">Route</code> instance for fluent documentation configuration.</p>
+</div>
+</div>
+<div id="method-Router-match" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Router-match" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">match</span>(<span class="param-type">string</span> <span class="param-name">method</span>, <span class="param-type">string</span> <span class="param-name">reqPath</span>, <span class="param-type">Map</span> <span class="param-name">paramsOut</span>) -&gt; <span class="return-type">Route</span>
+</div>
+<div class="doc-text"><p>Resolves an incoming HTTP method and request path against the registered routing table.</p>
+<p>Extracts segment path parameters into <code class="inline-code">paramsOut</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>method</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The incoming HTTP verb.</td>
+</tr>
+<tr>
+<td><code>reqPath</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The clean path of the request URL (excluding query string).</td>
+</tr>
+<tr>
+<td><code>paramsOut</code></td>
+<td><span class="type-pill">Map</span></td>
+<td>Map to populate with extracted parameter values.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Route</span> &mdash; The matched <code class="inline-code">Route</code>, or an invalid dummy route (<code class="inline-code">isValid == false</code>) if no match found.</p>
+</div>
+</div>
+<div id="method-Router-matchSegments" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-Router-matchSegments" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">matchSegments</span>(<span class="param-type">string</span> <span class="param-name">pattern</span>, <span class="param-type">string</span> <span class="param-name">reqPath</span>, <span class="param-type">Map</span> <span class="param-name">paramsOut</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Matches a pattern with parameterized segments against an incoming concrete URL path.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>pattern</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The route pattern (e.g. <code class="inline-code">&quot;/api/:version/users/:id&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>reqPath</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The concrete incoming request path (e.g. <code class="inline-code">&quot;/api/v1/users/42&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>paramsOut</code></td>
+<td><span class="type-pill">Map</span></td>
+<td>Output map storing extracted parameter bindings.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if the path matches the pattern, otherwise <code class="inline-code">false</code>.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-OpenApiGenerator" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>OpenApiGenerator</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Dynamic OpenAPI 3.0.3 specification generator from declared Syntra routes.</p>
+<p>Automatically compiles paths, verbs, parameters, request body schemas, and response types into an industry-standard OpenAPI JSON document.</p>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-OpenApiGenerator-generate" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-OpenApiGenerator-generate" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">generate</span>(<span class="param-type">App</span> <span class="param-name">app</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Compiles an OpenAPI 3.0.3 JSON document from the routes and schemas configured in <code class="inline-code">app</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>app</code></td>
+<td><span class="type-pill">App</span></td>
+<td>The Syntra web application instance.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; The formatted JSON string containing the complete OpenAPI 3.0.3 specification.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-SwaggerUi" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>SwaggerUi</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Embedded zero-dependency Swagger UI bundle generator.</p>
+<p>Renders an interactive single-page API playground connected to the application's OpenAPI endpoint.</p>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-SwaggerUi-generate" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-SwaggerUi-generate" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">generate</span>(<span class="param-type">string</span> <span class="param-name">openApiPath</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Generates standalone HTML document serving Swagger UI connected to <code class="inline-code">openApiPath</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>openApiPath</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The relative or absolute URL path where the OpenAPI JSON specification is served.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; The complete HTML document string.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-App" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>App</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>High-level web application and server container.</p>
+<p>Provides expressive route registration (<code class="inline-code">get</code>, <code class="inline-code">post</code>, <code class="inline-code">put</code>, <code class="inline-code">delete</code>, <code class="inline-code">ws</code>), global middleware chains, integrated OpenAPI/Swagger UI endpoints, and asynchronous event loop server.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">App app = new App();
+app.enableSwagger(&quot;/docs&quot;);
+app.get(&quot;/api/v1/ping&quot;, (Context ctx) =&gt; {
+    ctx.json(&quot;{\&quot;status\&quot;: \&quot;healthy\&quot;}&quot;);
+});
+app.listen(8080);</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>router</code></td>
+<td><span class="type-pill">Router</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Internal Radix Router managing URL pattern dispatching.</td>
+</tr>
+<tr>
+<td><code>openApiPath</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Endpoint path serving the generated OpenAPI 3.0 specification.</td>
+</tr>
+<tr>
+<td><code>swaggerPath</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Endpoint path serving the embedded Swagger UI interactive documentation viewer.</td>
+</tr>
+<tr>
+<td><code>openApiEnabled</code></td>
+<td><span class="type-pill">bool</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Whether the automatic OpenAPI specification endpoint is enabled.</td>
+</tr>
+<tr>
+<td><code>swaggerEnabled</code></td>
+<td><span class="type-pill">bool</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Whether the embedded Swagger UI viewer endpoint is enabled.</td>
+</tr>
+<tr>
+<td><code>globalMiddlewares</code></td>
+<td><span class="type-pill">any[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Global middleware pipeline executed sequentially on every incoming request.</td>
+</tr>
+<tr>
+<td><code>wsRoutes</code></td>
+<td><span class="type-pill">Map</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Table of registered WebSocket endpoints and connection upgrade handlers.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-App-use" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-App-use" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">use</span>(<span class="param-type">any</span> <span class="param-name">middleware</span>) -&gt; <span class="return-type">App</span>
+</div>
+<div class="doc-text"><p>Registers a global middleware handler executed for all incoming HTTP requests.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>middleware</code></td>
+<td><span class="type-pill">any</span></td>
+<td>Interceptor closure <code class="inline-code">(Context ctx) =&gt; void</code>.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">App</span> &mdash; A fluent reference to <code class="inline-code">this</code> App instance.</p>
+</div>
+<div class="example-box">
+<h5 class="sub-title">Example</h5>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">app.use((Context ctx) =&gt; {
+    println(&quot;[&quot; + ctx.req.method + &quot;] &quot; + ctx.req.path);
+});</code></pre>
+</div>
+</div>
+</div>
+<div id="method-App-enableOpenApi" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-App-enableOpenApi" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">enableOpenApi</span>(<span class="param-type">string</span> <span class="param-name">path</span>) -&gt; <span class="return-type">App</span>
+</div>
+<div class="doc-text"><p>Enables the OpenAPI 3.0 JSON specification endpoint at the designated route path.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The URL path (e.g. <code class="inline-code">&quot;/openapi.json&quot;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">App</span> &mdash; A fluent reference to <code class="inline-code">this</code> App instance.</p>
+</div>
+</div>
+<div id="method-App-enableSwagger" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-App-enableSwagger" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">enableSwagger</span>(<span class="param-type">string</span> <span class="param-name">path</span>) -&gt; <span class="return-type">App</span>
+</div>
+<div class="doc-text"><p>Enables the embedded Swagger UI interactive API documentation playground.</p>
+<p>Automatically enables the OpenAPI JSON endpoint if not already active.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The URL path (e.g. <code class="inline-code">&quot;/docs&quot;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">App</span> &mdash; A fluent reference to <code class="inline-code">this</code> App instance.</p>
+</div>
+<div class="example-box">
+<h5 class="sub-title">Example</h5>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">app.enableSwagger(&quot;/docs&quot;);</code></pre>
+</div>
+</div>
+</div>
+<div id="method-App-get" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-App-get" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">get</span>(<span class="param-type">string</span> <span class="param-name">path</span>, <span class="param-type">any</span> <span class="param-name">handler</span>) -&gt; <span class="return-type">Route</span>
+</div>
+<div class="doc-text"><p>Registers an HTTP GET route handler.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The route pattern (e.g. <code class="inline-code">&quot;/items/:id&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>handler</code></td>
+<td><span class="type-pill">any</span></td>
+<td>Closure <code class="inline-code">(Context ctx) =&gt; void</code> handling the request.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Route</span> &mdash; The created <code class="inline-code">Route</code> for metadata chaining.</p>
+</div>
+</div>
+<div id="method-App-post" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-App-post" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">post</span>(<span class="param-type">string</span> <span class="param-name">path</span>, <span class="param-type">any</span> <span class="param-name">handler</span>) -&gt; <span class="return-type">Route</span>
+</div>
+<div class="doc-text"><p>Registers an HTTP POST route handler.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The route pattern (e.g. <code class="inline-code">&quot;/items&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>handler</code></td>
+<td><span class="type-pill">any</span></td>
+<td>Closure <code class="inline-code">(Context ctx) =&gt; void</code> handling the request.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Route</span> &mdash; The created <code class="inline-code">Route</code> for metadata chaining.</p>
+</div>
+</div>
+<div id="method-App-put" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-App-put" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">put</span>(<span class="param-type">string</span> <span class="param-name">path</span>, <span class="param-type">any</span> <span class="param-name">handler</span>) -&gt; <span class="return-type">Route</span>
+</div>
+<div class="doc-text"><p>Registers an HTTP PUT route handler.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The route pattern (e.g. <code class="inline-code">&quot;/items/:id&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>handler</code></td>
+<td><span class="type-pill">any</span></td>
+<td>Closure <code class="inline-code">(Context ctx) =&gt; void</code> handling the request.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Route</span> &mdash; The created <code class="inline-code">Route</code> for metadata chaining.</p>
+</div>
+</div>
+<div id="method-App-patch" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-App-patch" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">patch</span>(<span class="param-type">string</span> <span class="param-name">path</span>, <span class="param-type">any</span> <span class="param-name">handler</span>) -&gt; <span class="return-type">Route</span>
+</div>
+<div class="doc-text"><p>Registers an HTTP PATCH route handler.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The route pattern (e.g. <code class="inline-code">&quot;/items/:id&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>handler</code></td>
+<td><span class="type-pill">any</span></td>
+<td>Closure <code class="inline-code">(Context ctx) =&gt; void</code> handling the request.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Route</span> &mdash; The created <code class="inline-code">Route</code> for metadata chaining.</p>
+</div>
+</div>
+<div id="method-App-delete" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-App-delete" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">delete</span>(<span class="param-type">string</span> <span class="param-name">path</span>, <span class="param-type">any</span> <span class="param-name">handler</span>) -&gt; <span class="return-type">Route</span>
+</div>
+<div class="doc-text"><p>Registers an HTTP DELETE route handler.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The route pattern (e.g. <code class="inline-code">&quot;/items/:id&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>handler</code></td>
+<td><span class="type-pill">any</span></td>
+<td>Closure <code class="inline-code">(Context ctx) =&gt; void</code> handling the request.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Route</span> &mdash; The created <code class="inline-code">Route</code> for metadata chaining.</p>
+</div>
+</div>
+<div id="method-App-options" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-App-options" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">options</span>(<span class="param-type">string</span> <span class="param-name">path</span>, <span class="param-type">any</span> <span class="param-name">handler</span>) -&gt; <span class="return-type">Route</span>
+</div>
+<div class="doc-text"><p>Registers an HTTP OPTIONS route handler.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The route pattern (e.g. <code class="inline-code">&quot;/cors&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>handler</code></td>
+<td><span class="type-pill">any</span></td>
+<td>Closure <code class="inline-code">(Context ctx) =&gt; void</code> handling the request.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Route</span> &mdash; The created <code class="inline-code">Route</code> for metadata chaining.</p>
+</div>
+</div>
+<div id="method-App-all" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-App-all" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">all</span>(<span class="param-type">string</span> <span class="param-name">path</span>, <span class="param-type">any</span> <span class="param-name">handler</span>) -&gt; <span class="return-type">Route</span>
+</div>
+<div class="doc-text"><p>Registers a route handler matching ANY HTTP verb.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The route pattern.</td>
+</tr>
+<tr>
+<td><code>handler</code></td>
+<td><span class="type-pill">any</span></td>
+<td>Closure <code class="inline-code">(Context ctx) =&gt; void</code> handling the request.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">Route</span> &mdash; The created <code class="inline-code">Route</code> for metadata chaining.</p>
+</div>
+</div>
+<div id="method-App-ws" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-App-ws" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">ws</span>(<span class="param-type">string</span> <span class="param-name">path</span>, <span class="param-type">any</span> <span class="param-name">handler</span>) -&gt; <span class="return-type">App</span>
+</div>
+<div class="doc-text"><p>Registers a full-duplex WebSocket connection upgrade handler at the specified path.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The WebSocket endpoint path (e.g. <code class="inline-code">&quot;/ws/feed&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>handler</code></td>
+<td><span class="type-pill">any</span></td>
+<td>Closure <code class="inline-code">(WebSocket ws) =&gt; void</code> invoked on successful handshake.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">App</span> &mdash; A fluent reference to <code class="inline-code">this</code> App instance.</p>
+</div>
+<div class="example-box">
+<h5 class="sub-title">Example</h5>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">app.ws(&quot;/ws/chat&quot;, (WebSocket ws) =&gt; {
+    ws.send(&quot;Connected to chat stream&quot;);
+});</code></pre>
+</div>
+</div>
+</div>
+<div id="method-App-handleWebSocketUpgrade" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-App-handleWebSocketUpgrade" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">handleWebSocketUpgrade</span>(<span class="param-type">HttpRequest</span> <span class="param-name">req</span>, <span class="param-type">TcpStream</span> <span class="param-name">client</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Negotiates an RFC 6455 WebSocket handshake upgrade from an incoming HTTP request.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>req</code></td>
+<td><span class="type-pill">HttpRequest</span></td>
+<td>The incoming client HTTP request with upgrade headers.</td>
+</tr>
+<tr>
+<td><code>client</code></td>
+<td><span class="type-pill">TcpStream</span></td>
+<td>The TCP connection socket.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if the connection was upgraded to WebSocket; <code class="inline-code">false</code> otherwise.</p>
+</div>
+</div>
+<div id="method-App-handleRequest" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-App-handleRequest" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">handleRequest</span>(<span class="param-type">HttpRequest</span> <span class="param-name">req</span>) -&gt; <span class="return-type">HttpResponse</span>
+</div>
+<div class="doc-text"><p>Dispatches an incoming HTTP request through routing, middlewares, and returns the response.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>req</code></td>
+<td><span class="type-pill">HttpRequest</span></td>
+<td>The incoming parsed HTTP client request.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">HttpResponse</span> &mdash; The assembled <code class="inline-code">HttpResponse</code> ready to transmit to the socket.</p>
+</div>
+</div>
+<div id="method-App-listen" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-App-listen" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">listen</span>(<span class="param-type">int</span> <span class="param-name">port</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Binds the HTTP server to a TCP port and enters the request listener loop.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>port</code></td>
+<td><span class="type-pill">int</span></td>
+<td>The TCP port to listen on (e.g. 8080, 3000).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="example-box">
+<h5 class="sub-title">Example</h5>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">app.listen(8080);</code></pre>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<footer class="site-footer">
+<div class="footer-inner">
+<p>Built with ❤️ by the Syntra Language Team • Version 0.1.0 • Spec 2026</p>
+<p class="footer-sub">High-performance Whole-Program Adaptive Programming Platform</p>
+</div>
+</footer>
+<script src="search.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+From: "Alice Smith" <alice@example.com>
+To: "Bob Jones" <bob@example.com>
+Subject: Project Roadmap Update
+Date: Tue, 24 Nov 2026 00:00:00 +0000
+Message-ID: <12345.67890@example.com>
+Content-Type: multipart/mixed; boundary="boundary_12345"
+MIME-Version: 1.0
+
+--boundary_12345
+Content-Type: text/plain; charset=UTF-8
+
+Hi Bob, please find the updated roadmap attached.
+
+--boundary_12345
+Content-Type: text/plain; name="roadmap.txt"
+Content-Disposition: attachment; filename="roadmap.txt"
+Content-Transfer-Encoding: base64
+
+TWlsZXN0b25lIDE6IENvbXBsZXRlZA==
+
+--boundary_12345--

@@ -1,0 +1,5 @@
+🧠 Syntra Learning System (Registered Models)
+══════════════════════════════════════════════════════════════════════════════════
+MODEL ID                 VERSION          DIGEST       ACCURACY   RMSE     STATUS   ACTIVE  
+──────────────────────────────────────────────────────────────────────────────────
+sls-ensemble-opt         1.0.0            7a8b3e21f0   94.2      % 2.15     APPROVED ★ ACTIVE

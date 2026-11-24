@@ -1,0 +1,880 @@
+// Syntra Standard Library: Self-Hosting AIR (Aether Intermediate Representation) Generator
+// Conforms to Specification 03: AIR-001 - AIR-032.
+// Implements SSA Intermediate Representation generation, block branching, and AIR serialization in Syntra.
+
+import "../stdlib/syntax.syn";
+import "../stdlib/checker.syn";
+
+/// SSA Value Identifier (e.g. `v0`, `v1`, `v2`).
+///
+/// Every value in AIR represents an immutable single-assignment static single-assignment (SSA) register.
+///
+/// @example
+/// ```syntra
+/// AirValue v = new AirValue(0, Type.Int());
+/// println(v.toString()); // "v0"
+/// ```
+/// @since v0.1.0
+class AirValue {
+    /// Unique integer identifier for this SSA register.
+    public int id;
+
+    /// Semantic type associated with the computation result.
+    public Type ty;
+
+    /// Creates an SSA value register reference.
+    ///
+    /// @param id Register index integer.
+    /// @param ty Value type.
+    /// @since v0.1.0
+    new(int id, Type ty) {
+        this.id = id;
+        this.ty = ty;
+    }
+
+    /// Formats the register as `"v<id>"`.
+    ///
+    /// @returns Register name string.
+    /// @since v0.1.0
+    func toString(): string {
+        return "v" + this.id;
+    }
+}
+
+/// Low-level Static Single Assignment (SSA) instruction in AIR.
+///
+/// Encapsulates opcode, target register, operands, and optional symbol/callee qualifiers.
+///
+/// @since v0.1.0
+class AirInstruction {
+    /// Target register receiving the operation result.
+    public AirValue result;
+
+    /// Instruction opcode (e.g. `"add"`, `"const.int"`, `"call"`, `"getfield"`, `"setfield"`).
+    public string op;
+
+    /// First input register or literal operand.
+    public string operand1;
+
+    /// Second input register or literal operand.
+    public string operand2;
+
+    /// Additional symbol metadata (e.g. function callee name, field identifier, class type).
+    public string extra;
+
+    /// Source location tracking span for debugging and line mapping.
+    public Span span;
+
+    /// Constructs an SSA instruction node.
+    ///
+    /// @param result Target value register.
+    /// @param op Opcode string.
+    /// @param operand1 First operand.
+    /// @param operand2 Second operand.
+    /// @param extra Additional descriptor metadata.
+    /// @param span Source code location span.
+    /// @since v0.1.0
+    new(AirValue result, string op, string operand1, string operand2, string extra, Span span) {
+        this.result = result;
+        this.op = op;
+        this.operand1 = operand1;
+        this.operand2 = operand2;
+        this.extra = extra;
+        this.span = span;
+    }
+
+    /// Serializes instruction into standard AIR text format: `v0: int = add v1, v2`.
+    ///
+    /// @returns Formatted textual AIR instruction line.
+    /// @since v0.1.0
+    func toString(): string {
+        string res = "    " + this.result.toString() + ": " + this.result.ty.toString() + " = " + this.op;
+        if (this.extra.length() > 0) {
+            res = res + " " + this.extra;
+        }
+        if (this.operand1.length() > 0) {
+            res = res + " " + this.operand1;
+        }
+        if (this.operand2.length() > 0) {
+            res = res + ", " + this.operand2;
+        }
+        return res;
+    }
+}
+
+/// Basic block control-flow terminator instruction.
+///
+/// Represents function return (`ret`), unconditional branch (`br`), or conditional branch (`br_if`).
+///
+/// @since v0.1.0
+class AirTerminator {
+    /// Terminator instruction kind (`"ret"`, `"br"`, `"br_if"`, or `"nop"`).
+    public string kind;
+
+    /// Return register or conditional boolean register operand.
+    public string value;
+
+    /// Primary destination block ID for branches.
+    public int targetBlock1;
+
+    /// Secondary destination block ID (else branch for `br_if`).
+    public int targetBlock2;
+
+    /// Constructs a basic block terminator.
+    ///
+    /// @param kind Terminator opcode.
+    /// @param value Branch condition or return value operand.
+    /// @param target1 Primary branch block ID.
+    /// @param target2 Else branch block ID.
+    /// @since v0.1.0
+    new(string kind, string value, int target1, int target2) {
+        this.kind = kind;
+        this.value = value;
+        this.targetBlock1 = target1;
+        this.targetBlock2 = target2;
+    }
+
+    /// Formats the terminator instruction as an indented AIR line.
+    ///
+    /// @returns Formatted terminator string.
+    /// @since v0.1.0
+    func toString(): string {
+        if (this.kind == "ret") {
+            if (this.value.length() > 0) {
+                return "    ret " + this.value;
+            }
+            return "    ret";
+        }
+        if (this.kind == "br") {
+            return "    br bb" + this.targetBlock1;
+        }
+        if (this.kind == "br_if") {
+            return "    br_if " + this.value + ", bb" + this.targetBlock1 + ", bb" + this.targetBlock2;
+        }
+        return "    nop";
+    }
+}
+
+/// Basic Block in the SSA control-flow graph (CFG).
+///
+/// Consists of a sequence of straight-line instructions followed by exactly one terminating instruction.
+///
+/// @since v0.1.0
+class AirBlock {
+    /// Unique integer block ID (e.g. `0` for `bb0`).
+    public int id;
+
+    /// Linear list of non-branching instructions.
+    public AirInstruction[] instructions;
+
+    /// Mandatory control-flow terminator ending the block.
+    public AirTerminator terminator;
+
+    /// Creates an empty basic block.
+    ///
+    /// @param id Unique block ID.
+    /// @since v0.1.0
+    new(int id) {
+        this.id = id;
+        this.instructions = [];
+        this.terminator = new AirTerminator("nop", "", 0, 0);
+    }
+
+    /// Appends an instruction to this block.
+    ///
+    /// @param inst Instruction to append.
+    /// @since v0.1.0
+    func addInstruction(AirInstruction inst) {
+        this.instructions.push(inst);
+    }
+
+    /// Sets the block terminator instruction.
+    ///
+    /// @param term Terminator node.
+    /// @since v0.1.0
+    func setTerminator(AirTerminator term) {
+        this.terminator = term;
+    }
+
+    /// Formats the block and all child instructions as textual AIR.
+    ///
+    /// @returns Block text representation.
+    /// @since v0.1.0
+    func toString(): string {
+        string res = "  bb" + this.id + ":\n";
+        int i = 0;
+        while (i < this.instructions.length()) {
+            res = res + this.instructions[i].toString() + "\n";
+            i = i + 1;
+        }
+        res = res + this.terminator.toString() + "\n";
+        return res;
+    }
+}
+
+/// Lowered AIR SSA Function representation.
+///
+/// Holds parameter names, types, return type signature, and the collection of control-flow blocks.
+///
+/// @since v0.1.0
+class AirFunction {
+    /// Function name symbol.
+    public string name;
+
+    /// Parameter names list.
+    public string[] paramNames;
+
+    /// Parameter types list.
+    public Type[] paramTypes;
+
+    /// Function return type.
+    public Type returnType;
+
+    /// Ordered array of constituent basic blocks forming the CFG.
+    public AirBlock[] blocks;
+
+    /// Creates an AIR function container.
+    ///
+    /// @param name Function symbol name.
+    /// @param returnType Return type.
+    /// @since v0.1.0
+    new(string name, Type returnType) {
+        this.name = name;
+        this.paramNames = [];
+        this.paramTypes = [];
+        this.returnType = returnType;
+        this.blocks = [];
+    }
+
+    /// Adds a typed parameter to the function signature.
+    ///
+    /// @param name Parameter name string.
+    /// @param ty Parameter type.
+    /// @since v0.1.0
+    func addParam(string name, Type ty) {
+        this.paramNames.push(name);
+        this.paramTypes.push(ty);
+    }
+
+    /// Adds a basic block to the function CFG.
+    ///
+    /// @param block The block to attach.
+    /// @since v0.1.0
+    func addBlock(AirBlock block) {
+        this.blocks.push(block);
+    }
+
+    /// Serializes the entire function signature and CFG blocks into text AIR format.
+    ///
+    /// @returns Textual representation of the function.
+    /// @since v0.1.0
+    func toString(): string {
+        string header = "func @" + this.name + "(";
+        int i = 0;
+        while (i < this.paramNames.length()) {
+            if (i > 0) {
+                header = header + ", ";
+            }
+            header = header + "v" + i + ": " + this.paramTypes[i].toString();
+            i = i + 1;
+        }
+        header = header + ") -> " + this.returnType.toString() + " {\n";
+
+        int b = 0;
+        while (b < this.blocks.length()) {
+            header = header + this.blocks[b].toString();
+            b = b + 1;
+        }
+        header = header + "}\n";
+        return header;
+    }
+}
+
+/// Top-level compilation module containing SSA functions.
+///
+/// Encapsulates all lowered functions for a compilation unit.
+///
+/// @since v0.1.0
+class AirModule {
+    /// Module name identifier.
+    public string name;
+
+    /// Functions defined within the module.
+    public AirFunction[] functions;
+
+    /// Initializes a named AIR module.
+    ///
+    /// @param name Module name string.
+    /// @since v0.1.0
+    new(string name) {
+        this.name = name;
+        this.functions = [];
+    }
+
+    /// Appends a lowered AIR function to the module.
+    ///
+    /// @param airFn Function to attach.
+    /// @since v0.1.0
+    func addFunction(AirFunction airFn) {
+        this.functions.push(airFn);
+    }
+
+    /// Serializes the entire module into textual AIR syntax.
+    ///
+    /// @returns Textual representation of all module functions.
+    /// @since v0.1.0
+    func toString(): string {
+        string res = "// Syntra AIR Module (SSA Architecture)\nmodule \"" + this.name + "\" {\n";
+        int i = 0;
+        while (i < this.functions.length()) {
+            res = res + this.functions[i].toString();
+            i = i + 1;
+        }
+        res = res + "}\n";
+        return res;
+    }
+}
+
+/// Variable-to-SSA register mapping binding.
+///
+/// Used during lowering to track which `AirValue` currently holds a lexical variable's value.
+///
+/// @since v0.1.0
+class SsaVar {
+    /// Lexical variable identifier name.
+    public string name;
+
+    /// Current SSA register holding the value.
+    public AirValue value;
+
+    /// Creates a variable binding.
+    ///
+    /// @param name Variable identifier.
+    /// @param value Bound SSA value.
+    /// @since v0.1.0
+    new(string name, AirValue value) {
+        this.name = name;
+        this.value = value;
+    }
+}
+
+/// AIR Lowering Engine: converts type-checked AST nodes to SSA AIR modules.
+///
+/// Performs control-flow graph construction, basic block splitting for `if` and `while` statements,
+/// variable versioning, and expression linearization into three-address SSA instructions.
+///
+/// @example
+/// ```syntra
+/// AirLowering lowering = new AirLowering(checker, "main");
+/// AirModule air = lowering.lowerProgram(ast);
+/// println(air.toString());
+/// ```
+/// @since v0.1.0
+class AirLowering {
+    /// TypeChecker providing semantic metadata and symbol tables.
+    public TypeChecker checker;
+
+    /// Target module being populated.
+    public AirModule module;
+
+    /// Generator counter for unique SSA value IDs.
+    public int nextValueId;
+
+    /// Generator counter for unique CFG block IDs.
+    public int nextBlockId;
+
+    /// Currently active basic block receiving instructions.
+    public AirBlock currentBlock;
+
+    /// Active variable bindings table for SSA register resolution.
+    public SsaVar[] varBindings;
+
+    /// Creates an AIR lowering engine instance.
+    ///
+    /// @param checker Semantic analyzer containing verified symbols.
+    /// @param moduleName Module name string.
+    /// @since v0.1.0
+    new(TypeChecker checker, string moduleName) {
+        this.checker = checker;
+        this.module = new AirModule(moduleName);
+        this.nextValueId = 0;
+        this.nextBlockId = 0;
+        this.varBindings = [];
+    }
+
+    /// Allocates a new virtual SSA value register of the specified type.
+    ///
+    /// @param ty Value type.
+    /// @returns New `AirValue` instance.
+    /// @since v0.1.0
+    func newValue(Type ty): AirValue {
+        AirValue v = new AirValue(this.nextValueId, ty);
+        this.nextValueId = this.nextValueId + 1;
+        return v;
+    }
+
+    /// Allocates a new basic block with a unique sequential ID.
+    ///
+    /// @returns New `AirBlock` instance.
+    /// @since v0.1.0
+    func newBlock(): AirBlock {
+        AirBlock b = new AirBlock(this.nextBlockId);
+        this.nextBlockId = this.nextBlockId + 1;
+        return b;
+    }
+
+    /// Updates or inserts a variable binding to point to an SSA value register.
+    ///
+    /// @param name Variable name string.
+    /// @param val Bound SSA value.
+    /// @since v0.1.0
+    func bindVar(string name, AirValue val) {
+        // Update existing binding if present
+        int i = this.varBindings.length() - 1;
+        bool found = false;
+        while (i >= 0 && found == false) {
+            if (this.varBindings[i].name == name) {
+                this.varBindings[i].value = val;
+                found = true;
+            }
+            i = i - 1;
+        }
+        if (found == false) {
+            this.varBindings.push(new SsaVar(name, val));
+        }
+    }
+
+    /// Looks up the current SSA value register bound to a lexical variable name.
+    ///
+    /// @param name Variable name string.
+    /// @returns The bound `AirValue`, or a sentinel with id `-1` if not found.
+    /// @since v0.1.0
+    func lookupVar(string name): AirValue {
+        int i = this.varBindings.length() - 1;
+        while (i >= 0) {
+            if (this.varBindings[i].name == name) {
+                return this.varBindings[i].value;
+            }
+            i = i - 1;
+        }
+        return new AirValue(-1, Type.Unknown());
+    }
+
+    /// Emits a new SSA instruction into the active basic block and returns its result register.
+    ///
+    /// @param op Instruction opcode string.
+    /// @param op1 First operand.
+    /// @param op2 Second operand.
+    /// @param extra Additional descriptor metadata.
+    /// @param ty Result value type.
+    /// @param span Source code location span.
+    /// @returns The allocated result `AirValue`.
+    /// @since v0.1.0
+    func emit(string op, string op1, string op2, string extra, Type ty, Span span): AirValue {
+        AirValue val = this.newValue(ty);
+        AirInstruction inst = new AirInstruction(val, op, op1, op2, extra, span);
+        this.currentBlock.addInstruction(inst);
+        return val;
+    }
+
+    // --- High-Level Program Lowering ---
+
+    /// Lowers an entire parsed and verified program AST into an SSA `AirModule`.
+    ///
+    /// Iterates top-level function declarations, class declarations, and namespace declarations.
+    ///
+    /// @param program The root `Program` AST node.
+    /// @returns The completed `AirModule`.
+    /// @since v0.1.0
+    func lowerProgram(AstNode program): AirModule {
+        int i = 0;
+        while (i < program.childCount()) {
+            AstNode item = program.getChild(i);
+            if (item.kind == "FunctionDecl") {
+                AirFunction airFn = this.lowerFunction(item);
+                this.module.addFunction(airFn);
+            } else if (item.kind == "ClassDecl") {
+                this.lowerClass(item);
+            } else if (item.kind == "NamespaceDecl") {
+                int nm = 0;
+                while (nm < item.childCount()) {
+                    AstNode nItem = item.getChild(nm);
+                    if (nItem.kind == "FunctionDecl") {
+                        AstNode cloned = new AstNode("FunctionDecl", item.name + "_" + nItem.name, nItem.intVal, nItem.span);
+                        cloned.children = nItem.children;
+                        AirFunction airFn = this.lowerFunction(cloned);
+                        this.module.addFunction(airFn);
+                    } else if (nItem.kind == "ClassDecl") {
+                        this.lowerClass(nItem);
+                    }
+                    nm = nm + 1;
+                }
+            }
+            i = i + 1;
+        }
+        return this.module;
+    }
+
+    /// Lowers a function declaration AST node into an `AirFunction`.
+    ///
+    /// Creates entry block `bb0`, binds incoming parameters, lowers the function body,
+    /// and guarantees block termination.
+    ///
+    /// @param funcNode The `FunctionDecl` AST node.
+    /// @returns The compiled `AirFunction`.
+    /// @since v0.1.0
+    func lowerFunction(AstNode funcNode): AirFunction {
+        string fnName = funcNode.name;
+        FnSymbol fnSym = this.checker.getFunction(fnName);
+        AirFunction airFn = new AirFunction(fnName, fnSym.returnType);
+
+        this.nextValueId = 0;
+        this.nextBlockId = 0;
+        this.varBindings = [];
+
+        AirBlock entryBlock = this.newBlock();
+        this.currentBlock = entryBlock;
+        airFn.addBlock(entryBlock);
+
+        // Bind function parameters
+        int p = 0;
+        while (p < fnSym.paramCount()) {
+            string pName = fnSym.paramNames[p];
+            Type pTy = fnSym.paramTypes[p];
+            airFn.addParam(pName, pTy);
+            AirValue pVal = this.newValue(pTy);
+            this.bindVar(pName, pVal);
+            p = p + 1;
+        }
+
+        // Lower body statements
+        if (funcNode.childCount() > 0) {
+            AstNode body = funcNode.getChild(funcNode.childCount() - 1);
+            if (body.kind == "Block") {
+                this.lowerBlock(body, airFn);
+            }
+        }
+
+        // If block doesn't have terminator, add default return
+        if (this.currentBlock.terminator.kind == "nop") {
+            this.currentBlock.setTerminator(new AirTerminator("ret", "", 0, 0));
+        }
+
+        return airFn;
+    }
+
+    /// Lowers methods of a class declaration into namespaced AIR functions with explicit `this` pointer parameters.
+    ///
+    /// @param classNode The `ClassDecl` AST node.
+    /// @since v0.1.0
+    func lowerClass(AstNode classNode) {
+        int i = 0;
+        while (i < classNode.childCount()) {
+            AstNode member = classNode.getChild(i);
+            if (member.kind == "FunctionDecl") {
+                string mName = classNode.name + "_" + member.name;
+                FnSymbol mSym = this.checker.getClass(classNode.name).getMethod(member.name);
+                AirFunction airFn = new AirFunction(mName, mSym.returnType);
+
+                this.nextValueId = 0;
+                this.nextBlockId = 0;
+                this.varBindings = [];
+
+                AirBlock entryBlock = this.newBlock();
+                this.currentBlock = entryBlock;
+                airFn.addBlock(entryBlock);
+
+                // Parameter 0 is 'this' pointer
+                AirValue thisVal = this.newValue(Type.Class(classNode.name));
+                this.bindVar("this", thisVal);
+                airFn.addParam("this", Type.Class(classNode.name));
+
+                // Member parameters
+                int pi = 0;
+                while (pi < mSym.paramCount()) {
+                    string pName = mSym.paramNames[pi];
+                    Type pTy = mSym.paramTypes[pi];
+                    airFn.addParam(pName, pTy);
+                    AirValue pVal = this.newValue(pTy);
+                    this.bindVar(pName, pVal);
+                    pi = pi + 1;
+                }
+
+                if (member.childCount() > 0) {
+                    AstNode body = member.getChild(member.childCount() - 1);
+                    if (body.kind == "Block") {
+                        this.lowerBlock(body, airFn);
+                    }
+                }
+
+                if (this.currentBlock.terminator.kind == "nop") {
+                    this.currentBlock.setTerminator(new AirTerminator("ret", "", 0, 0));
+                }
+
+                this.module.addFunction(airFn);
+            }
+            i = i + 1;
+        }
+    }
+
+    /// Lowers an AST statement block node into the active CFG block stream.
+    ///
+    /// @param blockNode The `Block` AST node.
+    /// @param airFn The enclosing AIR function.
+    /// @since v0.1.0
+    func lowerBlock(AstNode blockNode, AirFunction airFn) {
+        int i = 0;
+        while (i < blockNode.childCount()) {
+            this.lowerStatement(blockNode.getChild(i), airFn);
+            i = i + 1;
+        }
+    }
+
+    /// Dispatches lowering of an individual AST statement (variable declarations, returns, control flow).
+    ///
+    /// @param stmt The statement AST node.
+    /// @param airFn The enclosing AIR function.
+    /// @since v0.1.0
+    func lowerStatement(AstNode stmt, AirFunction airFn) {
+        if (stmt.kind == "VarDecl") {
+            Type declaredTy = Type.Int();
+            if (stmt.childCount() > 0 && stmt.getChild(0).kind == "Type") {
+                declaredTy = this.checker.parseType(stmt.getChild(0).name);
+            }
+            if (stmt.childCount() > 1) {
+                AirValue initVal = this.lowerExpression(stmt.getChild(1));
+                initVal.ty = declaredTy;
+                this.bindVar(stmt.name, initVal);
+            } else {
+                AirValue defaultVal = this.emit("const.int", "0", "", "", declaredTy, stmt.span);
+                this.bindVar(stmt.name, defaultVal);
+            }
+        } else if (stmt.kind == "ReturnStmt") {
+            if (stmt.childCount() > 0) {
+                AirValue retVal = this.lowerExpression(stmt.getChild(0));
+                this.currentBlock.setTerminator(new AirTerminator("ret", retVal.toString(), 0, 0));
+            } else {
+                this.currentBlock.setTerminator(new AirTerminator("ret", "", 0, 0));
+            }
+        } else if (stmt.kind == "IfStmt") {
+            this.lowerIfStmt(stmt, airFn);
+        } else if (stmt.kind == "WhileStmt") {
+            this.lowerWhileStmt(stmt, airFn);
+        } else if (stmt.kind == "ExprStmt") {
+            if (stmt.childCount() > 0) {
+                this.lowerExpression(stmt.getChild(0));
+            }
+        }
+    }
+
+    /// Lowers an `if-else` branching statement, splitting control flow into `then`, `else`, and `merge` blocks.
+    ///
+    /// @param ifNode The `IfStmt` AST node.
+    /// @param airFn The enclosing AIR function.
+    /// @since v0.1.0
+    func lowerIfStmt(AstNode ifNode, AirFunction airFn) {
+        AirValue condVal = this.lowerExpression(ifNode.getChild(0));
+
+        AirBlock thenBlock = this.newBlock();
+        AirBlock elseBlock = this.newBlock();
+        AirBlock mergeBlock = this.newBlock();
+
+        this.currentBlock.setTerminator(new AirTerminator("br_if", condVal.toString(), thenBlock.id, elseBlock.id));
+
+        // Then block
+        airFn.addBlock(thenBlock);
+        this.currentBlock = thenBlock;
+        this.lowerBlock(ifNode.getChild(1), airFn);
+        if (this.currentBlock.terminator.kind == "nop") {
+            this.currentBlock.setTerminator(new AirTerminator("br", "", mergeBlock.id, 0));
+        }
+
+        // Else block
+        airFn.addBlock(elseBlock);
+        this.currentBlock = elseBlock;
+        if (ifNode.childCount() > 2) {
+            this.lowerBlock(ifNode.getChild(2), airFn);
+        }
+        if (this.currentBlock.terminator.kind == "nop") {
+            this.currentBlock.setTerminator(new AirTerminator("br", "", mergeBlock.id, 0));
+        }
+
+        // Merge block
+        airFn.addBlock(mergeBlock);
+        this.currentBlock = mergeBlock;
+    }
+
+    /// Lowers a `while` loop statement into `cond`, `body`, and `exit` blocks with backward loop branch.
+    ///
+    /// @param whileNode The `WhileStmt` AST node.
+    /// @param airFn The enclosing AIR function.
+    /// @since v0.1.0
+    func lowerWhileStmt(AstNode whileNode, AirFunction airFn) {
+        AirBlock condBlock = this.newBlock();
+        AirBlock bodyBlock = this.newBlock();
+        AirBlock exitBlock = this.newBlock();
+
+        this.currentBlock.setTerminator(new AirTerminator("br", "", condBlock.id, 0));
+
+        // Condition block
+        airFn.addBlock(condBlock);
+        this.currentBlock = condBlock;
+        AirValue condVal = this.lowerExpression(whileNode.getChild(0));
+        this.currentBlock.setTerminator(new AirTerminator("br_if", condVal.toString(), bodyBlock.id, exitBlock.id));
+
+        // Body block
+        airFn.addBlock(bodyBlock);
+        this.currentBlock = bodyBlock;
+        this.lowerBlock(whileNode.getChild(1), airFn);
+        if (this.currentBlock.terminator.kind == "nop") {
+            this.currentBlock.setTerminator(new AirTerminator("br", "", condBlock.id, 0));
+        }
+
+        // Exit block
+        airFn.addBlock(exitBlock);
+        this.currentBlock = exitBlock;
+    }
+
+    // --- Expression Lowering ---
+
+    /// Lowers an AST expression into one or more linearized SSA instructions and returns the result value.
+    ///
+    /// Handles literals, variable lookups, assignments, binary expressions, member accesses, method calls, and allocations.
+    ///
+    /// @param expr The expression AST node.
+    /// @returns The computed `AirValue` SSA register.
+    /// @since v0.1.0
+    func lowerExpression(AstNode expr): AirValue {
+        if (expr.kind == "IntLit") {
+            return this.emit("const.int", "" + expr.intVal, "", "", Type.Int(), expr.span);
+        }
+        if (expr.kind == "StringLit") {
+            return this.emit("const.str", "\"" + expr.name + "\"", "", "", Type.String(), expr.span);
+        }
+        if (expr.kind == "BoolLit") {
+            return this.emit("const.bool", expr.name, "", "", Type.Bool(), expr.span);
+        }
+
+        if (expr.kind == "Identifier") {
+            AirValue bound = this.lookupVar(expr.name);
+            if (bound.id >= 0) {
+                return bound;
+            }
+            return this.emit("const.int", "0", "", "", Type.Unknown(), expr.span);
+        }
+
+        if (expr.kind == "ThisExpr") {
+            return this.lookupVar("this");
+        }
+
+        if (expr.kind == "Assignment") {
+            if (expr.childCount() >= 2) {
+                AstNode target = expr.getChild(0);
+                AirValue val = this.lowerExpression(expr.getChild(1));
+
+                if (target.kind == "Identifier") {
+                    AirValue orig = this.lookupVar(target.name);
+                    if (orig.id >= 0) {
+                        this.emit("mov", val.toString(), orig.toString(), target.name, val.ty, expr.span);
+                        return orig;
+                    } else {
+                        this.bindVar(target.name, val);
+                        return val;
+                    }
+                } else if (target.kind == "MemberAccess") {
+                    AirValue obj = this.lowerExpression(target.getChild(0));
+                    this.emit("setfield", obj.toString(), val.toString(), target.name, Type.Void(), expr.span);
+                    return val;
+                }
+            }
+        }
+
+        if (expr.kind == "BinaryExpr") {
+            if (expr.childCount() >= 2) {
+                AirValue left = this.lowerExpression(expr.getChild(0));
+                AirValue right = this.lowerExpression(expr.getChild(1));
+                string op = expr.name;
+
+                if (op == "+") { return this.emit("add", left.toString(), right.toString(), "", left.ty, expr.span); }
+                if (op == "-") { return this.emit("sub", left.toString(), right.toString(), "", left.ty, expr.span); }
+                if (op == "*") { return this.emit("mul", left.toString(), right.toString(), "", left.ty, expr.span); }
+                if (op == "/") { return this.emit("div", left.toString(), right.toString(), "", left.ty, expr.span); }
+                if (op == "%") { return this.emit("rem", left.toString(), right.toString(), "", left.ty, expr.span); }
+
+                if (op == "<")  { return this.emit("cmp.lt", left.toString(), right.toString(), "", Type.Bool(), expr.span); }
+                if (op == "<=") { return this.emit("cmp.le", left.toString(), right.toString(), "", Type.Bool(), expr.span); }
+                if (op == ">")  { return this.emit("cmp.gt", left.toString(), right.toString(), "", Type.Bool(), expr.span); }
+                if (op == ">=") { return this.emit("cmp.ge", left.toString(), right.toString(), "", Type.Bool(), expr.span); }
+                if (op == "==") { return this.emit("cmp.eq", left.toString(), right.toString(), "", Type.Bool(), expr.span); }
+                if (op == "!=") { return this.emit("cmp.ne", left.toString(), right.toString(), "", Type.Bool(), expr.span); }
+                if (op == "&&") { return this.emit("and", left.toString(), right.toString(), "", Type.Bool(), expr.span); }
+                if (op == "||") { return this.emit("or", left.toString(), right.toString(), "", Type.Bool(), expr.span); }
+            }
+        }
+
+        if (expr.kind == "MemberAccess") {
+            if (expr.childCount() > 0) {
+                AirValue obj = this.lowerExpression(expr.getChild(0));
+                return this.emit("getfield", obj.toString(), "", expr.name, Type.Unknown(), expr.span);
+            }
+        }
+
+        if (expr.kind == "CallExpr") {
+            if (expr.childCount() > 0) {
+                AstNode callee = expr.getChild(0);
+                string argsStr = "";
+                int a = 1;
+                while (a < expr.childCount()) {
+                    AirValue argVal = this.lowerExpression(expr.getChild(a));
+                    if (a > 1) {
+                        argsStr = argsStr + ", ";
+                    }
+                    argsStr = argsStr + argVal.toString();
+                    a = a + 1;
+                }
+
+                if (callee.kind == "Identifier") {
+                    return this.emit("call", argsStr, "", callee.name, Type.Unknown(), expr.span);
+                } else if (callee.kind == "MemberAccess") {
+                    AstNode objNode = callee.getChild(0);
+                    string memberName = callee.name;
+                    if (objNode.kind == "Identifier") {
+                        string prefix = objNode.name;
+                        string qualifiedUnderscore = prefix + "_" + memberName;
+                        if (this.checker.hasFunction(qualifiedUnderscore)) {
+                            return this.emit("call", argsStr, "", qualifiedUnderscore, Type.Unknown(), expr.span);
+                        } else if (this.checker.hasFunction(memberName) && this.checker.hasClass(prefix) == false) {
+                            return this.emit("call", argsStr, "", memberName, Type.Unknown(), expr.span);
+                        }
+                    }
+                    AirValue objVal = this.lowerExpression(objNode);
+                    string allArgs = objVal.toString();
+                    if (argsStr.length() > 0) {
+                        allArgs = allArgs + ", " + argsStr;
+                    }
+                    string targetMethod = callee.name;
+                    if (objVal.ty.kind == "class") {
+                        targetMethod = objVal.ty.name + "_" + callee.name;
+                    } else {
+                        int ci = 0;
+                        while (ci < this.checker.classes.length()) {
+                            ClassSymbol cs = this.checker.classes[ci];
+                            if (cs.hasMethod(callee.name)) {
+                                targetMethod = cs.name + "_" + callee.name;
+                            }
+                            ci = ci + 1;
+                        }
+                    }
+                    return this.emit("call", allArgs, "", targetMethod, Type.Unknown(), expr.span);
+                }
+            }
+        }
+
+        if (expr.kind == "NewExpr") {
+            Type clsTy = this.checker.parseType(expr.name);
+            return this.emit("const.int", "0", "", expr.name, clsTy, expr.span);
+        }
+
+        return this.emit("const.int", "0", "", "", Type.Unknown(), expr.span);
+    }
+}

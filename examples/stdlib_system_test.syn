@@ -1,0 +1,19 @@
+// Test standard library import of system module
+import system;
+
+func main(): int {
+    println("Testing stdlib/system.syn module import...");
+    string[] a = System.args();
+    string path = System.getEnv("PATH");
+    int t = System.timeMs();
+
+    println($"System.timeMs: {t}");
+    println($"System.args count: {a.len()}");
+    println($"System.getEnv PATH len: {path.len()}");
+
+    if (t > 0 && path.len() > 0) {
+        println("stdlib system module test passed!");
+        return 42;
+    }
+    return 1;
+}

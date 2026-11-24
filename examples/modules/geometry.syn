@@ -1,0 +1,19 @@
+/// Geometry module demonstrating classes and functions.
+
+class Point {
+    public int x;
+    public int y;
+
+    new(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    public func manhattan_distance(): int {
+        return this.x + this.y;
+    }
+}
+
+func area(int width, int height): int {
+    return width * height;
+}

@@ -1,13 +1,28 @@
 [package]
-name = "aether_cli"
+name = "syntra_cli"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
+[[bin]]
+name = "syn"
+path = "src/bin/syn.rs"
+
+[[bin]]
+name = "syntra"
+path = "src/bin/syntra.rs"
+
 [dependencies]
 clap.workspace = true
-aether_diagnostics.workspace = true
-aether_syntax.workspace = true
-aether_frontend.workspace = true
-aether_air.workspace = true
-aether_runtime.workspace = true
+syntra_diagnostics.workspace = true
+syntra_syntax.workspace = true
+syntra_frontend.workspace = true
+syntra_air.workspace = true
+syntra_opt = { path = "../opt" }
+syntra_backend_cranelift.workspace = true
+syntra_runtime.workspace = true
+syntra_provenance = { path = "../provenance" }
+syntra_intelligence = { path = "../intelligence" }
+syntra_analysis = { path = "../analysis" }
+syntra_sandbox = { path = "../sandbox" }
+sha2 = "0.11.1"

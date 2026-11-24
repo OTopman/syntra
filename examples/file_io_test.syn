@@ -1,0 +1,134 @@
+// Integration Test for Syntra File I/O Standard Subsystem
+// Tests Unified Dual-Mode: Static File.* and OOP class File, plus import io;
+import io;
+
+func main(): int {
+    string test_path = "/tmp/syntra_file_test.txt";
+    string oop_path = "/tmp/syntra_oop_test.txt";
+
+    // ----------------------------------------------------
+    // 1. Static File.* API Testing
+    // ----------------------------------------------------
+    // Cleanup any existing file
+    if (File.exists(test_path)) {
+        File.delete(test_path);
+    }
+
+    bool initial_exists = File.exists(test_path);
+    print("Static: Initial exists (should be false): ");
+    println(initial_exists);
+
+    // Write text to file
+    bool write_ok = File.writeText(test_path, "Hello Syntra File I/O!\n");
+    print("Static: Write success: ");
+    println(write_ok);
+
+    bool exists_after_write = File.exists(test_path);
+    print("Static: Exists after write: ");
+    println(exists_after_write);
+
+    // Append text
+    bool append_ok = File.appendText(test_path, "Second line of text.\n");
+    print("Static: Append success: ");
+    println(append_ok);
+
+    // Read full text
+    string content = File.readText(test_path);
+    print("Static: Content read back:\n");
+    print(content);
+
+    // Check size
+    int sz = File.size(test_path);
+    print("Static: File size (bytes): ");
+    println(sz);
+
+    // Read lines
+    string[] lines = File.readLines(test_path);
+    print("Static: Lines count: ");
+    println(lines.length);
+
+    // Delete file
+    bool delete_ok = File.delete(test_path);
+    print("Static: Delete success: ");
+    println(delete_ok);
+
+    bool exists_after_del = File.exists(test_path);
+    print("Static: Exists after delete: ");
+    println(exists_after_del);
+
+    // ----------------------------------------------------
+    // 2. OOP class File API Testing
+    // ----------------------------------------------------
+    File f = new File(oop_path);
+    print("OOP: File path via getPath(): ");
+    println(f.getPath());
+    print("OOP: File path via f.path: ");
+    println(f.path);
+
+    if (f.exists()) {
+        f.delete();
+    }
+
+    print("OOP: Initial exists: ");
+    println(f.exists());
+
+    bool f_write = f.writeText("OOP File content line 1\n");
+    print("OOP: Write ok: ");
+    println(f_write);
+
+    bool f_append = f.appendText("OOP File content line 2\n");
+    print("OOP: Append ok: ");
+    println(f_append);
+
+    print("OOP: Exists: ");
+    println(f.exists());
+
+    string oop_content = f.readText();
+    print("OOP: Content read:\n");
+    print(oop_content);
+
+    print("OOP: File size: ");
+    println(f.size());
+
+    string[] oop_lines = f.readLines();
+    print("OOP: Lines count: ");
+    println(oop_lines.length);
+
+    bool f_del = f.delete();
+    print("OOP: Delete ok: ");
+    println(f_del);
+
+    print("OOP: Exists after delete: ");
+    println(f.exists());
+
+    // ----------------------------------------------------
+    // 3. Module import io; Functions Testing
+    // ----------------------------------------------------
+    string mod_path = "/tmp/syntra_mod_io_test.txt";
+    writeFile(mod_path, "Standard module io text");
+    bool mod_exists = fileExists(mod_path);
+    string mod_read = readFile(mod_path);
+    int mod_sz = fileSize(mod_path);
+    deleteFile(mod_path);
+
+    print("Module: Read text: ");
+    println(mod_read);
+    print("Module: Exists was: ");
+    println(mod_exists);
+
+    // Validation checks for final exit code
+    int score = 0;
+    if (initial_exists == false && exists_after_write && exists_after_del == false) {
+        score = score + 14;
+    }
+    if (f_write && f_append && f_del) {
+        score = score + 14;
+    }
+    if (mod_exists && mod_sz > 0) {
+        score = score + 14;
+    }
+
+    println("File I/O Verification Completed! Score: " + score);
+    // score is 14 + 14 + 14 = 42
+    return score;
+}

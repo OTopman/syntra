@@ -1,0 +1,25 @@
+// Multi-Module Bootstrapping Test: Utilities Subsystem
+
+func max(int a, int b): int {
+    if (a > b) {
+        return a;
+    }
+    return b;
+}
+
+func min(int a, int b): int {
+    if (a < b) {
+        return a;
+    }
+    return b;
+}
+
+func clamp(int v, int lo, int hi): int {
+    if (v < lo) {
+        return lo;
+    }
+    if (v > hi) {
+        return hi;
+    }
+    return v;
+}

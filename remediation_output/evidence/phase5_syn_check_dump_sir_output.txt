@@ -1,0 +1,162 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running `target/debug/syn check examples/hello.syn --dump-sir`
+🔍 Checking 'examples/hello.syn'...
+✅ Syntax check passed! Successfully parsed 3 top-level item(s).
+✅ Type check passed! 0 semantic errors found.
+✅ AIR Invariant Verification passed! (AIR-001, AIR-002, AIR-003 enforced)
+
+--- Syntra Intermediate Representation (AIR) ---
+; AIR Module: main_module
+
+func @Player_new(v0: string, v3: int) -> Player {
+  bb0:
+    v1 = alloc.stack string
+    v2 = store v1, v0
+    v4 = alloc.stack int
+    v5 = store v4, v3
+    v6 = alloc.arena Player
+    v7 = load v1
+    v8 = setfield v6.name (offset 0), v7
+    v9 = load v4
+    v10 = setfield v6.health (offset 8), v9
+    v11 = iconst.int 0
+    v12 = setfield v6.score (offset 16), v11
+    return v6
+}
+
+func @Player_take_damage(v13: Player, v14: int) -> void {
+  bb1:
+    v15 = alloc.stack int
+    v16 = store v15, v14
+    v17 = getfield v13.health (offset 8)
+    v18 = load v15
+    v19 = Sub v17, v18
+    v20 = setfield v13.health (offset 8), v19
+    v21 = getfield v13.name (offset 0)
+    v22 = sconst " took "
+    v23 = call @syntra_concat_str(v21, v22)
+    v24 = load v15
+    v25 = call @syntra_int_to_str(v24)
+    v26 = call @syntra_concat_str(v23, v25)
+    v27 = sconst " damage! Health remaining: "
+    v28 = call @syntra_concat_str(v26, v27)
+    v29 = getfield v13.health (offset 8)
+    v30 = call @syntra_int_to_str(v29)
+    v31 = call @syntra_concat_str(v28, v30)
+    v32 = call @syntra_println_str(v31)
+    v33 = iconst.void 0
+    return
+}
+
+func @Player_is_alive(v34: Player) -> bool {
+  bb2:
+    v35 = getfield v34.health (offset 8)
+    v36 = iconst.int 0
+    v37 = Greater v35, v36
+    return v37
+}
+
+func @Player_add_score(v38: Player, v39: int) -> void {
+  bb3:
+    v40 = alloc.stack int
+    v41 = store v40, v39
+    v42 = getfield v38.score (offset 16)
+    v43 = load v40
+    v44 = Add v42, v43
+    v45 = setfield v38.score (offset 16), v44
+    v46 = sconst "+"
+    v47 = load v40
+    v48 = call @syntra_int_to_str(v47)
+    v49 = call @syntra_concat_str(v46, v48)
+    v50 = sconst " points added! Total score: "
+    v51 = call @syntra_concat_str(v49, v50)
+    v52 = getfield v38.score (offset 16)
+    v53 = call @syntra_int_to_str(v52)
+    v54 = call @syntra_concat_str(v51, v53)
+    v55 = call @syntra_println_str(v54)
+    v56 = iconst.void 0
+    return
+}
+
+func @Player_get_score(v57: Player) -> int {
+  bb4:
+    v58 = getfield v57.score (offset 16)
+    return v58
+}
+
+func @main() -> int {
+  bb5:
+    v122 = sconst "Player"
+    v123 = sconst "{\"type\":\"object\",\"properties\":{\"health\": {\"type\":\"integer\",\"format\":\"int64\"}, \"name\": {\"type\":\"string\"}, \"score\": {\"type\":\"integer\",\"format\":\"int64\"}},\"required\":[\"health\", \"name\", \"score\"]}"
+    v124 = call @syntra_schema_register(v122, v123)
+    v59 = iconst.int 100
+    v60 = alloc.stack int
+    v61 = store v60, v59
+    v62 = sconst "--- Starting Syntra Adventure ---"
+    v63 = call @syntra_println_str(v62)
+    v64 = iconst.void 0
+    v65 = sconst "Knight"
+    v66 = load v60
+    v67 = call @Player_new(v65, v66)
+    v68 = alloc.stack Player
+    v69 = store v68, v67
+    v70 = sconst "Created hero: "
+    v71 = load v68
+    v72 = getfield v71.name (offset 0)
+    v73 = call @syntra_concat_str(v70, v72)
+    v74 = sconst " with "
+    v75 = call @syntra_concat_str(v73, v74)
+    v76 = load v68
+    v77 = getfield v76.health (offset 8)
+    v78 = call @syntra_int_to_str(v77)
+    v79 = call @syntra_concat_str(v75, v78)
+    v80 = sconst " HP."
+    v81 = call @syntra_concat_str(v79, v80)
+    v82 = call @syntra_println_str(v81)
+    v83 = iconst.void 0
+    v84 = sconst "\n[Battle Commences]"
+    v85 = call @syntra_println_str(v84)
+    v86 = iconst.void 0
+    v87 = iconst.int 35
+    v88 = load v68
+    v89 = call @Player_take_damage(v88, v87)
+    v90 = iconst.int 150
+    v91 = load v68
+    v92 = call @Player_add_score(v91, v90)
+    v93 = sconst "\n[Battle Assessment]"
+    v94 = call @syntra_println_str(v93)
+    v95 = iconst.void 0
+    v96 = load v68
+    v97 = call @Player_is_alive(v96)
+    br_cond v97, bb6(), bb7()
+  bb6:
+    v98 = load v68
+    v99 = call @Player_get_score(v98)
+    v100 = alloc.stack int
+    v101 = store v100, v99
+    v102 = sconst "Victory! Hero survived with "
+    v103 = load v68
+    v104 = getfield v103.health (offset 8)
+    v105 = call @syntra_int_to_str(v104)
+    v106 = call @syntra_concat_str(v102, v105)
+    v107 = sconst " HP."
+    v108 = call @syntra_concat_str(v106, v107)
+    v109 = call @syntra_println_str(v108)
+    v110 = iconst.void 0
+    v111 = sconst "Final Score: "
+    v112 = load v100
+    v113 = call @syntra_int_to_str(v112)
+    v114 = call @syntra_concat_str(v111, v113)
+    v115 = call @syntra_println_str(v114)
+    v116 = iconst.void 0
+    v117 = load v100
+    return v117
+  bb7:
+    v118 = sconst "Defeat! Hero fell in battle."
+    v119 = call @syntra_println_str(v118)
+    v120 = iconst.void 0
+    v121 = iconst.int 0
+    return v121
+}
+
+

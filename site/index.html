@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Syntra Standard Library Documentation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top-nav">
+<div class="nav-left">
+<button class="mobile-toggle" id="mobileToggle" aria-label="Toggle Navigation">☰</button>
+<a href="index.html" class="brand-link">
+<span class="brand-logo">🔮</span>
+<span class="brand-name">Syntra</span>
+<span class="brand-badge">Docs</span>
+</a>
+</div>
+<div class="nav-center">
+<div class="search-container">
+<span class="search-icon">🔍</span>
+<input type="text" id="searchInput" placeholder="Search modules, classes, methods... (/)" autocomplete="off">
+<span class="search-shortcut">/</span>
+<div id="searchResults" class="search-dropdown hidden"></div>
+</div>
+</div>
+<div class="nav-right">
+<a href="index.html" class="nav-link">Modules</a>
+<button id="themeToggle" class="theme-toggle" title="Toggle Dark / Light theme">🌙</button>
+</div>
+</header>
+<main class="home-container">
+<section class="hero-section">
+<div class="hero-badge">✨ Syntra v0.1.0 • 2026 Edition</div>
+<h1 class="hero-title">Syntra Standard Library</h1>
+<p class="hero-subtitle">Zero-overhead, type-safe, cross-platform standard library with pure native performance, high-throughput asynchronous I/O, and cryptographic integrity.</p>
+<div class="stats-grid">
+<div class="stat-card"><span class="stat-num">16</span><span class="stat-label">Modules</span></div>
+<div class="stat-card"><span class="stat-num">59</span><span class="stat-label">Classes</span></div>
+<div class="stat-card"><span class="stat-num">327</span><span class="stat-label">Methods</span></div>
+<div class="stat-card"><span class="stat-num">26</span><span class="stat-label">Functions</span></div>
+<div class="stat-card"><span class="stat-num">100%</span><span class="stat-label">Documented</span></div>
+</div>
+</section>
+<section class="modules-section">
+<div class="section-header">
+<h2>Standard Library Modules</h2>
+<p>Click any module below to inspect its classes, interfaces, methods, and complete API references.</p>
+</div>
+<div class="module-grid">
+<a href="air.html" class="module-card">
+<div class="module-card-header">
+<span class="module-icon">🧬</span>
+<div class="module-info">
+<h3 class="module-name">air</h3>
+<span class="module-category">Intermediate Representation</span>
+</div>
+</div>
+<p class="module-desc">Conforms to Specification 03: AIR-001 - AIR-032. Implements SSA Intermediate Representation generation, block branching, and AIR serialization in Syntra.</p>
+<div class="module-card-footer">
+<span class="badge pill">8 classes</span>
+<span class="badge pill">24 methods</span>
+<span class="view-arrow">&rarr;</span>
+</div>
+</a>
+<a href="checker.html" class="module-card">
+<div class="module-card-header">
+<span class="module-icon">🔍</span>
+<div class="module-info">
+<h3 class="module-name">checker</h3>
+<span class="module-category">Type Checking & Semantics</span>
+</div>
+</div>
+<p class="module-desc">Provides a zero-GC self-hosting Type Checker, Symbol Table, and Scope Analyzer in Syntra.</p>
+<div class="module-card-footer">
+<span class="badge pill">7 classes</span>
+<span class="badge pill">51 methods</span>
+<span class="view-arrow">&rarr;</span>
+</div>
+</a>
+<a href="codegen.html" class="module-card">
+<div class="module-card-header">
+<span class="module-icon">⚙️</span>
+<div class="module-info">
+<h3 class="module-name">codegen</h3>
+<span class="module-category">Cranelift Code Generation</span>
+</div>
+</div>
+<p class="module-desc">Translates Syntra AIR (SSA Intermediate Representation) into native machine assembly (x86-64 / AMD64 System V ABI). Fully self-hosting, zero external dependencies, operating within Arena memory domains.</p>
+<div class="module-card-footer">
+<span class="badge pill">4 classes</span>
+<span class="badge pill">12 methods</span>
+<span class="view-arrow">&rarr;</span>
+</div>
+</a>
+<a href="concurrency.html" class="module-card">
+<div class="module-card-header">
+<span class="module-icon">⚡</span>
+<div class="module-info">
+<h3 class="module-name">concurrency</h3>
+<span class="module-category">Async & Threading</span>
+</div>
+</div>
+<p class="module-desc">Standard Library: Concurrency &amp; Thread Synchronization Provides Task, Channel, ThreadPool, and Select primitives</p>
+<div class="module-card-footer">
+<span class="badge pill">0 classes</span>
+<span class="badge pill">0 methods</span>
+<span class="view-arrow">&rarr;</span>
+</div>
+</a>
+<a href="crypto.html" class="module-card">
+<div class="module-card-header">
+<span class="module-icon">🔒</span>
+<div class="module-info">
+<h3 class="module-name">crypto</h3>
+<span class="module-category">Cryptography</span>
+</div>
+</div>
+<p class="module-desc">100% Pure Syntra Implementation with ZERO external C or OpenSSL dependencies. Standards compliant: - SHA-256: FIPS PUB 180-4 Secure Hash Standard - HMAC-SHA256: RFC 2104 Keyed-Hashing for Message Authentication - Hex &amp; Base64: RFC 4648 Encoders &amp; Decoders - SecureRandom: Cryptographically secure entropy source - ConstantTime: Timing-attack resistant operations</p>
+<div class="module-card-footer">
+<span class="badge pill">7 classes</span>
+<span class="badge pill">27 methods</span>
+<span class="view-arrow">&rarr;</span>
+</div>
+</a>
+<a href="email.html" class="module-card">
+<div class="module-card-header">
+<span class="module-icon">✉️</span>
+<div class="module-info">
+<h3 class="module-name">email</h3>
+<span class="module-category">Email & MIME Engine</span>
+</div>
+</div>
+<p class="module-desc">Enterprise-grade, RFC-compliant email composition, MIME serialization, inbound parsing, DKIM canonicalization, SMTP client, Cloud REST API transports, and in-memory test runner. Standards compliant: - RFC 5321: Simple Mail Transfer Protocol (SMTP client, EHLO, AUTH LOGIN/PLAIN) - RFC 5322: Internet Message Format (Headers, Date, Message-ID, Address specs) - RFC 2045/2046/2047: MIME Multipart, Attachments, UTF-8 Encoded-Words - RFC 6376: DomainKeys Identified Mail (DKIM) Canonicalization &amp; Body Hashing - RFC 4648: Base64 Content-Transfer-Encoding for binary attachments</p>
+<div class="module-card-footer">
+<span class="badge pill">13 classes</span>
+<span class="badge pill">62 methods</span>
+<span class="view-arrow">&rarr;</span>
+</div>
+</a>
+<a href="file.html" class="module-card">
+<div class="module-card-header">
+<span class="module-icon">📁</span>
+<div class="module-info">
+<h3 class="module-name">file</h3>
+<span class="module-category">Filesystem Primitives</span>
+</div>
+</div>
+<p class="module-desc">Aliases and high-level file utilities.</p>
+<div class="module-card-footer">
+<span class="badge pill">0 classes</span>
+<span class="badge pill">0 methods</span>
+<span class="view-arrow">&rarr;</span>
+</div>
+</a>
+<a href="http.html" class="module-card">
+<div class="module-card-header">
+<span class="module-icon">📡</span>
+<div class="module-info">
+<h3 class="module-name">http</h3>
+<span class="module-category">HTTP Client/Server</span>
+</div>
+</div>
+<p class="module-desc">Provides HttpRequest, HttpResponse, HttpServer, and HttpClient Supports HTTP methods: GET, POST, PUT, PATCH, DELETE, OPTIONS</p>
+<div class="module-card-footer">
+<span class="badge pill">4 classes</span>
+<span class="badge pill">38 methods</span>
+<span class="view-arrow">&rarr;</span>
+</div>
+</a>
+<a href="io.html" class="module-card">
+<div class="module-card-header">
+<span class="module-icon">💾</span>
+<div class="module-info">
+<h3 class="module-name">io</h3>
+<span class="module-category">I/O Streams & Buffers</span>
+</div>
+</div>
+<p class="module-desc">Provides standard file and stream operations.</p>
+<div class="module-card-footer">
+<span class="badge pill">0 classes</span>
+<span class="badge pill">0 methods</span>
+<span class="view-arrow">&rarr;</span>
+</div>
+</a>
+<a href="json.html" class="module-card">
+<div class="module-card-header">
+<span class="module-icon">📋</span>
+<div class="module-info">
+<h3 class="module-name">json</h3>
+<span class="module-category">JSON Serialization</span>
+</div>
+</div>
+<p class="module-desc">Native JSON serialization and deserialization</p>
+<div class="module-card-footer">
+<span class="badge pill">1 classes</span>
+<span class="badge pill">2 methods</span>
+<span class="view-arrow">&rarr;</span>
+</div>
+</a>
+<a href="loader.html" class="module-card">
+<div class="module-card-header">
+<span class="module-icon">📦</span>
+<div class="module-info">
+<h3 class="module-name">loader</h3>
+<span class="module-category">Dynamic Module Loader</span>
+</div>
+</div>
+<p class="module-desc">Provides recursive multi-file dependency resolution, AST splicing, circular dependency prevention, and search path resolution for self-hosting.</p>
+<div class="module-card-footer">
+<span class="badge pill">1 classes</span>
+<span class="badge pill">9 methods</span>
+<span class="view-arrow">&rarr;</span>
+</div>
+</a>
+<a href="map.html" class="module-card">
+<div class="module-card-header">
+<span class="module-icon">🗺️</span>
+<div class="module-info">
+<h3 class="module-name">map</h3>
+<span class="module-category">Collections & Hash Maps</span>
+</div>
+</div>
+<p class="module-desc">Key-Value dictionary data structure</p>
+<div class="module-card-footer">
+<span class="badge pill">1 classes</span>
+<span class="badge pill">2 methods</span>
+<span class="view-arrow">&rarr;</span>
+</div>
+</a>
+<a href="net.html" class="module-card">
+<div class="module-card-header">
+<span class="module-icon">🔌</span>
+<div class="module-info">
+<h3 class="module-name">net</h3>
+<span class="module-category">Networking & Sockets</span>
+</div>
+</div>
+<p class="module-desc">Provides socket-level networking primitives (TcpListener, TcpStream)</p>
+<div class="module-card-footer">
+<span class="badge pill">0 classes</span>
+<span class="badge pill">0 methods</span>
+<span class="view-arrow">&rarr;</span>
+</div>
+</a>
+<a href="syntax.html" class="module-card">
+<div class="module-card-header">
+<span class="module-icon">🌲</span>
+<div class="module-info">
+<h3 class="module-name">syntax</h3>
+<span class="module-category">AST & Lexer Engine</span>
+</div>
+</div>
+<p class="module-desc">Provides a zero-GC self-hosting Lexer, AST, and recursive-descent Parser utilizing Syntra Memory Domains (Scoped Arenas) for high-performance compilation.</p>
+<div class="module-card-footer">
+<span class="badge pill">5 classes</span>
+<span class="badge pill">48 methods</span>
+<span class="view-arrow">&rarr;</span>
+</div>
+</a>
+<a href="system.html" class="module-card">
+<div class="module-card-header">
+<span class="module-icon">⚙️</span>
+<div class="module-info">
+<h3 class="module-name">system</h3>
+<span class="module-category">OS Primitives & Environment</span>
+</div>
+</div>
+<p class="module-desc">Provides command-line arguments, environment variables, time, and exit controls.</p>
+<div class="module-card-footer">
+<span class="badge pill">0 classes</span>
+<span class="badge pill">0 methods</span>
+<span class="view-arrow">&rarr;</span>
+</div>
+</a>
+<a href="web.html" class="module-card">
+<div class="module-card-header">
+<span class="module-icon">🌐</span>
+<div class="module-info">
+<h3 class="module-name">web</h3>
+<span class="module-category">Web Framework</span>
+</div>
+</div>
+<p class="module-desc">High-performance asynchronous HTTP microframework, Radix Router, OpenAPI 3.0 specification generator, and embedded Swagger UI interactive documentation viewer.</p>
+<div class="module-card-footer">
+<span class="badge pill">8 classes</span>
+<span class="badge pill">52 methods</span>
+<span class="view-arrow">&rarr;</span>
+</div>
+</a>
+</div>
+</section>
+</main>
+<footer class="site-footer">
+<div class="footer-inner">
+<p>Built with ❤️ by the Syntra Language Team • Version 0.1.0 • Spec 2026</p>
+<p class="footer-sub">High-performance Whole-Program Adaptive Programming Platform</p>
+</div>
+</footer>
+<script src="search.js"></script>
+</body>
+</html>

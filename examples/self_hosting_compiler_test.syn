@@ -1,0 +1,122 @@
+// Syntra Self-Hosting Compiler Milestone 1 Test
+// Demonstrates self-hosting Lexer, AST, and Parser written purely in Syntra,
+// allocating all AST nodes within the Arena memory domain for zero-GC compilation.
+
+import "../stdlib/syntax.syn";
+
+func main(): int {
+    println("=== Syntra Self-Hosting Compiler: Milestone 1 Verification ===");
+
+    string sampleCode = "func add(int a, int b): int {\n    return a + b;\n}\nclass Calculator {\n    public int base;\n    new(int b) {\n        this.base = b;\n    }\n    func calculate(int x): int {\n        if (x > 0) {\n            return this.base + x;\n        } else {\n            return this.base;\n        }\n    }\n}";
+
+    println("--- Test 1: Lexical Analysis (Self-Hosting Lexer) ---");
+    Lexer lexer = new Lexer(sampleCode);
+    Token[] tokens = lexer.tokenize();
+    println("Tokenization complete! Total tokens produced: " + tokens.length());
+
+    if (tokens.length() <= 0) {
+        println("FAILED: Lexer produced 0 tokens");
+        return 1;
+    }
+
+    Token tok0 = tokens[0];
+    println("First token: " + tok0.toString());
+    if (tok0.kind != "KwFunc" || tok0.text != "func") {
+        println("FAILED: Expected first token to be 'func'");
+        return 1;
+    }
+
+    Token tok1 = tokens[1];
+    println("Second token: " + tok1.toString());
+    if (tok1.kind != "Identifier" || tok1.text != "add") {
+        println("FAILED: Expected second token to be 'add'");
+        return 1;
+    }
+
+    Token lastTok = tokens[tokens.length() - 1];
+    println("Last token: " + lastTok.toString());
+    if (lastTok.kind != "EOF") {
+        println("FAILED: Expected last token to be 'EOF'");
+        return 1;
+    }
+    println("LEXER_VERIFICATION_PASSED: True");
+
+    println("--- Test 2: Syntactic Analysis & Arena AST Allocation ---");
+    Arena compilerArena = Arena.create(65536);
+    println("Initial Compiler Arena Bytes: " + compilerArena.allocatedBytes());
+
+    Parser parser = new Parser(tokens, compilerArena);
+    AstNode programAst = parser.parseProgram();
+
+    int astBytes = compilerArena.allocatedBytes();
+    println("AST Parsing Complete! Arena Memory Allocated: " + astBytes + " bytes");
+    println("AST Root Kind: " + programAst.kind + ", Top-Level Items: " + programAst.childCount());
+
+    if (programAst.kind != "Program") {
+        println("FAILED: Root AST node should be 'Program'");
+        return 1;
+    }
+
+    if (programAst.childCount() != 2) {
+        println("FAILED: Expected 2 top-level items, got " + programAst.childCount());
+        return 1;
+    }
+
+    AstNode fnDecl = programAst.getChild(0);
+    println("Item 0: " + fnDecl.kind + " '" + fnDecl.name + "'");
+    if (fnDecl.kind != "FunctionDecl" || fnDecl.name != "add") {
+        println("FAILED: Expected first item to be FunctionDecl 'add'");
+        return 1;
+    }
+
+    AstNode clsDecl = programAst.getChild(1);
+    println("Item 1: " + clsDecl.kind + " '" + clsDecl.name + "', members: " + clsDecl.childCount());
+    if (clsDecl.kind != "ClassDecl" || clsDecl.name != "Calculator") {
+        println("FAILED: Expected second item to be ClassDecl 'Calculator'");
+        return 1;
+    }
+
+    if (astBytes <= 0) {
+        println("FAILED: Arena should record positive allocated bytes for AST nodes");
+        return 1;
+    }
+    println("PARSER_AND_ARENA_AST_PASSED: True");
+
+    println("--- Test 3: S-Expression AST Visualization ---");
+    string astDump = programAst.printTree("");
+    println(astDump);
+    println("AST_VISUALIZATION_PASSED: True");
+
+    println("--- Test 4: O(1) Instant Arena Bulk Reclamation ---");
+    compilerArena.reset();
+    println("Arena Allocated Bytes after reset(): " + compilerArena.allocatedBytes());
+    if (compilerArena.allocatedBytes() != 0) {
+        println("FAILED: Arena bytes after reset should be 0");
+        return 1;
+    }
+    compilerArena.destroy();
+    println("ARENA_BULK_RECLAMATION_PASSED: True");
+
+    println("--- Test 5: Scoped Arena Parsing (Arena.scoped) ---");
+    int scopedItems = Arena.scoped((Arena localArena) => {
+        string quickCode = "func multiply(int x, int y): int { return x * y; }";
+        Lexer l = new Lexer(quickCode);
+        Token[] t = l.tokenize();
+        Parser p = new Parser(t, localArena);
+        AstNode root = p.parseProgram();
+        println("Inside Arena.scoped: parsed " + root.childCount() + " function(s), bytes: " + localArena.allocatedBytes());
+        return root.childCount();
+    });
+
+    println("Arena.scoped returned top-level count: " + scopedItems);
+    if (scopedItems != 1) {
+        println("FAILED: Expected 1 top-level item from scoped parse, got " + scopedItems);
+        return 1;
+    }
+    println("SCOPED_ARENA_PARSING_PASSED: True");
+
+    println("=========================================================================");
+    println("SUCCESS: ALL SELF-HOSTING COMPILER MILESTONE 1 INVARIANTS VERIFIED");
+    println("=========================================================================");
+    return 0;
+}

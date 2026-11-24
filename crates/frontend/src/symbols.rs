@@ -1,6 +1,6 @@
 use crate::types::Type;
-use aether_diagnostics::Span;
 use std::collections::HashMap;
+use syntra_diagnostics::Span;
 
 #[derive(Debug, Clone)]
 pub struct VariableSymbol {
@@ -13,6 +13,7 @@ pub struct VariableSymbol {
 #[derive(Debug, Clone)]
 pub struct FunctionSymbol {
     pub name: String,
+    pub generic_params: Vec<String>,
     pub params: Vec<(String, Type)>,
     pub return_type: Type,
     pub span: Span,
@@ -47,6 +48,7 @@ pub struct ConstructorSymbol {
 #[derive(Debug, Clone)]
 pub struct ClassSymbol {
     pub name: String,
+    pub generic_params: Vec<String>,
     pub extends: Option<String>,
     pub implements: Vec<String>,
     pub fields: HashMap<String, FieldSymbol>,

@@ -1,7 +1,8 @@
-use aether_diagnostics::Span;
-use aether_frontend::Type;
-use aether_syntax::ast::BinaryOp;
+use std::collections::HashMap;
 use std::fmt;
+use syntra_diagnostics::Span;
+use syntra_frontend::Type;
+use syntra_syntax::ast::BinaryOp;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ValueId(pub usize);
@@ -21,7 +22,7 @@ impl fmt::Display for BlockId {
     }
 }
 
-/// Aether Memory Domain classification (Specification 02)
+/// Syntra Memory Domain classification (Specification 02)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MemoryDomain {
     Stack,
@@ -47,6 +48,7 @@ impl fmt::Display for MemoryDomain {
 pub struct AirModule {
     pub name: String,
     pub functions: Vec<AirFunction>,
+    pub class_sizes: HashMap<String, usize>,
 }
 
 #[derive(Debug, Clone)]
@@ -103,14 +105,52 @@ pub enum Op {
         ptr: ValueId,
         val: ValueId,
     },
+    GetField {
+        object: ValueId,
+        field_name: String,
+        offset: usize,
+    },
+    SetField {
+        object: ValueId,
+        field_name: String,
+        offset: usize,
+        val: ValueId,
+    },
+    AllocArray {
+        elem_ty: Type,
+        len: ValueId,
+    },
+    GetIndex {
+        array: ValueId,
+        index: ValueId,
+    },
+    SetIndex {
+        array: ValueId,
+        index: ValueId,
+        val: ValueId,
+    },
+    ArrayLength {
+        array: ValueId,
+    },
     Call {
         func_name: String,
         args: Vec<ValueId>,
+    },
+    FuncAddr {
+        func_name: String,
     },
     NewObject {
         class_name: String,
         domain: MemoryDomain,
         args: Vec<ValueId>,
+    },
+    /// Speculative invariant guard (RUN-022, RUN-023, SAFE-011)
+    /// If `cond` is false at runtime, execution bails out to `deopt_target`
+    Guard {
+        cond: ValueId,
+        deopt_target: BlockId,
+        deopt_args: Vec<ValueId>,
+        reason: String,
     },
 }
 

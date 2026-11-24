@@ -1,7 +1,7 @@
 use crate::ir::*;
-use aether_diagnostics::{Diagnostic, Span};
-use aether_frontend::Type;
 use std::collections::HashMap;
+use syntra_diagnostics::{Diagnostic, Span};
+use syntra_frontend::Type;
 
 pub struct AirVerifier<'a> {
     func: &'a AirFunction,
@@ -20,17 +20,16 @@ impl<'a> AirVerifier<'a> {
 
     pub fn verify(mut self) -> Result<(), Vec<Diagnostic>> {
         // AIR-002: Check CFG entry block exists
-        let block_map: HashMap<BlockId, &BasicBlock> = self
-            .func
-            .blocks
-            .iter()
-            .map(|b| (b.id, b))
-            .collect();
+        let block_map: HashMap<BlockId, &BasicBlock> =
+            self.func.blocks.iter().map(|b| (b.id, b)).collect();
 
         if !block_map.contains_key(&self.func.entry_block) {
             self.diagnostics.push(Diagnostic::error(
                 "AIR-002",
-                format!("Entry block {} does not exist in function '{}'", self.func.entry_block, self.func.name),
+                format!(
+                    "Entry block {} does not exist in function '{}'",
+                    self.func.entry_block, self.func.name
+                ),
                 Span::default(),
             ));
             return Err(self.diagnostics);
@@ -48,7 +47,7 @@ impl<'a> AirVerifier<'a> {
                 if self.defined_values.contains_key(arg_id) {
                     self.diagnostics.push(Diagnostic::error(
                         "AIR-001",
-                        format!("SSA violation: value {} is defined multiple times", arg_id),
+                        format!("SSA violation: value {arg_id} is defined multiple times"),
                         Span::default(),
                     ));
                 }
@@ -61,7 +60,10 @@ impl<'a> AirVerifier<'a> {
                 if self.defined_values.contains_key(&inst.result) {
                     self.diagnostics.push(Diagnostic::error(
                         "AIR-001",
-                        format!("SSA violation: value {} is defined multiple times", inst.result),
+                        format!(
+                            "SSA violation: value {} is defined multiple times",
+                            inst.result
+                        ),
                         inst.span,
                     ));
                 }
@@ -79,6 +81,28 @@ impl<'a> AirVerifier<'a> {
                     Op::Load { ptr } => {
                         self.check_value_defined(*ptr, inst.span);
                     }
+                    Op::GetField { object, .. } => {
+                        self.check_value_defined(*object, inst.span);
+                    }
+                    Op::SetField { object, val, .. } => {
+                        self.check_value_defined(*object, inst.span);
+                        self.check_value_defined(*val, inst.span);
+                    }
+                    Op::AllocArray { len, .. } => {
+                        self.check_value_defined(*len, inst.span);
+                    }
+                    Op::GetIndex { array, index } => {
+                        self.check_value_defined(*array, inst.span);
+                        self.check_value_defined(*index, inst.span);
+                    }
+                    Op::SetIndex { array, index, val } => {
+                        self.check_value_defined(*array, inst.span);
+                        self.check_value_defined(*index, inst.span);
+                        self.check_value_defined(*val, inst.span);
+                    }
+                    Op::ArrayLength { array } => {
+                        self.check_value_defined(*array, inst.span);
+                    }
                     Op::Call { args, .. } => {
                         for a in args {
                             self.check_value_defined(*a, inst.span);
@@ -89,7 +113,39 @@ impl<'a> AirVerifier<'a> {
                             self.check_value_defined(*a, inst.span);
                         }
                     }
-                    Op::ConstInt(_) | Op::ConstFloat(_) | Op::ConstBool(_) | Op::ConstString(_) | Op::Alloc { .. } => {}
+                    Op::Guard {
+                        cond,
+                        deopt_target,
+                        deopt_args,
+                        ..
+                    } => {
+                        self.check_value_defined(*cond, inst.span);
+                        if let Some(c_ty) = self.defined_values.get(cond) {
+                            if *c_ty != Type::Bool {
+                                self.diagnostics.push(Diagnostic::error(
+                                    "AIR-003",
+                                    format!("Guard condition must be 'bool', found '{c_ty}'"),
+                                    inst.span,
+                                ));
+                            }
+                        }
+                        if !block_map.contains_key(deopt_target) {
+                            self.diagnostics.push(Diagnostic::error(
+                                "AIR-002",
+                                format!("Guard deopt target block {deopt_target} does not exist"),
+                                inst.span,
+                            ));
+                        }
+                        for a in deopt_args {
+                            self.check_value_defined(*a, inst.span);
+                        }
+                    }
+                    Op::ConstInt(_)
+                    | Op::ConstFloat(_)
+                    | Op::ConstBool(_)
+                    | Op::ConstString(_)
+                    | Op::Alloc { .. }
+                    | Op::FuncAddr { .. } => {}
                 }
 
                 self.defined_values.insert(inst.result, inst.ty.clone());
@@ -104,7 +160,10 @@ impl<'a> AirVerifier<'a> {
                             if !v_ty.is_assignable_to(&self.func.return_type) {
                                 self.diagnostics.push(Diagnostic::error(
                                     "AIR-003",
-                                    format!("Return type mismatch: expected '{}', found '{}'", self.func.return_type, v_ty),
+                                    format!(
+                                        "Return type mismatch: expected '{}', found '{}'",
+                                        self.func.return_type, v_ty
+                                    ),
                                     *span,
                                 ));
                             }
@@ -112,7 +171,10 @@ impl<'a> AirVerifier<'a> {
                     } else if self.func.return_type != Type::Void {
                         self.diagnostics.push(Diagnostic::error(
                             "AIR-003",
-                            format!("Return type mismatch: expected '{}', found void", self.func.return_type),
+                            format!(
+                                "Return type mismatch: expected '{}', found void",
+                                self.func.return_type
+                            ),
                             *span,
                         ));
                     }
@@ -121,7 +183,7 @@ impl<'a> AirVerifier<'a> {
                     if !block_map.contains_key(target) {
                         self.diagnostics.push(Diagnostic::error(
                             "AIR-002",
-                            format!("Branch target {} does not exist", target),
+                            format!("Branch target {target} does not exist"),
                             *span,
                         ));
                     }
@@ -142,7 +204,7 @@ impl<'a> AirVerifier<'a> {
                         if *c_ty != Type::Bool {
                             self.diagnostics.push(Diagnostic::error(
                                 "AIR-003",
-                                format!("Branch condition must be 'bool', found '{}'", c_ty),
+                                format!("Branch condition must be 'bool', found '{c_ty}'"),
                                 *span,
                             ));
                         }
@@ -150,14 +212,14 @@ impl<'a> AirVerifier<'a> {
                     if !block_map.contains_key(then_block) {
                         self.diagnostics.push(Diagnostic::error(
                             "AIR-002",
-                            format!("Then branch target {} does not exist", then_block),
+                            format!("Then branch target {then_block} does not exist"),
                             *span,
                         ));
                     }
                     if !block_map.contains_key(else_block) {
                         self.diagnostics.push(Diagnostic::error(
                             "AIR-002",
-                            format!("Else branch target {} does not exist", else_block),
+                            format!("Else branch target {else_block} does not exist"),
                             *span,
                         ));
                     }
@@ -182,7 +244,7 @@ impl<'a> AirVerifier<'a> {
         if !self.defined_values.contains_key(&val) {
             self.diagnostics.push(Diagnostic::error(
                 "AIR-001",
-                format!("SSA violation: value {} is used before definition", val),
+                format!("SSA violation: value {val} is used before definition"),
                 span,
             ));
         }

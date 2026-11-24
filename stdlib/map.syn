@@ -1,0 +1,47 @@
+// Syntra Standard Library: Map
+// Key-Value dictionary data structure
+
+/// Generic key-value pair container representing an entry in a `Map`.
+///
+/// Encapsulates immutable key references and associated values.
+///
+/// ```syntra
+/// let entry = new MapEntry<string, int>("counter", 42);
+/// System.println("Key: " + entry.getKey() + " -> " + entry.getValue());
+/// ```
+///
+/// @param K The type of the map key.
+/// @param V The type of the map value.
+/// @since v0.1.0
+class MapEntry<K, V> {
+    /// The entry's key identifier.
+    K key;
+
+    /// The value associated with the key.
+    V value;
+
+    /// Constructs a new `MapEntry` binding `key` to `value`.
+    ///
+    /// @param key The key identifier.
+    /// @param value The value associated with key.
+    constructor(K key, V value) {
+        this.key = key;
+        this.value = value;
+    }
+
+    /// Retrieves the entry's key.
+    ///
+    /// @return The key of type `K`.
+    /// @since v0.1.0
+    func getKey(): K {
+        return this.key;
+    }
+
+    /// Retrieves the entry's value.
+    ///
+    /// @return The value of type `V`.
+    /// @since v0.1.0
+    func getValue(): V {
+        return this.value;
+    }
+}

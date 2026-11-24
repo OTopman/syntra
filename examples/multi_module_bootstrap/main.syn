@@ -1,0 +1,20 @@
+// Multi-Module Bootstrapping Test: Main Application Driver
+// Imports sibling modules: math.syn and utils.syn
+
+import "math.syn";
+import "utils.syn";
+
+func main(): int {
+    int sum = math.add(20, 22);
+    int prod = math.multiply(6, 7);
+    int big = utils.max(sum, prod);
+    int small = utils.min(sum, prod);
+    int f6 = math.fib(6);
+    int clamped = utils.clamp(50, 10, 42);
+
+    if (sum == 42 && prod == 42 && big == 42 && small == 42 && f6 == 8 && clamped == 42) {
+        return 42;
+    }
+
+    return 1;
+}

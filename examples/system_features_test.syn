@@ -1,0 +1,80 @@
+// Comprehensive End-to-End Test for Syntra Features:
+// 1. Standard System Subsystem (System.args, System.getEnv, System.timeMs)
+// 3. String Interpolation ($"Hello, {name}!")
+// 4. Structured Error Handling (try / catch / finally with throw)
+
+func test_string_interpolation(): int {
+    string lang = "Syntra";
+    int year = 2026;
+    int a = 15;
+    int b = 25;
+
+    string msg = $"Welcome to {lang} in {year}! Sum: {a + b}";
+    println(msg);
+
+    if (msg == "Welcome to Syntra in 2026! Sum: 40") {
+        return 10;
+    }
+    return 0;
+}
+
+func test_try_catch_finally(): int {
+    string caught = "";
+    int finally_executed = 0;
+
+    println("Testing try / catch / finally...");
+    try {
+        println("  -> Inside try block, throwing error...");
+        throw "FailedOperation: file access denied";
+        println("  -> This should never print!");
+    } catch (err) {
+        println($"  -> Caught expected error: {err}");
+        caught = err;
+    } finally {
+        println("  -> Finally block executed unconditionally!");
+        finally_executed = 1;
+    }
+
+    if (caught == "FailedOperation: file access denied" && finally_executed == 1) {
+        return 20;
+    }
+    return 0;
+}
+
+func test_system_subsystem(): int {
+    println("Testing System subsystem...");
+    int start_time = System.timeMs();
+    println($"  -> Current timestamp: {start_time} ms");
+
+    string path_env = System.getEnv("PATH");
+    println($"  -> PATH env length: {path_env.len()} characters");
+
+    string[] cli_args = System.args();
+    println($"  -> CLI arguments count: {cli_args.len()}");
+    for arg in cli_args {
+        println($"     arg: {arg}");
+    }
+
+    if (start_time > 0) {
+        return 30;
+    }
+    return 0;
+}
+
+func main(): int {
+    println("=== Syntra Milestone 12 Verification Suite ===");
+
+    int s1 = test_string_interpolation();
+    int s2 = test_try_catch_finally();
+    int s3 = test_system_subsystem();
+
+    int total_score = s1 + s2 + s3;
+    println($"All tests completed! Total score: {total_score} / 60");
+
+    if (total_score == 60) {
+        println("SUCCESS: All Milestone 12 features verified with 100% score!");
+        return 42;
+    }
+
+    return 1;
+}

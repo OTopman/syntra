@@ -1,0 +1,50 @@
+// Syntra Standard Library: Json
+// Native JSON serialization and deserialization
+
+/// Helper utilities for JSON serialization and parsing of Syntra objects,
+/// arrays, and key-value maps.
+///
+/// Built on top of the native high-speed JSON serialization engine.
+///
+/// ```syntra
+/// let data = new Map<string, string>();
+/// data.set("name", "syntra");
+/// data.set("version", "0.1.0");
+///
+/// let json = JsonHelper.stringifyMap(data);
+/// System.println("JSON: " + json);
+/// ```
+///
+/// @since v0.1.0
+class JsonHelper {
+    /// Parses a JSON formatted string into a Syntra Map representation.
+    ///
+    /// ```syntra
+    /// let raw = "{\"host\":\"localhost\",\"port\":\"8080\"}";
+    /// let map = JsonHelper.parseMap(raw);
+    /// System.println("Host: " + map.get("host"));
+    /// ```
+    ///
+    /// @param jsonStr Valid JSON string payload.
+    /// @return Key-value map representation of JSON object.
+    /// @throws RuntimeException If JSON string contains invalid syntax.
+    /// @since v0.1.0
+    static func parseMap(string jsonStr): Map<string, string> {
+        return Json.parse(jsonStr);
+    }
+
+    /// Serializes a Syntra key-value map into a compact JSON string.
+    ///
+    /// ```syntra
+    /// let map = new Map<string, string>();
+    /// map.set("status", "ok");
+    /// let json = JsonHelper.stringifyMap(map);
+    /// ```
+    ///
+    /// @param map Key-value map containing string entries.
+    /// @return Formatted JSON string encoding the map.
+    /// @since v0.1.0
+    static func stringifyMap(Map<string, string> map): string {
+        return Json.stringify(map);
+    }
+}

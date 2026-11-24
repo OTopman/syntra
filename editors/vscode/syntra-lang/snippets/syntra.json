@@ -1,0 +1,216 @@
+{
+  "Function Declaration (fn)": {
+    "prefix": "fn",
+    "body": [
+      "fn ${1:name}(${2:params}): ${3:void} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Declare a function with return type"
+  },
+  "Function Declaration (func)": {
+    "prefix": "func",
+    "body": [
+      "func ${1:name}(${2:params}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Declare a function"
+  },
+  "Main Function": {
+    "prefix": "main",
+    "body": [
+      "fn main() {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Main entry point"
+  },
+  "Class Declaration": {
+    "prefix": "class",
+    "body": [
+      "class ${1:Name} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Declare a class"
+  },
+  "ThreadPool Executor": {
+    "prefix": "threadpool",
+    "body": [
+      "ThreadPool ${1:pool} = new ThreadPool(${2:4});",
+      "$0"
+    ],
+    "description": "Instantiate a ThreadPool worker pool"
+  },
+  "Task Spawn": {
+    "prefix": "spawn",
+    "body": [
+      "Task ${1:task} = Task.spawn(fn() {",
+      "\t$0",
+      "});"
+    ],
+    "description": "Spawn an asynchronous task"
+  },
+  "Channel Initialization": {
+    "prefix": "channel",
+    "body": [
+      "Channel ${1:ch} = new Channel(${2:10});",
+      "$0"
+    ],
+    "description": "Create a typed FIFO channel"
+  },
+  "Channel Select": {
+    "prefix": "select",
+    "body": [
+      "int ${1:readyIndex} = Channel.select([${2:ch1}, ${3:ch2}]);",
+      "$0"
+    ],
+    "description": "Non-blocking multiplexer over channels"
+  },
+  "If Statement": {
+    "prefix": "if",
+    "body": [
+      "if (${1:condition}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "If branch"
+  },
+  "If Else Statement": {
+    "prefix": "ifelse",
+    "body": [
+      "if (${1:condition}) {",
+      "\t$2",
+      "} else {",
+      "\t$0",
+      "}"
+    ],
+    "description": "If-else conditional"
+  },
+  "For In Loop": {
+    "prefix": "for",
+    "body": [
+      "for (${1:item} in ${2:iterable}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "For-in iterator loop"
+  },
+  "While Loop": {
+    "prefix": "while",
+    "body": [
+      "while (${1:condition}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "While loop"
+  },
+  "Print Line": {
+    "prefix": "println",
+    "body": [
+      "System.println(${1:\"message\"});"
+    ],
+    "description": "Print to stdout with newline"
+  },
+  "Print": {
+    "prefix": "print",
+    "body": [
+      "System.print(${1:\"message\"});"
+    ],
+    "description": "Print to stdout without newline"
+  },
+  "Package Manifest": {
+    "prefix": "package",
+    "body": [
+      "package Config {",
+      "\tname = \"${1:package_name}\"",
+      "\tversion = \"${2:0.1.0}\"",
+      "\tedition = \"2026\"",
+      "",
+      "\toptimization {",
+      "\t\tpgo = \"${3|locked,profile,adaptive,off|}\"",
+      "\t\ttelemetry_mode = \"${4|sampling,continuous,off|}\"",
+      "\t}",
+      "",
+      "\tbuild {",
+      "\t\tmode = \"${5|native,interpreter,jit|}\"",
+      "\t\tmemory_domains = \"${6|strict,permissive,arena|}\"",
+      "\t}",
+      "",
+      "\tnetwork {",
+      "\t\ttls_provider = \"${7|pure,native,rustls,openssl|}\"",
+      "\t}",
+      "",
+      "\tdependencies = [",
+      "\t\t$0",
+      "\t]",
+      "}"
+    ],
+    "description": "Complete Package.syn manifest template"
+  },
+  "Dependency (Version)": {
+    "prefix": "dep",
+    "body": [
+      "Dependency.version(\"${1:name}\", \"${2:0.1.0}\"),"
+    ],
+    "description": "Add versioned dependency"
+  },
+  "Dependency (Path)": {
+    "prefix": "dep-path",
+    "body": [
+      "Dependency.path(\"${1:name}\", \"${2:./libs/name}\"),"
+    ],
+    "description": "Add local path dependency"
+  },
+  "Dependency (Git)": {
+    "prefix": "dep-git",
+    "body": [
+      "Dependency.git(\"${1:name}\", \"${2:https://github.com/user/repo}\"),"
+    ],
+    "description": "Add remote Git repository dependency"
+  },
+  "Dependency (Git Branch)": {
+    "prefix": "dep-branch",
+    "body": [
+      "Dependency.gitBranch(\"${1:name}\", \"${2:https://github.com/user/repo}\", \"${3:main}\"),"
+    ],
+    "description": "Add Git dependency pinned to branch"
+  },
+  "Dependency (Git Tag)": {
+    "prefix": "dep-tag",
+    "body": [
+      "Dependency.gitTag(\"${1:name}\", \"${2:https://github.com/user/repo}\", \"${3:v1.0.0}\"),"
+    ],
+    "description": "Add Git dependency pinned to release tag"
+  },
+  "Optimization Block": {
+    "prefix": "optimization",
+    "body": [
+      "optimization {",
+      "\tpgo = \"${1|locked,profile,adaptive,off|}\"",
+      "\ttelemetry_mode = \"${2|sampling,continuous,off|}\"",
+      "}"
+    ],
+    "description": "Optimization and PGO configuration block"
+  },
+  "Build Block": {
+    "prefix": "build",
+    "body": [
+      "build {",
+      "\tmode = \"${1|native,interpreter,jit|}\"",
+      "\tmemory_domains = \"${2|strict,permissive,arena|}\"",
+      "}"
+    ],
+    "description": "Compilation and memory domain configuration block"
+  },
+  "Network Block": {
+    "prefix": "network",
+    "body": [
+      "network {",
+      "\ttls_provider = \"${1|pure,native,rustls,openssl|}\"",
+      "}"
+    ],
+    "description": "Network and TLS provider configuration block"
+  }
+}

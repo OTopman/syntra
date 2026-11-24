@@ -1,0 +1,11 @@
+--- Starting Syntra Adventure ---
+Created hero: Knight with 100 HP.
+
+[Battle Commences]
+Knight took 35 damage! Health remaining: 65
++150 points added! Total score: 150
+
+[Battle Assessment]
+Victory! Hero survived with 65 HP.
+Final Score: 150
+build exit: 150

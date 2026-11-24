@@ -1,0 +1,346 @@
+// Syntra Standard Library: Module Loader Subsystem (Milestone 5)
+// Provides recursive multi-file dependency resolution, AST splicing,
+// circular dependency prevention, and search path resolution for self-hosting.
+
+import "../stdlib/syntax.syn";
+
+/// Pure Syntra Module Loader & Dependency Resolver.
+///
+/// Resolves and loads multi-file Syntra packages recursively, parsing imports into AST nodes,
+/// preventing circular dependencies, managing package search paths, and performing AST splicing.
+///
+/// @example
+/// ```syntra
+/// Arena arena = new Arena();
+/// ModuleLoader loader = new ModuleLoader(arena);
+/// loader.addSearchPath("./vendor");
+/// AstNode rootAst = loader.loadProgram("src/main.syn");
+/// ```
+/// @since v0.1.0
+class ModuleLoader {
+    /// List of canonical file paths that have already been resolved and parsed to prevent cycles.
+    public string[] loadedFiles;
+
+    /// Ordered search directory paths inspected when resolving imports without relative slashes.
+    public string[] searchPaths;
+
+    /// Memory arena used for allocating AST nodes during parsing.
+    public Arena arena;
+
+    /// Creates a new `ModuleLoader` tied to an AST memory arena with standard default search paths.
+    ///
+    /// Standard search paths added automatically:
+    /// - `"."` (current working directory)
+    /// - `"src"`
+    /// - `"stdlib"`
+    /// - `"packages"`
+    /// - `".syntra/packages"`
+    /// - `"examples"`
+    ///
+    /// @param arena The memory arena managing AST allocation lifetimes.
+    /// @since v0.1.0
+    new(Arena arena) {
+        this.arena = arena;
+        this.loadedFiles = [];
+        this.searchPaths = [];
+        this.searchPaths.push(".");
+        this.searchPaths.push("src");
+        this.searchPaths.push("stdlib");
+        this.searchPaths.push("packages");
+        this.searchPaths.push(".syntra/packages");
+        this.searchPaths.push("examples");
+    }
+
+    /// Registers an additional directory search path for module resolution.
+    ///
+    /// @param path The directory path to search (e.g. `"vendor/lib"`).
+    /// @since v0.1.0
+    func addSearchPath(string path) {
+        this.searchPaths.push(path);
+    }
+
+    /// Checks whether a given module file path has already been processed.
+    ///
+    /// @param path The canonical file path.
+    /// @returns `true` if already loaded; `false` otherwise.
+    /// @since v0.1.0
+    func isLoaded(string path): bool {
+        int i = 0;
+        while (i < this.loadedFiles.length()) {
+            if (this.loadedFiles[i] == path) {
+                return true;
+            }
+            i = i + 1;
+        }
+        return false;
+    }
+
+    /// Marks a module file path as loaded to guard against circular import loops.
+    ///
+    /// @param path The file path to mark.
+    /// @since v0.1.0
+    func markLoaded(string path) {
+        this.loadedFiles.push(path);
+    }
+
+    /// Computes the directory path enclosing a given file path.
+    ///
+    /// @param filePath The relative or absolute file path.
+    /// @returns The parent directory path (e.g. `"src/utils"` from `"src/utils/math.syn"`).
+    /// @since v0.1.0
+    func getParentDir(string filePath): string {
+        int lastSlash = -1;
+        int i = 0;
+        while (i < filePath.length()) {
+            if (filePath.charAt(i) == "/" || filePath.charAt(i) == "\\") {
+                lastSlash = i;
+            }
+            i = i + 1;
+        }
+        if (lastSlash < 0) {
+            return ".";
+        }
+        if (lastSlash == 0) {
+            return "/";
+        }
+        return filePath.substring(0, lastSlash);
+    }
+
+    /// Joins a parent directory path and a relative child path cleanly with a forward slash.
+    ///
+    /// @param dir The parent directory.
+    /// @param file The child file or subdirectory path.
+    /// @returns The concatenated path string.
+    /// @since v0.1.0
+    func joinPath(string dir, string file): string {
+        if (dir == "." || dir.length() == 0) {
+            return file;
+        }
+        if (dir.endsWith("/") || dir.endsWith("\\")) {
+            return dir + file;
+        }
+        return dir + "/" + file;
+    }
+
+    /// Extracts the canonical module identifier name from an import path string.
+    ///
+    /// Strips trailing `.syn` extensions, directory prefixes, and dotted package qualifiers.
+    ///
+    /// @param importPath The raw import string (e.g. `"std.net.http"` or `"./math.syn"`).
+    /// @returns The base module name (e.g. `"http"` or `"math"`).
+    /// @since v0.1.0
+    func extractModuleName(string importPath): string {
+        string name = importPath;
+        if (name.endsWith(".syn")) {
+            name = name.substring(0, name.length() - 4);
+        }
+        int lastSlash = -1;
+        int i = 0;
+        while (i < name.length()) {
+            if (name.charAt(i) == "/" || name.charAt(i) == "\\") {
+                lastSlash = i;
+            }
+            i = i + 1;
+        }
+        if (lastSlash >= 0 && lastSlash + 1 < name.length()) {
+            name = name.substring(lastSlash + 1, name.length());
+        }
+        int lastDot = -1;
+        i = 0;
+        while (i < name.length()) {
+            if (name.charAt(i) == ".") {
+                lastDot = i;
+            }
+            i = i + 1;
+        }
+        if (lastDot >= 0 && lastDot + 1 < name.length()) {
+            name = name.substring(lastDot + 1, name.length());
+        }
+        return name;
+    }
+
+    /// Locates an import file on the filesystem relative to the importing file or search paths.
+    ///
+    /// Checks:
+    /// 1. Direct path relative to current importing file.
+    /// 2. Direct path relative to registered search paths.
+    /// 3. Dot notation translation (e.g. `"models.user"` -> `"models/user.syn"` or `"models/user/src/lib.syn"`).
+    ///
+    /// @param importPath The raw import declaration path.
+    /// @param currentFile The path of the file declaring the import.
+    /// @returns The absolute or relative file path found, or `""` if not resolved.
+    /// @since v0.1.0
+    func findModuleFile(string importPath, string currentFile): string {
+        string parentDir = this.getParentDir(currentFile);
+
+        // 1. Direct path with .syn or slashes
+        if (importPath.endsWith(".syn") || importPath.contains("/")) {
+            string candidate = this.joinPath(parentDir, importPath);
+            if (File.exists(candidate)) {
+                return candidate;
+            }
+            int s = 0;
+            while (s < this.searchPaths.length()) {
+                string sp = this.searchPaths[s];
+                string spCandidate = this.joinPath(sp, importPath);
+                if (File.exists(spCandidate)) {
+                    return spCandidate;
+                }
+                s = s + 1;
+            }
+            if (File.exists(importPath)) {
+                return importPath;
+            }
+            return "";
+        }
+
+        // 2. Dot notation or identifier name: e.g. "modules.math_utils" -> "modules/math_utils.syn"
+        string relPath = "";
+        int i = 0;
+        while (i < importPath.length()) {
+            string c = importPath.charAt(i);
+            if (c == ".") {
+                relPath = relPath + "/";
+            } else {
+                relPath = relPath + c;
+            }
+            i = i + 1;
+        }
+
+        string p1 = this.joinPath(parentDir, relPath + ".syn");
+        if (File.exists(p1)) {
+            return p1;
+        }
+
+        int s = 0;
+        while (s < this.searchPaths.length()) {
+            string sp = this.searchPaths[s];
+            string c1 = this.joinPath(sp, relPath + ".syn");
+            if (File.exists(c1)) {
+                return c1;
+            }
+            string c2 = this.joinPath(sp, relPath + "/src/lib.syn");
+            if (File.exists(c2)) {
+                return c2;
+            }
+            string c3 = this.joinPath(sp, relPath + "/lib.syn");
+            if (File.exists(c3)) {
+                return c3;
+            }
+            string c4 = this.joinPath(sp, relPath + "/main.syn");
+            if (File.exists(c4)) {
+                return c4;
+            }
+            s = s + 1;
+        }
+
+        if (File.exists(relPath + ".syn")) {
+            return relPath + ".syn";
+        }
+
+        return "";
+    }
+
+    /// Recursively parses an imported module file, resolving nested imports and splicing declarations.
+    ///
+    /// @param moduleFile The resolved file path of the module.
+    /// @param moduleName The extracted module namespace name.
+    /// @returns Array of parsed AST declaration nodes from the module and its transitive dependencies.
+    /// @since v0.1.0
+    func loadModuleRecursive(string moduleFile, string moduleName): AstNode[] {
+        AstNode[] result = [];
+        if (this.isLoaded(moduleFile)) {
+            return result;
+        }
+        this.markLoaded(moduleFile);
+
+        string src = File.readText(moduleFile);
+        Lexer lexer = new Lexer(src);
+        Token[] tokens = lexer.tokenize();
+        Parser parser = new Parser(tokens, this.arena);
+        AstNode childProg = parser.parseProgram();
+
+        int i = 0;
+        while (i < childProg.childCount()) {
+            AstNode item = childProg.getChild(i);
+            if (item.kind == "ImportDecl") {
+                string nestedFile = this.findModuleFile(item.name, moduleFile);
+                if (nestedFile.length() > 0) {
+                    string nestedModName = this.extractModuleName(item.name);
+                    AstNode[] nestedItems = this.loadModuleRecursive(nestedFile, nestedModName);
+                    int n = 0;
+                    while (n < nestedItems.length()) {
+                        result.push(nestedItems[n]);
+                        n = n + 1;
+                    }
+                } else {
+                    println("❌ Warning: Could not resolve nested import '" + item.name + "' from '" + moduleFile + "'");
+                }
+            } else if (item.kind == "FunctionDecl") {
+                result.push(item);
+                if (moduleName.length() > 0) {
+                    AstNode namespacedFn = new AstNode("FunctionDecl", moduleName + "_" + item.name, item.intVal, item.span);
+                    namespacedFn.children = item.children;
+                    result.push(namespacedFn);
+                }
+            } else {
+                result.push(item);
+            }
+            i = i + 1;
+        }
+
+        return result;
+    }
+
+    /// Loads the root Syntra program and recursively resolves, parses, and splices all imported modules into one unified AST.
+    ///
+    /// @param rootFile Path to the primary source entry file (e.g. `"src/main.syn"`).
+    /// @returns The merged `Program` AST root node.
+    /// @example
+    /// ```syntra
+    /// AstNode program = loader.loadProgram("src/main.syn");
+    /// ```
+    /// @since v0.1.0
+    func loadProgram(string rootFile): AstNode {
+        if (File.exists(rootFile) == false) {
+            println("❌ Error: Root file not found: " + rootFile);
+            Span errSpan = new Span(0, 0, 1, 1);
+            return new AstNode("ErrorNode", rootFile, 0, errSpan);
+        }
+
+        this.markLoaded(rootFile);
+        string src = File.readText(rootFile);
+        Lexer lexer = new Lexer(src);
+        Token[] tokens = lexer.tokenize();
+        Parser parser = new Parser(tokens, this.arena);
+        AstNode rootProg = parser.parseProgram();
+
+        Span progSpan = new Span(0, 0, 1, 1);
+        AstNode mergedAst = new AstNode("Program", "", 0, progSpan);
+
+        int i = 0;
+        while (i < rootProg.childCount()) {
+            AstNode item = rootProg.getChild(i);
+            if (item.kind == "ImportDecl") {
+                string resolved = this.findModuleFile(item.name, rootFile);
+                if (resolved.length() == 0) {
+                    println("❌ Error: Could not resolve import '" + item.name + "' from '" + rootFile + "'");
+                    Span errSpan = new Span(0, 0, 1, 1);
+                    return new AstNode("ErrorNode", item.name, 0, errSpan);
+                }
+                string modName = this.extractModuleName(item.name);
+                AstNode[] importedItems = this.loadModuleRecursive(resolved, modName);
+                int m = 0;
+                while (m < importedItems.length()) {
+                    mergedAst.addChild(importedItems[m]);
+                    m = m + 1;
+                }
+            } else {
+                mergedAst.addChild(item);
+            }
+            i = i + 1;
+        }
+
+        return mergedAst;
+    }
+}

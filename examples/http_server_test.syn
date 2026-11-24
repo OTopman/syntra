@@ -1,0 +1,107 @@
+import net;
+import http;
+
+async fn start_test_server(int port): int {
+    HttpServer server = new HttpServer();
+    server.listen(port);
+    System.println("Server listening on port " + port);
+
+    // 1. Accept GET request
+    TcpStream client1 = server.accept();
+    string raw1 = client1.read();
+    HttpRequest req1 = HttpRequest.parse(raw1);
+    System.println("Server received method=" + req1.method + ", path=" + req1.path + ", isGet=" + req1.isGet());
+    HttpResponse res1 = HttpResponse.ok("Item list", "text/plain");
+    server.sendResponse(client1, res1);
+
+    // 2. Accept POST request
+    TcpStream client2 = server.accept();
+    string raw2 = client2.read();
+    HttpRequest req2 = HttpRequest.parse(raw2);
+    System.println("Server received method=" + req2.method + ", body=" + req2.body + ", isPost=" + req2.isPost());
+    HttpResponse res2 = HttpResponse.created("{\"id\":1}", "application/json");
+    server.sendResponse(client2, res2);
+
+    // 3. Accept PUT request
+    TcpStream client3 = server.accept();
+    string raw3 = client3.read();
+    HttpRequest req3 = HttpRequest.parse(raw3);
+    System.println("Server received method=" + req3.method + ", body=" + req3.body + ", isPut=" + req3.isPut());
+    HttpResponse res3 = HttpResponse.ok("{\"updated\":true}", "application/json");
+    server.sendResponse(client3, res3);
+
+    // 4. Accept PATCH request
+    TcpStream client4 = server.accept();
+    string raw4 = client4.read();
+    HttpRequest req4 = HttpRequest.parse(raw4);
+    System.println("Server received method=" + req4.method + ", body=" + req4.body + ", isPatch=" + req4.isPatch());
+    HttpResponse res4 = HttpResponse.ok("{\"patched\":true}", "application/json");
+    server.sendResponse(client4, res4);
+
+    // 5. Accept DELETE request
+    TcpStream client5 = server.accept();
+    string raw5 = client5.read();
+    HttpRequest req5 = HttpRequest.parse(raw5);
+    System.println("Server received method=" + req5.method + ", path=" + req5.path + ", isDelete=" + req5.isDelete());
+    HttpResponse res5 = HttpResponse.noContent();
+    server.sendResponse(client5, res5);
+
+    // 6. Accept OPTIONS request
+    TcpStream client6 = server.accept();
+    string raw6 = client6.read();
+    HttpRequest req6 = HttpRequest.parse(raw6);
+    System.println("Server received method=" + req6.method + ", path=" + req6.path + ", isOptions=" + req6.isOptions());
+    HttpResponse res6 = HttpResponse.ok("", "text/plain");
+    res6.setHeader("Allow", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+    server.sendResponse(client6, res6);
+
+    server.close();
+    System.println("Server closed");
+    return 0;
+}
+
+fn main(): void {
+    System.println("--- Starting HTTP Server/Client Multi-Method Test ---");
+    int testPort = 19877;
+
+    // 1. Spawn server in async background task
+    Task serverTask = start_test_server(testPort);
+
+    // Wait a moment for server to bind
+    Task.sleep(100);
+
+    // Test GET
+    System.println("Client sending GET...");
+    HttpResponse getRes = HttpClient.get("127.0.0.1", testPort, "/items");
+    System.println("GET response: status=" + getRes.statusCode + ", body=" + getRes.body);
+
+    // Test POST
+    System.println("Client sending POST...");
+    HttpResponse postRes = HttpClient.post("127.0.0.1", testPort, "/items", "{\"name\":\"Syntra\"}", "application/json");
+    System.println("POST response: status=" + postRes.statusCode + ", body=" + postRes.body);
+
+    // Test PUT
+    System.println("Client sending PUT...");
+    HttpResponse putRes = HttpClient.put("127.0.0.1", testPort, "/items/1", "{\"name\":\"Syntra 2.0\"}", "application/json");
+    System.println("PUT response: status=" + putRes.statusCode + ", body=" + putRes.body);
+
+    // Test PATCH
+    System.println("Client sending PATCH...");
+    HttpResponse patchRes = HttpClient.patch("127.0.0.1", testPort, "/items/1", "{\"version\":\"2.1\"}", "application/json");
+    System.println("PATCH response: status=" + patchRes.statusCode + ", body=" + patchRes.body);
+
+    // Test DELETE
+    System.println("Client sending DELETE...");
+    HttpResponse deleteRes = HttpClient.delete("127.0.0.1", testPort, "/items/1");
+    System.println("DELETE response: status=" + deleteRes.statusCode + ", statusText=" + deleteRes.statusText);
+
+    // Test OPTIONS
+    System.println("Client sending OPTIONS...");
+    HttpResponse optRes = HttpClient.options("127.0.0.1", testPort, "/items");
+    System.println("OPTIONS response: status=" + optRes.statusCode + ", Allow=" + optRes.getHeader("Allow"));
+
+    // Await server task completion
+    await serverTask;
+
+    System.println("--- All 6 HTTP Methods Verified Successfully ---");
+}

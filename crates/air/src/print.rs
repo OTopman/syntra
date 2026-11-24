@@ -25,7 +25,7 @@ pub fn print_air_module(module: &AirModule) -> String {
                     block
                         .params
                         .iter()
-                        .map(|(id, ty)| format!("{}: {}", id, ty))
+                        .map(|(id, ty)| format!("{id}: {ty}"))
                         .collect::<Vec<_>>()
                         .join(", ")
                 )
@@ -33,13 +33,17 @@ pub fn print_air_module(module: &AirModule) -> String {
             out.push_str(&format!("  {}:{}\n", block.id, params_str));
 
             for inst in &block.instructions {
-                out.push_str(&format!("    {} = {}\n", inst.result, format_op(&inst.op, &inst.ty)));
+                out.push_str(&format!(
+                    "    {} = {}\n",
+                    inst.result,
+                    format_op(&inst.op, &inst.ty)
+                ));
             }
 
             match &block.terminator {
                 Terminator::Return(val, _) => {
                     if let Some(v) = val {
-                        out.push_str(&format!("    return {}\n", v));
+                        out.push_str(&format!("    return {v}\n"));
                     } else {
                         out.push_str("    return\n");
                     }
@@ -48,7 +52,10 @@ pub fn print_air_module(module: &AirModule) -> String {
                     out.push_str(&format!(
                         "    br {}({})\n",
                         target,
-                        args.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(", ")
+                        args.iter()
+                            .map(|a| a.to_string())
+                            .collect::<Vec<_>>()
+                            .join(", ")
                     ));
                 }
                 Terminator::CondBranch {
@@ -63,9 +70,17 @@ pub fn print_air_module(module: &AirModule) -> String {
                         "    br_cond {}, {}({}), {}({})\n",
                         cond,
                         then_block,
-                        then_args.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(", "),
+                        then_args
+                            .iter()
+                            .map(|a| a.to_string())
+                            .collect::<Vec<_>>()
+                            .join(", "),
                         else_block,
-                        else_args.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(", ")
+                        else_args
+                            .iter()
+                            .map(|a| a.to_string())
+                            .collect::<Vec<_>>()
+                            .join(", ")
                     ));
                 }
             }
@@ -77,29 +92,77 @@ pub fn print_air_module(module: &AirModule) -> String {
     out
 }
 
-fn format_op(op: &Op, ty: &aether_frontend::Type) -> String {
+fn format_op(op: &Op, ty: &syntra_frontend::Type) -> String {
     match op {
-        Op::ConstInt(i) => format!("iconst.{} {}", ty, i),
-        Op::ConstFloat(f) => format!("fconst.{} {}", ty, f),
-        Op::ConstBool(b) => format!("bconst {}", b),
-        Op::ConstString(s) => format!("sconst {:?}", s),
-        Op::Binary { op, left, right } => format!("{:?} {}, {}", op, left, right),
-        Op::Alloc { domain, ty } => format!("alloc.{} {}", domain, ty),
-        Op::Load { ptr } => format!("load {}", ptr),
-        Op::Store { ptr, val } => format!("store {}, {}", ptr, val),
+        Op::ConstInt(i) => format!("iconst.{ty} {i}"),
+        Op::ConstFloat(f) => format!("fconst.{ty} {f}"),
+        Op::ConstBool(b) => format!("bconst {b}"),
+        Op::ConstString(s) => format!("sconst {s:?}"),
+        Op::Binary { op, left, right } => format!("{op:?} {left}, {right}"),
+        Op::Alloc { domain, ty } => format!("alloc.{domain} {ty}"),
+        Op::Load { ptr } => format!("load {ptr}"),
+        Op::Store { ptr, val } => format!("store {ptr}, {val}"),
+        Op::GetField {
+            object,
+            field_name,
+            offset,
+        } => {
+            format!("getfield {object}.{field_name} (offset {offset})")
+        }
+        Op::SetField {
+            object,
+            field_name,
+            offset,
+            val,
+        } => {
+            format!("setfield {object}.{field_name} (offset {offset}), {val}")
+        }
+        Op::AllocArray { elem_ty, len } => format!("alloc_array.{elem_ty} len {len}"),
+        Op::GetIndex { array, index } => format!("getindex {array}[{index}]"),
+        Op::SetIndex { array, index, val } => format!("setindex {array}[{index}], {val}"),
+        Op::ArrayLength { array } => format!("array_length {array}"),
         Op::Call { func_name, args } => {
             format!(
                 "call @{}({})",
                 func_name,
-                args.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(", ")
+                args.iter()
+                    .map(|a| a.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
             )
         }
-        Op::NewObject { class_name, domain, args } => {
+        Op::FuncAddr { func_name } => format!("func_addr @{func_name}"),
+        Op::NewObject {
+            class_name,
+            domain,
+            args,
+        } => {
             format!(
                 "new.{} @{}({})",
                 domain,
                 class_name,
-                args.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(", ")
+                args.iter()
+                    .map(|a| a.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
+        }
+        Op::Guard {
+            cond,
+            deopt_target,
+            deopt_args,
+            reason,
+        } => {
+            format!(
+                "guard {}, deopt -> {}({}) // reason: {}",
+                cond,
+                deopt_target,
+                deopt_args
+                    .iter()
+                    .map(|a| a.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                reason
             )
         }
     }

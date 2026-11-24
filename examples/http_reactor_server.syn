@@ -1,0 +1,9 @@
+import net;
+import http;
+
+fn main(): void {
+    int port = 3125;
+    int workers = 8;
+    System.println("Starting Syntra Native Multi-Core Reactor on port " + port + " with " + workers + " workers...");
+    HttpServer.serveReactor(port, workers);
+}

@@ -1,0 +1,22 @@
+[package]
+name = "syntra_backend_cranelift"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+cranelift-codegen.workspace = true
+cranelift-frontend.workspace = true
+cranelift-module.workspace = true
+cranelift-native.workspace = true
+cranelift-object.workspace = true
+target-lexicon.workspace = true
+thiserror.workspace = true
+syntra_diagnostics.workspace = true
+syntra_syntax.workspace = true
+syntra_frontend.workspace = true
+syntra_air.workspace = true
+
+[dev-dependencies]
+syntra_runtime.workspace = true
+

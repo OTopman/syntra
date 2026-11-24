@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module: system - Syntra Documentation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top-nav">
+<div class="nav-left">
+<button class="mobile-toggle" id="mobileToggle" aria-label="Toggle Navigation">☰</button>
+<a href="index.html" class="brand-link">
+<span class="brand-logo">🔮</span>
+<span class="brand-name">Syntra</span>
+<span class="brand-badge">Docs</span>
+</a>
+</div>
+<div class="nav-center">
+<div class="search-container">
+<span class="search-icon">🔍</span>
+<input type="text" id="searchInput" placeholder="Search in system or all symbols... (/)" autocomplete="off">
+<span class="search-shortcut">/</span>
+<div id="searchResults" class="search-dropdown hidden"></div>
+</div>
+</div>
+<div class="nav-right">
+<a href="index.html" class="nav-link">Modules</a>
+<button id="themeToggle" class="theme-toggle" title="Toggle Dark / Light theme">🌙</button>
+</div>
+</header>
+<div class="layout-wrapper">
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-section">
+<h4 class="sidebar-title">Standard Library</h4>
+<ul class="sidebar-nav">
+<li><a href="air.html">air</a></li>
+<li><a href="checker.html">checker</a></li>
+<li><a href="codegen.html">codegen</a></li>
+<li><a href="concurrency.html">concurrency</a></li>
+<li><a href="crypto.html">crypto</a></li>
+<li><a href="email.html">email</a></li>
+<li><a href="file.html">file</a></li>
+<li><a href="http.html">http</a></li>
+<li><a href="io.html">io</a></li>
+<li><a href="json.html">json</a></li>
+<li><a href="loader.html">loader</a></li>
+<li><a href="map.html">map</a></li>
+<li><a href="net.html">net</a></li>
+<li><a href="syntax.html">syntax</a></li>
+<li><a href="system.html" class="active">system</a></li>
+<li><a href="web.html">web</a></li>
+</ul>
+</div>
+<div class="sidebar-section toc-section">
+<h4 class="sidebar-title">On This Page</h4>
+<ul class="sidebar-toc">
+<li><span class="toc-group">Namespaces</span><ul>
+<li><a href="#ns-System">System</a></li>
+</ul></li>
+</ul>
+</div>
+</aside>
+<main class="content-main">
+<nav class="breadcrumbs">
+<a href="index.html">Home</a> &gt; <a href="index.html#modules">Standard Library</a> &gt; <span class="current">system</span>
+</nav>
+<header class="page-header">
+<div class="page-title-row">
+<span class="header-icon">⚙️</span>
+<h1>system</h1>
+<span class="badge category">OS Primitives & Environment</span>
+</div>
+<div class="module-lead"><p>Provides command-line arguments, environment variables, time, and exit controls.</p>
+</div>
+</header>
+<section id="ns-System" class="api-section">
+<div class="section-title-bar">
+<span class="kind-tag namespace">namespace</span>
+<h2>System</h2>
+</div>
+<div class="doc-text"><p>The <code class="inline-code">System</code> namespace provides foundational operating system primitives, process lifecycle management, standard console I/O, execution timers, and access to the host environment.</p>
+<p>All functions in this namespace interface directly with the runtime kernel without intermediate allocation overhead.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">import System;
+
+func main(): void {
+    System.println(&quot;Application started at &quot; + System.timeMs() + &quot; ms&quot;);
+    let user = System.getEnv(&quot;USER&quot;);
+    System.println(&quot;Running as user: &quot; + user);
+}</code></pre>
+</div>
+</div>
+<div id="func-System-args" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#func-System-args" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">args</span>() -&gt; <span class="return-type">string[]</span>
+</div>
+<div class="doc-text"><p>Retrieves the array of command-line arguments passed to the program upon invocation.</p>
+<p>The first entry typically represents the active binary or executed script path, followed by any user-supplied flags, arguments, and switches.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let args = System.args();
+for arg in args {
+    System.println(&quot;Arg: &quot; + arg);
+}</code></pre>
+</div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string[]</span> &mdash; An array of strings representing command-line arguments.</p>
+</div>
+</div>
+<div id="func-System-println" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#func-System-println" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">println</span>(<span class="param-type">string</span> <span class="param-name">msg</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Prints a message to standard output (<code class="inline-code">stdout</code>) followed by an operating system newline.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">System.println(&quot;Processing completed successfully.&quot;);</code></pre>
+</div>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>msg</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The string payload to display on stdout.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">void</span> &mdash; void</p>
+</div>
+</div>
+<div id="func-System-print" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#func-System-print" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">print</span>(<span class="param-type">string</span> <span class="param-name">msg</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Prints a message to standard output (<code class="inline-code">stdout</code>) without appending a trailing newline.</p>
+<p>Useful for progress indicators, interactive command prompts, and structured terminal logs.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">System.print(&quot;Progress: [&quot;);
+System.print(&quot;==========&quot;);
+System.println(&quot;] 100%&quot;);</code></pre>
+</div>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>msg</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The string payload to display on stdout.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">void</span> &mdash; void</p>
+</div>
+</div>
+<div id="func-System-exit" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#func-System-exit" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">exit</span>(<span class="param-type">int</span> <span class="param-name">code</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Terminates the calling process immediately with the specified exit code.</p>
+<p>Conventionally, an exit code of <code class="inline-code">0</code> denotes clean, successful termination, while non-zero codes indicate errors or abnormal abort conditions.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">if (!isValid) {
+    System.println(&quot;Fatal validation error.&quot;);
+    System.exit(1);
+}</code></pre>
+</div>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>code</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Operating system process return code (0 for success, &gt;0 for errors).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">void</span> &mdash; void</p>
+</div>
+</div>
+<div id="func-System-getEnv" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#func-System-getEnv" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">getEnv</span>(<span class="param-type">string</span> <span class="param-name">key</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Reads an environment variable by name from the current process environment.</p>
+<p>If the environment variable is unset or inaccessible, this function returns an empty string (<code class="inline-code">&quot;&quot;</code>) rather than throwing an exception.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let path = System.getEnv(&quot;PATH&quot;);
+let port = System.getEnv(&quot;PORT&quot;);</code></pre>
+</div>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>key</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The case-sensitive name of the environment variable to look up.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; The string value of the environment variable, or <code class="inline-code">&quot;&quot;</code> if unset.</p>
+</div>
+</div>
+<div id="func-System-timeMs" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#func-System-timeMs" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">timeMs</span>() -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>Returns the current Unix epoch time in milliseconds.</p>
+<p>Measures monotonic wall-clock elapsed time since 00:00:00 UTC, January 1, 1970.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let start = System.timeMs();
+doComputation();
+let elapsed = System.timeMs() - start;
+System.println(&quot;Duration: &quot; + elapsed + &quot; ms&quot;);</code></pre>
+</div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; 64-bit integer timestamp in milliseconds.</p>
+</div>
+</div>
+<div id="func-System-exec" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#func-System-exec" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">exec</span>(<span class="param-type">string</span> <span class="param-name">cmd</span>) -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>Spawns a subshell process executing the specified command and returns its termination exit code.</p>
+<p>Blocks the current fiber until the child process terminates.</p>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let status = System.exec(&quot;git status --short&quot;);
+if (status != 0) {
+    System.println(&quot;Git command failed.&quot;);
+}</code></pre>
+</div>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>cmd</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The shell command string to execute.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Process exit status code returned by the OS.</p>
+</div>
+</div>
+</section>
+</main>
+</div>
+<footer class="site-footer">
+<div class="footer-inner">
+<p>Built with ❤️ by the Syntra Language Team • Version 0.1.0 • Spec 2026</p>
+<p class="footer-sub">High-performance Whole-Program Adaptive Programming Platform</p>
+</div>
+</footer>
+<script src="search.js"></script>
+</body>
+</html>

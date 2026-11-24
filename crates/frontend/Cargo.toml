@@ -1,10 +1,10 @@
 [package]
-name = "aether_frontend"
+name = "syntra_frontend"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
-aether_diagnostics.workspace = true
-aether_syntax.workspace = true
+syntra_diagnostics.workspace = true
+syntra_syntax.workspace = true
 thiserror.workspace = true

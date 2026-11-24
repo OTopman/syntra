@@ -1,0 +1,163 @@
+// Syntra Self-Hosting Compiler Milestone 2 Test
+// Demonstrates self-hosting Type Checker, Symbol Resolution, and Semantic Diagnostics
+// written purely in Syntra, operating over AST nodes allocated in Arena memory domains.
+
+import "../stdlib/syntax.syn";
+import "../stdlib/checker.syn";
+
+func main(): int {
+    println("=== Syntra Self-Hosting Compiler: Milestone 2 Verification ===");
+
+    Arena compArena = Arena.create(131072);
+    println("Compiler Arena initialized with capacity: 131072 bytes");
+
+    // -------------------------------------------------------------
+    // Test 1: Symbol Collection & Verification on Valid Program
+    // -------------------------------------------------------------
+    println("\n--- Test 1: Symbol Resolution & Declaration Collection ---");
+    string validCode = "func add(int a, int b): int {\n    return a + b;\n}\nclass Calculator {\n    public int base;\n    new(int b) {\n        this.base = b;\n    }\n    func calculate(int x): int {\n        if (x > 0) {\n            return this.base + x;\n        } else {\n            return this.base;\n        }\n    }\n}";
+
+    Lexer lexer1 = new Lexer(validCode);
+    Token[] tokens1 = lexer1.tokenize();
+    Parser parser1 = new Parser(tokens1, compArena);
+    AstNode program1 = parser1.parseProgram();
+
+    TypeChecker checker1 = new TypeChecker();
+    checker1.collectSymbols(program1);
+
+    if (checker1.hasFunction("add") == false) {
+        println("FAILED: Expected function 'add' to be defined in symbol table");
+        return 1;
+    }
+    FnSymbol addFn = checker1.getFunction("add");
+    println("Function 'add' resolved: returnType=" + addFn.returnType.toString() + ", paramCount=" + addFn.paramCount());
+    if (addFn.paramCount() != 2 || addFn.returnType.kind != "int") {
+        println("FAILED: Function 'add' signature mismatch");
+        return 1;
+    }
+
+    if (checker1.hasClass("Calculator") == false) {
+        println("FAILED: Expected class 'Calculator' in symbol table");
+        return 1;
+    }
+    ClassSymbol calcCls = checker1.getClass("Calculator");
+    println("Class 'Calculator' resolved: fields=" + calcCls.fieldNames.length() + ", methods=" + calcCls.methods.length());
+    if (calcCls.hasField("base") == false) {
+        println("FAILED: Expected field 'base' in Calculator");
+        return 1;
+    }
+    if (calcCls.hasMethod("calculate") == false) {
+        println("FAILED: Expected method 'calculate' in Calculator");
+        return 1;
+    }
+
+    println("TEST_1_PASSED: Symbol collection verified successfully");
+
+    // -------------------------------------------------------------
+    // Test 2: Full Semantic Analysis on Valid Program (0 errors)
+    // -------------------------------------------------------------
+    println("\n--- Test 2: Full Semantic Analysis on Valid AST ---");
+    TypeChecker fullChecker = new TypeChecker();
+    fullChecker.checkProgram(program1);
+
+    println("Semantic Diagnostics Count on Valid Code: " + fullChecker.errorCount());
+    if (fullChecker.hasErrors()) {
+        println("FAILED: Valid program produced unexpected diagnostics:");
+        int d = 0;
+        while (d < fullChecker.errorCount()) {
+            println("  " + fullChecker.diagnostics[d].toString());
+            d = d + 1;
+        }
+        return 1;
+    }
+    println("TEST_2_PASSED: Valid program type checked with 0 errors");
+
+    // -------------------------------------------------------------
+    // Test 3: Semantic Diagnostic Catching (Negative Cases)
+    // -------------------------------------------------------------
+    println("\n--- Test 3: Detecting Semantic Errors & Diagnostics ---");
+
+    // 3a: Variable assignment type mismatch (int x = "hello";)
+    println("Subtest 3a: Incompatible variable assignment type...");
+    string badAssignCode = "func testAssign(): void {\n    int num = \"string_value\";\n}";
+    Lexer lexer3a = new Lexer(badAssignCode);
+    Parser parser3a = new Parser(lexer3a.tokenize(), compArena);
+    TypeChecker checker3a = new TypeChecker();
+    checker3a.checkProgram(parser3a.parseProgram());
+
+    if (checker3a.hasErrors() == false) {
+        println("FAILED: Expected type mismatch error on 'int num = string'");
+        return 1;
+    }
+    println("Caught expected diagnostic: " + checker3a.diagnostics[0].toString());
+
+    // 3b: Undefined variable lookup
+    println("Subtest 3b: Undefined variable reference...");
+    string undefinedVarCode = "func testUndef(): int {\n    return missingVar + 10;\n}";
+    Lexer lexer3b = new Lexer(undefinedVarCode);
+    Parser parser3b = new Parser(lexer3b.tokenize(), compArena);
+    TypeChecker checker3b = new TypeChecker();
+    checker3b.checkProgram(parser3b.parseProgram());
+
+    if (checker3b.hasErrors() == false) {
+        println("FAILED: Expected error for undefined variable 'missingVar'");
+        return 1;
+    }
+    println("Caught expected diagnostic: " + checker3b.diagnostics[0].toString());
+
+    // 3c: Incompatible operator operands ("hello" - 42)
+    println("Subtest 3c: Invalid binary operator operand types...");
+    string badOpCode = "func testBadOp(): int {\n    int result = \"hello\" - 42;\n    return result;\n}";
+    Lexer lexer3c = new Lexer(badOpCode);
+    Parser parser3c = new Parser(lexer3c.tokenize(), compArena);
+    TypeChecker checker3c = new TypeChecker();
+    checker3c.checkProgram(parser3c.parseProgram());
+
+    if (checker3c.hasErrors() == false) {
+        println("FAILED: Expected error on subtraction with string operand");
+        return 1;
+    }
+    println("Caught expected diagnostic: " + checker3c.diagnostics[0].toString());
+
+    // 3d: Function call argument count and type mismatch
+    println("Subtest 3d: Function call argument mismatch...");
+    string badCallCode = "func compute(int a, int b): int {\n    return a + b;\n}\nfunc caller(): void {\n    compute(10);\n    compute(10, \"not_an_int\");\n}";
+    Lexer lexer3d = new Lexer(badCallCode);
+    Parser parser3d = new Parser(lexer3d.tokenize(), compArena);
+    TypeChecker checker3d = new TypeChecker();
+    checker3d.checkProgram(parser3d.parseProgram());
+
+    if (checker3d.errorCount() < 2) {
+        println("FAILED: Expected at least 2 errors for bad function calls, got " + checker3d.errorCount());
+        return 1;
+    }
+    println("Caught expected call diagnostic 1: " + checker3d.diagnostics[0].toString());
+    println("Caught expected call diagnostic 2: " + checker3d.diagnostics[1].toString());
+
+    println("TEST_3_PASSED: All semantic error diagnostics caught successfully");
+
+    // -------------------------------------------------------------
+    // Test 4: Zero-GC Arena Memory Domain Reclamation
+    // -------------------------------------------------------------
+    println("\n--- Test 4: Arena Memory Domain Verification ---");
+    int bytesUsed = compArena.allocatedBytes();
+    println("Compiler Arena memory used during parsing & checking: " + bytesUsed + " bytes");
+    if (bytesUsed <= 0) {
+        println("FAILED: Arena expected to track allocated bytes");
+        return 1;
+    }
+
+    compArena.reset();
+    println("Arena reset complete. Bytes allocated after reset: " + compArena.allocatedBytes());
+    if (compArena.allocatedBytes() != 0) {
+        println("FAILED: Arena allocated bytes should be 0 after reset");
+        return 1;
+    }
+
+    println("TEST_4_PASSED: Arena memory domain recycled with O(1) bulk reset");
+
+    println("\n=======================================================");
+    println("ALL SELF-HOSTING TYPE CHECKER TESTS PASSED (100%)");
+    println("=======================================================");
+    return 0;
+}

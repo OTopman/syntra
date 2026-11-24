@@ -1,0 +1,35 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s
+     Running unittests src/lib.rs (target/debug/deps/syntra_runtime-cf76e677ed2a7982)
+
+running 22 tests
+test guards::tests::test_guard_validation_success_and_violation ... ok
+test sar::tests::test_sar_disabled_by_default_run020 ... ok
+test sar::tests::test_sar_worker_scale_up_and_down ... ok
+test sar::tests::test_sar_memory_pressure_adaptation ... ok
+test code_cache::tests::test_code_cache_lru_and_active_pinning ... ok
+test deopt::tests::test_deopt_state_reconstruction_and_blacklisting ... ok
+test sar::tests::test_sar_background_compilation_and_guard_deopt_loop ... ok
+test profile::tests::test_profile_synlock_roundtrip ... ok
+test tests::test_repl_eval_line ... ok
+test tests::test_math_namespace_multi_args ... ok
+test websocket::tests::test_base64_encode ... ok
+test tests::test_string_operations_and_chaining ... ok
+test websocket::tests::test_client_masked_frame_write_and_read ... ok
+test tests::test_runtime_array_sum_and_methods ... ok
+test websocket::tests::test_client_xor_unmasking ... ok
+test tests::test_system_and_error_handling_runtime ... ok
+test websocket::tests::test_rfc6455_handshake_vector ... ok
+test websocket::tests::test_server_unmasked_frame_write ... ok
+test websocket::tests::test_sha1_known_hashes ... ok
+test tests::test_maps_json_and_functional_runtime ... ok
+test tests::test_file_io_runtime_and_oop ... ok
+test tests::test_concurrency_tasks_and_channels_runtime ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+   Doc-tests syntra_runtime
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

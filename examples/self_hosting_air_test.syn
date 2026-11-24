@@ -1,0 +1,113 @@
+// Syntra Self-Hosting Compiler Milestone 3 Test
+// Demonstrates the end-to-end self-hosting pipeline:
+// Source Code -> Lexer -> Parser -> TypeChecker -> AIR Lowering (SSA Blocks & Instructions)
+// All AST and AIR nodes managed within the Arena Memory Domain.
+
+import "../stdlib/syntax.syn";
+import "../stdlib/checker.syn";
+import "../stdlib/air.syn";
+
+func main(): int {
+    println("=== Syntra Self-Hosting Compiler: Milestone 3 Verification ===");
+
+    Arena compArena = Arena.create(131072);
+    println("Compiler Arena initialized with capacity: 131072 bytes");
+
+    string sampleCode = "func add(int a, int b): int {\n    return a + b;\n}\nclass Calculator {\n    public int base;\n    new(int b) {\n        this.base = b;\n    }\n    func calculate(int x): int {\n        if (x > 0) {\n            return this.base + x;\n        } else {\n            return this.base;\n        }\n    }\n}";
+
+    // -------------------------------------------------------------
+    // Step 1: Lexical Analysis
+    // -------------------------------------------------------------
+    println("\n--- Step 1: Lexical Analysis ---");
+    Lexer lexer = new Lexer(sampleCode);
+    Token[] tokens = lexer.tokenize();
+    println("Tokenization succeeded! Emitted " + tokens.length() + " tokens.");
+    if (tokens.length() <= 0) {
+        println("FAILED: No tokens emitted");
+        return 1;
+    }
+
+    // -------------------------------------------------------------
+    // Step 2: Syntactic Analysis & Arena AST Allocation
+    // -------------------------------------------------------------
+    println("\n--- Step 2: Syntactic Analysis ---");
+    Parser parser = new Parser(tokens, compArena);
+    AstNode programAst = parser.parseProgram();
+    println("Parsing succeeded! Top-level children: " + programAst.childCount());
+    if (programAst.childCount() != 2) {
+        println("FAILED: Expected 2 top-level items, got " + programAst.childCount());
+        return 1;
+    }
+
+    // -------------------------------------------------------------
+    // Step 3: Semantic Analysis & Symbol Table Resolution
+    // -------------------------------------------------------------
+    println("\n--- Step 3: Semantic Analysis ---");
+    TypeChecker checker = new TypeChecker();
+    checker.checkProgram(programAst);
+    println("Semantic Analysis finished with " + checker.errorCount() + " diagnostics.");
+    if (checker.hasErrors()) {
+        println("FAILED: Semantic errors detected in valid sample code");
+        return 1;
+    }
+    println("Symbol 'add' return type: " + checker.getFunction("add").returnType.toString());
+    println("Class 'Calculator' has method 'calculate': " + checker.getClass("Calculator").hasMethod("calculate"));
+
+    // -------------------------------------------------------------
+    // Step 4: AIR SSA Lowering (Aether Intermediate Representation)
+    // -------------------------------------------------------------
+    println("\n--- Step 4: AIR SSA Lowering ---");
+    AirLowering lowering = new AirLowering(checker, "sample_module");
+    AirModule airMod = lowering.lowerProgram(programAst);
+
+    println("AIR Module generated successfully!");
+    println("Functions lowered into AIR: " + airMod.functions.length());
+    if (airMod.functions.length() < 2) {
+        println("FAILED: Expected at least 2 lowered AIR functions, got " + airMod.functions.length());
+        return 1;
+    }
+
+    AirFunction fn0 = airMod.functions[0];
+    println("Function 0: " + fn0.name + ", Basic Blocks: " + fn0.blocks.length());
+    if (fn0.name != "add") {
+        println("FAILED: Expected first function to be 'add'");
+        return 1;
+    }
+
+    AirFunction fn1 = airMod.functions[1];
+    println("Function 1: " + fn1.name + ", Basic Blocks: " + fn1.blocks.length());
+    if (fn1.name != "Calculator_calculate") {
+        println("FAILED: Expected second function to be 'Calculator_calculate'");
+        return 1;
+    }
+    // Calculator_calculate has an if-statement, so it must contain multiple basic blocks (entry, then, else, merge)
+    if (fn1.blocks.length() < 4) {
+        println("FAILED: Expected at least 4 basic blocks for 'calculate' with if-statement, got " + fn1.blocks.length());
+        return 1;
+    }
+
+    // -------------------------------------------------------------
+    // Step 5: AIR Serialization & Verification
+    // -------------------------------------------------------------
+    println("\n--- Step 5: AIR Textual Assembly Output ---");
+    string airText = airMod.toString();
+    println(airText);
+
+    // -------------------------------------------------------------
+    // Step 6: Arena Bulk Reclamation
+    // -------------------------------------------------------------
+    println("--- Step 6: Arena Memory Domain Recycling ---");
+    int bytesUsed = compArena.allocatedBytes();
+    println("Arena bytes allocated for compilation pipeline: " + bytesUsed + " bytes");
+    compArena.reset();
+    println("Arena bytes allocated after O(1) bulk reset: " + compArena.allocatedBytes());
+    if (compArena.allocatedBytes() != 0) {
+        println("FAILED: Expected 0 bytes after reset");
+        return 1;
+    }
+
+    println("\n=======================================================");
+    println("ALL SELF-HOSTING PIPELINE MILESTONES VERIFIED (100%)");
+    println("=======================================================");
+    return 0;
+}

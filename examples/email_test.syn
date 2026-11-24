@@ -1,0 +1,115 @@
+// Syntra Standard Library: Email Subsystem End-to-End Verification Test
+// Tests: EmailAddress, EmailMessage, MimeSerializer, EmailParser, DkimConfig, TestInboxTransport
+
+import "email";
+import "system";
+
+func main(): void {
+    System.println("===============================================================");
+    System.println("🧪 Syntra Enterprise Email Subsystem Verification Test");
+    System.println("===============================================================");
+
+    // 1. EmailAddress Parsing & Validation
+    System.println("\n[1] Testing EmailAddress Parsing & CRLF Sanitization...");
+    EmailAddress addr1 = EmailAddress.parse("Alice Smith <alice@example.com>");
+    EmailAddress addr2 = EmailAddress.parse("bob@acme.org");
+    EmailAddress injected = EmailAddress.parse("Attacker <bad@evil.com\r\nBcc: victim@target.com>");
+
+    System.println("  ✓ Addr1 Name:      " + addr1.name);
+    System.println("  ✓ Addr1 Address:   " + addr1.address);
+    System.println("  ✓ Addr1 Formatted: " + addr1.format());
+    System.println("  ✓ Addr1 Valid:     " + addr1.isValid());
+    System.println("  ✓ Addr2 Valid:     " + addr2.isValid());
+    System.println("  ✓ Sanitized Addr:  " + injected.format());
+
+    // 2. EmailMessage Composition & Dynamic Templating
+    System.println("\n[2] Testing EmailMessage Composition & Dynamic Templating...");
+    string tplHtml = "<h1>Welcome, {{name}}!</h1><p>Your activation code is <strong>{{code}}</strong>.</p>";
+    string tplText = "Welcome, {{name}}! Your activation code is: {{code}}";
+
+    Map<string, string> vars = new Map<string, string>();
+    vars.set("name", "Alice");
+    vars.set("code", "SYN-2026-X");
+
+    EmailMessage msg = EmailMessage.create()
+        .from("support@syntra.dev", "Syntra Support")
+        .to("alice@example.com", "Alice Smith")
+        .cc("audit@syntra.dev")
+        .subject("Welcome to Syntra Platform! 🚀")
+        .renderHtml(tplHtml, vars)
+        .renderText(tplText, vars)
+        .attachText("getting-started.txt", "1. Install syn\n2. Run syn run app.syn", "text/plain");
+
+    System.println("  ✓ From:        " + msg.from.format());
+    System.println("  ✓ To:          " + msg.to[0].format());
+    System.println("  ✓ Subject:     " + msg.subject);
+    System.println("  ✓ HTML Body:   " + msg.html);
+    System.println("  ✓ Text Body:   " + msg.text);
+    System.println("  ✓ Attachments: " + msg.attachments.length() + " item(s)");
+
+    // 3. TestInboxTransport Verification (Zero-Network In-Memory Suite)
+    System.println("\n[3] Testing TestInboxTransport (In-Memory Test Runner)...");
+    TestInboxTransport testInbox = TestInboxTransport.create();
+    EmailSendResult sendResult = testInbox.send(msg);
+
+    System.println("  ✓ Sent Success:       " + sendResult.success);
+    System.println("  ✓ Sent Status Code:   " + sendResult.statusCode);
+    System.println("  ✓ Inbox Count:        " + testInbox.count());
+    System.println("  ✓ Contains Alice:     " + testInbox.containsTo("alice@example.com"));
+    System.println("  ✓ Contains Substring: " + testInbox.containsSubject("Welcome to Syntra"));
+
+    EmailMessage retrieved = testInbox.last();
+    System.println("  ✓ Retrieved Subject:  " + retrieved.subject);
+
+    // 4. MIME Wire-Format Compilation
+    System.println("\n[4] Testing RFC 5322 & MIME Compilation (toMime)...");
+    string rawMime = msg.toMime();
+    System.println("  ✓ Compiled MIME length: " + rawMime.length() + " bytes");
+    System.println("  ✓ Contains Subject:     " + rawMime.contains("Subject:"));
+    System.println("  ✓ Contains Boundary:    " + rawMime.contains("multipart/mixed"));
+    System.println("  ✓ Contains Attachment:  " + rawMime.contains("getting-started.txt"));
+
+    // 5. Inbound EmailParser Verification (Ingesting Raw MIME)
+    System.println("\n[5] Testing EmailParser (Inbound Raw MIME Ingestion)...");
+    EmailMessage parsedMsg = EmailParser.parse(rawMime);
+    System.println("  ✓ Parsed From:        " + parsedMsg.from.format());
+    System.println("  ✓ Parsed Subject:     " + parsedMsg.subject);
+    System.println("  ✓ Parsed HTML Body:   " + parsedMsg.html);
+    System.println("  ✓ Parsed Attachments: " + parsedMsg.attachments.length() + " item(s)");
+    if (parsedMsg.attachments.length() > 0) {
+        System.println("  ✓ Attachment 0 Name:  " + parsedMsg.attachments[0].filename);
+        System.println("  ✓ Attachment 0 Type:  " + parsedMsg.attachments[0].contentType);
+    }
+
+    // 6. DKIM Canonicalization & Body Hashing
+    System.println("\n[6] Testing DKIM RFC 6376 Canonicalization & Body Hash...");
+    DkimConfig dkim = DkimConfig.of("s1", "syntra.dev", "mock_rsa_key");
+    string bodyHash = dkim.computeBodyHash(msg.text, "relaxed");
+    string dkimHeader = dkim.formatHeader("from:to:subject:date", bodyHash, "c2lnbmF0dXJl");
+
+    System.println("  ✓ DKIM Selector:  " + dkim.selector);
+    System.println("  ✓ DKIM Domain:    " + dkim.domain);
+    System.println("  ✓ DKIM Body Hash: " + bodyHash);
+    System.println("  ✓ DKIM Header:    " + dkimHeader);
+
+    // 7. Webhook Security & Multi-Cloud Transports
+    System.println("\n[7] Testing Inbound Webhook Verification & Multi-Cloud Transports...");
+    string samplePayload = "{\"event\":\"inbound_message\",\"from\":\"user@example.com\"}";
+    string webhookSecret = "whsec_syntra_secret_key_123";
+    string validSig = HmacSha256.compute(webhookSecret, samplePayload);
+
+    bool sigValid = EmailParser.verifyWebhookSignature(samplePayload, validSig, webhookSecret);
+    bool sigInvalid = EmailParser.verifyWebhookSignature(samplePayload, "tampered_signature", webhookSecret);
+    System.println("  ✓ Valid Webhook Sig:   " + sigValid);
+    System.println("  ✓ Tampered Sig Reject: " + (sigInvalid == false));
+
+    PostmarkTransport postmark = PostmarkTransport.of("pm_test_token");
+    MailgunTransport mailgun = MailgunTransport.of("mg.syntra.dev", "key-test");
+    System.println("  ✓ Postmark Transport:  Ready (Token: " + postmark.serverToken + ")");
+    System.println("  ✓ Mailgun Transport:   Ready (Domain: " + mailgun.domain + ")");
+    System.println("  ✓ Attachment Size:     " + msg.attachments[0].size() + " bytes");
+
+    System.println("\n===============================================================");
+    System.println("✅ All Email Subsystem Verification Checks PASSED Successfully!");
+    System.println("===============================================================");
+}

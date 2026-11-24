@@ -1,0 +1,26 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.19s
+     Running `target/debug/syn run examples/async_await_test.syn`
+--- Starting Async/Await Test ---
+Direct await compute_double(21) = 42
+Direct await greet_async = Hello, Syntra from async!
+Task handle await = 100
+Concurrent async sum (10*2 + 20*2) = 60
+Method syntax t2.await() = 200
+Async class method multiply(6, 7) = 42
+--- Async/Await Test Completed Successfully ---
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running `target/debug/syn build examples/async_await_test.syn -o /tmp/async_await_test_bin`
+🔨 Building native binary for 'examples/async_await_test.syn' (target: x86_64-apple-darwin)...
+🎯 PGO: Consuming profile lockfile 'profile.synlock' (Integrity: 1c82801ac39c219e)
+⚡ Optimization pipeline applied 1 pass(es) with verified invariants.
+🔒 Build Identity Manifest: 18834852e56937ff
+✅ Successfully compiled native executable: /tmp/async_await_test_bin
+🚀 Run it directly: .//tmp/async_await_test_bin
+--- Starting Async/Await Test ---
+Direct await compute_double(21) = 42
+Direct await greet_async = Hello, Syntra from async!
+Task handle await = 100
+Concurrent async sum (10*2 + 20*2) = 60
+Method syntax t2.await() = 200
+Async class method multiply(6, 7) = 42
+--- Async/Await Test Completed Successfully ---

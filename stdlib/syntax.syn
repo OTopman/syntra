@@ -1,0 +1,1317 @@
+// Syntra Standard Library: Syntax & Compiler Subsystem (Specification 01 & 02)
+// Provides a zero-GC self-hosting Lexer, AST, and recursive-descent Parser
+// utilizing Syntra Memory Domains (Scoped Arenas) for high-performance compilation.
+
+/// Source code location span tracking byte offsets, 1-based line, and 1-based column coordinates.
+///
+/// Attached to tokens, AST nodes, and compiler diagnostics for error reporting and IDE navigation.
+///
+/// @example
+/// ```syntra
+/// Span span = new Span(0, 10, 1, 1);
+/// println(span.toString()); // "1:1"
+/// ```
+/// @since v0.1.0
+class Span {
+    /// 0-based start byte offset in the source buffer.
+    public int start;
+
+    /// 0-based end byte offset in the source buffer.
+    public int end;
+
+    /// 1-based source line number.
+    public int line;
+
+    /// 1-based source column offset.
+    public int col;
+
+    /// Constructs a source location span.
+    ///
+    /// @param start Start byte offset.
+    /// @param end End byte offset.
+    /// @param line 1-based line number.
+    /// @param col 1-based column number.
+    /// @since v0.1.0
+    new(int start, int end, int line, int col) {
+        this.start = start;
+        this.end = end;
+        this.line = line;
+        this.col = col;
+    }
+
+    /// Formats the span as a standard line:column position string.
+    ///
+    /// @returns Position string formatted as `line:col`.
+    /// @since v0.1.0
+    func toString(): string {
+        return this.line + ":" + this.col;
+    }
+}
+
+/// Lexical token produced by the Syntra Lexer.
+///
+/// Encapsulates token classification kind, matched text slice, and precise source location span.
+///
+/// @example
+/// ```syntra
+/// Token tok = new Token("Identifier", "myVar", span);
+/// println(tok.toString());
+/// ```
+/// @since v0.1.0
+class Token {
+    /// Token kind tag (e.g. `"Identifier"`, `"IntLit"`, `"KwFunc"`, `"LParen"`).
+    public string kind;
+
+    /// Matched source string text.
+    public string text;
+
+    /// Source location span where the token was matched.
+    public Span span;
+
+    /// Constructs a lexical token.
+    ///
+    /// @param kind Token classification tag.
+    /// @param text Matched literal text.
+    /// @param span Source span.
+    /// @since v0.1.0
+    new(string kind, string text, Span span) {
+        this.kind = kind;
+        this.text = text;
+        this.span = span;
+    }
+
+    /// Serializes token debugging information.
+    ///
+    /// @returns Formatted token description string.
+    /// @since v0.1.0
+    func toString(): string {
+        return "[" + this.kind + " '" + this.text + "' at " + this.span.toString() + "]";
+    }
+}
+
+/// Abstract Syntax Tree (AST) node allocated within an Arena memory domain.
+///
+/// Represents syntactical constructs (Programs, Functions, Classes, Expressions, Statements).
+///
+/// @example
+/// ```syntra
+/// AstNode node = new AstNode("IntLit", "42", 42, span);
+/// println(node.toSExpr());
+/// ```
+/// @since v0.1.0
+class AstNode {
+    /// AST node classification tag (e.g. `"Program"`, `"FunctionDecl"`, `"BinaryExpr"`).
+    public string kind;
+
+    /// Identifier name or literal text payload.
+    public string name;
+
+    /// Pre-parsed integer value for numeric literals.
+    public int intVal;
+
+    /// Ordered children AST nodes.
+    public AstNode[] children;
+
+    /// Source code location span covering this syntactic construct.
+    public Span span;
+
+    /// Constructs an AST node.
+    ///
+    /// @param kind AST node kind discriminator.
+    /// @param name Name string or operator symbol.
+    /// @param intVal Numeric value if integer literal.
+    /// @param span Source location span.
+    /// @since v0.1.0
+    new(string kind, string name, int intVal, Span span) {
+        this.kind = kind;
+        this.name = name;
+        this.intVal = intVal;
+        this.children = [];
+        this.span = span;
+    }
+
+    /// Appends a child AST node to this node's children list.
+    ///
+    /// @param child Child AST node to append.
+    /// @since v0.1.0
+    func addChild(AstNode child) {
+        this.children.push(child);
+    }
+
+    /// Returns the total number of child nodes.
+    ///
+    /// @returns Child node count.
+    /// @since v0.1.0
+    func childCount(): int {
+        return this.children.length();
+    }
+
+    /// Retrieves the child AST node at index `i`.
+    ///
+    /// @param i 0-based child index.
+    /// @returns The child `AstNode`.
+    /// @since v0.1.0
+    func getChild(int i): AstNode {
+        return this.children[i];
+    }
+
+    /// Checks if this node contains at least one child node.
+    ///
+    /// @returns `true` if children exist; `false` otherwise.
+    /// @since v0.1.0
+    func hasChildren(): bool {
+        return this.children.length() > 0;
+    }
+
+    /// Formats the AST sub-tree into an indented S-expression string.
+    ///
+    /// @param indent Current whitespace indentation string.
+    /// @returns S-expression formatted string.
+    /// @since v0.1.0
+    func printTree(string indent): string {
+        string res = indent + "(" + this.kind;
+        if (this.name.length() > 0) {
+            res = res + " \"" + this.name + "\"";
+        }
+        if (this.intVal != 0) {
+            res = res + " " + this.intVal;
+        }
+        if (this.children.length() == 0) {
+            res = res + ")";
+            return res;
+        }
+        res = res + "\n";
+        int i = 0;
+        while (i < this.children.length()) {
+            AstNode child = this.children[i];
+            res = res + child.printTree(indent + "  ");
+            if (i + 1 < this.children.length()) {
+                res = res + "\n";
+            }
+            i = i + 1;
+        }
+        res = res + ")";
+        return res;
+    }
+
+    /// Serializes the entire AST tree into a multi-line S-expression string.
+    ///
+    /// @returns S-expression string.
+    /// @since v0.1.0
+    func toSExpr(): string {
+        return this.printTree("");
+    }
+}
+
+/// High-performance Syntra Lexer.
+///
+/// Scans UTF-8 source text and produces a linear stream of strongly typed tokens.
+/// Handles comments (`//`, `/* */`), integer literals, string escapes, keywords, and operators.
+///
+/// @example
+/// ```syntra
+/// Lexer lexer = new Lexer("func add(int a, int b): int { return a + b; }");
+/// Token[] tokens = lexer.tokenize();
+/// ```
+/// @since v0.1.0
+class Lexer {
+    /// Raw source text string.
+    public string src;
+
+    /// Current scanning cursor byte index.
+    public int pos;
+
+    /// Total byte length of source text.
+    public int len;
+
+    /// Current 1-based source line.
+    public int line;
+
+    /// Current 1-based source column.
+    public int col;
+
+    /// Constructs a lexer over the given source code string.
+    ///
+    /// @param src Source code string.
+    /// @since v0.1.0
+    new(string src) {
+        this.src = src;
+        this.pos = 0;
+        this.len = src.length();
+        this.line = 1;
+        this.col = 1;
+    }
+
+    /// Checks if the scanner cursor has reached or passed the end of the source.
+    ///
+    /// @returns `true` if at EOF; `false` otherwise.
+    /// @since v0.1.0
+    func isEof(): bool {
+        return this.pos >= this.len;
+    }
+
+    /// Peeks at the current character code without consuming it.
+    ///
+    /// @returns ASCII character code (0-255), or -1 if at EOF.
+    /// @since v0.1.0
+    func peek(): int {
+        if (this.pos >= this.len) {
+            return -1;
+        }
+        return this.src.charCodeAt(this.pos);
+    }
+
+    /// Peeks ahead by `offset` characters from the current position.
+    ///
+    /// @param offset Number of characters ahead to inspect.
+    /// @returns Character code, or -1 if past EOF.
+    /// @since v0.1.0
+    func peekAhead(int offset): int {
+        int target = this.pos + offset;
+        if (target >= this.len) {
+            return -1;
+        }
+        return this.src.charCodeAt(target);
+    }
+
+    /// Consumes and returns the current character, advancing line and column counters.
+    ///
+    /// @returns Character code consumed.
+    /// @since v0.1.0
+    func advance(): int {
+        if (this.pos >= this.len) {
+            return -1;
+        }
+        int code = this.src.charCodeAt(this.pos);
+        this.pos = this.pos + 1;
+        if (code == 10) { // '\n'
+            this.line = this.line + 1;
+            this.col = 1;
+        } else {
+            this.col = this.col + 1;
+        }
+        return code;
+    }
+
+    /// Skips whitespace characters (spaces, tabs, newlines) and single/multi-line comments.
+    ///
+    /// @since v0.1.0
+    func skipWhitespaceAndComments() {
+        bool scanning = true;
+        while (scanning && this.isEof() == false) {
+            int code = this.peek();
+            // Whitespace: space (32), tab (9), newline (10), CR (13)
+            if (code == 32 || code == 9 || code == 10 || code == 13) {
+                this.advance();
+            } else if (code == 47) { // '/'
+                int next = this.peekAhead(1);
+                if (next == 47) { // Single-line comment: //
+                    this.advance();
+                    this.advance();
+                    while (this.isEof() == false && this.peek() != 10) {
+                        this.advance();
+                    }
+                } else if (next == 42) { // Multi-line comment: /* ... */
+                    this.advance();
+                    this.advance();
+                    bool inComment = true;
+                    while (inComment && this.isEof() == false) {
+                        if (this.peek() == 42 && this.peekAhead(1) == 47) {
+                            this.advance();
+                            this.advance();
+                            inComment = false;
+                        } else {
+                            this.advance();
+                        }
+                    }
+                } else {
+                    scanning = false;
+                }
+            } else {
+                scanning = false;
+            }
+        }
+    }
+
+    /// Scans a sequence of decimal digits into an `IntLit` token.
+    ///
+    /// @returns The scanned `Token`.
+    /// @since v0.1.0
+    func lexNumber(): Token {
+        int startPos = this.pos;
+        int startCol = this.col;
+        int startLine = this.line;
+        bool inNum = true;
+
+        while (inNum && this.isEof() == false) {
+            int c = this.peek();
+            if (c >= 48 && c <= 57) { // 0-9
+                this.advance();
+            } else {
+                inNum = false;
+            }
+        }
+
+        string numText = this.src.substring(startPos, this.pos);
+        Span span = new Span(startPos, this.pos, startLine, startCol);
+        return new Token("IntLit", numText, span);
+    }
+
+    /// Scans a quoted string literal and processes escape sequences (`\n`, `\t`, `\r`, `\"`, `\\`).
+    ///
+    /// @returns The scanned `Token`.
+    /// @since v0.1.0
+    func lexString(): Token {
+        int startPos = this.pos;
+        int startCol = this.col;
+        int startLine = this.line;
+
+        this.advance(); // consume opening quote '"'
+        string content = "";
+        bool inStr = true;
+
+        while (inStr && this.isEof() == false) {
+            int c = this.peek();
+            if (c == 34) { // closing quote '"'
+                this.advance();
+                inStr = false;
+            } else if (c == 92) { // escape '\'
+                this.advance();
+                int esc = this.advance();
+                if (esc == 110) { // '\n'
+                    content = content + "\n";
+                } else if (esc == 116) { // '\t'
+                    content = content + "\t";
+                } else if (esc == 114) { // '\r'
+                    content = content + "\r";
+                } else if (esc == 34) { // '\"'
+                    content = content + "\"";
+                } else if (esc == 92) { // '\\'
+                    content = content + "\\";
+                } else {
+                    content = content + this.src.charAt(this.pos - 1);
+                }
+            } else {
+                content = content + this.src.charAt(this.pos);
+                this.advance();
+            }
+        }
+
+        Span span = new Span(startPos, this.pos, startLine, startCol);
+        return new Token("StringLit", content, span);
+    }
+
+    /// Scans an identifier or keyword sequence into the appropriate keyword token or `Identifier`.
+    ///
+    /// @returns The scanned `Token`.
+    /// @since v0.1.0
+    func lexIdentifier(): Token {
+        int startPos = this.pos;
+        int startCol = this.col;
+        int startLine = this.line;
+        bool inIdent = true;
+
+        while (inIdent && this.isEof() == false) {
+            int c = this.peek();
+            bool isLetter = (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c == 95; // A-Z, a-z, _
+            bool isDigit = (c >= 48 && c <= 57);
+            if (isLetter || isDigit) {
+                this.advance();
+            } else {
+                inIdent = false;
+            }
+        }
+
+        string word = this.src.substring(startPos, this.pos);
+        Span span = new Span(startPos, this.pos, startLine, startCol);
+
+        // Keyword recognition
+        if (word == "func" || word == "fn") { return new Token("KwFunc", word, span); }
+        if (word == "class") { return new Token("KwClass", word, span); }
+        if (word == "interface") { return new Token("KwInterface", word, span); }
+        if (word == "namespace") { return new Token("KwNamespace", word, span); }
+        if (word == "import") { return new Token("KwImport", word, span); }
+        if (word == "let") { return new Token("KwLet", word, span); }
+        if (word == "const") { return new Token("KwConst", word, span); }
+        if (word == "if") { return new Token("KwIf", word, span); }
+        if (word == "else") { return new Token("KwElse", word, span); }
+        if (word == "while") { return new Token("KwWhile", word, span); }
+        if (word == "for") { return new Token("KwFor", word, span); }
+        if (word == "return") { return new Token("KwReturn", word, span); }
+        if (word == "async") { return new Token("KwAsync", word, span); }
+        if (word == "await") { return new Token("KwAwait", word, span); }
+        if (word == "new") { return new Token("KwNew", word, span); }
+        if (word == "this") { return new Token("KwThis", word, span); }
+        if (word == "true") { return new Token("KwTrue", word, span); }
+        if (word == "false") { return new Token("KwFalse", word, span); }
+        if (word == "public") { return new Token("KwPublic", word, span); }
+        if (word == "private") { return new Token("KwPrivate", word, span); }
+        if (word == "static") { return new Token("KwStatic", word, span); }
+        if (word == "int") { return new Token("KwInt", word, span); }
+        if (word == "float") { return new Token("KwFloat", word, span); }
+        if (word == "bool") { return new Token("KwBool", word, span); }
+        if (word == "string") { return new Token("KwString", word, span); }
+        if (word == "void") { return new Token("KwVoid", word, span); }
+
+        return new Token("Identifier", word, span);
+    }
+
+    /// Scans and returns the next token from the character stream.
+    ///
+    /// @returns The next `Token`.
+    /// @since v0.1.0
+    func nextToken(): Token {
+        this.skipWhitespaceAndComments();
+
+        if (this.isEof()) {
+            Span eofSpan = new Span(this.pos, this.pos, this.line, this.col);
+            return new Token("EOF", "", eofSpan);
+        }
+
+        int startPos = this.pos;
+        int startCol = this.col;
+        int startLine = this.line;
+        int c = this.peek();
+
+        // Numbers: 0-9
+        if (c >= 48 && c <= 57) {
+            return this.lexNumber();
+        }
+
+        // Strings: "
+        if (c == 34) {
+            return this.lexString();
+        }
+
+        // Identifiers / Keywords: a-z, A-Z, _
+        if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c == 95) {
+            return this.lexIdentifier();
+        }
+
+        // Punctuation and Operators
+        this.advance();
+        Span span = new Span(startPos, this.pos, startLine, startCol);
+
+        if (c == 40) { return new Token("LParen", "(", span); }
+        if (c == 41) { return new Token("RParen", ")", span); }
+        if (c == 123) { return new Token("LBrace", "{", span); }
+        if (c == 125) { return new Token("RBrace", "}", span); }
+        if (c == 91) { return new Token("LBracket", "[", span); }
+        if (c == 93) { return new Token("RBracket", "]", span); }
+        if (c == 59) { return new Token("Semicolon", ";", span); }
+        if (c == 58) { return new Token("Colon", ":", span); }
+        if (c == 44) { return new Token("Comma", ",", span); }
+        if (c == 46) { return new Token("Dot", ".", span); }
+
+        if (c == 43) { return new Token("Plus", "+", span); }
+        if (c == 45) { return new Token("Minus", "-", span); }
+        if (c == 42) { return new Token("Star", "*", span); }
+        if (c == 47) { return new Token("Slash", "/", span); }
+        if (c == 37) { return new Token("Percent", "%", span); }
+
+        if (c == 61) { // '=' or '=='
+            if (this.peek() == 61) {
+                this.advance();
+                span.end = this.pos;
+                return new Token("EqualEqual", "==", span);
+            }
+            return new Token("Assign", "=", span);
+        }
+
+        if (c == 33) { // '!' or '!='
+            if (this.peek() == 61) {
+                this.advance();
+                span.end = this.pos;
+                return new Token("NotEqual", "!=", span);
+            }
+            return new Token("Bang", "!", span);
+        }
+
+        if (c == 60) { // '<' or '<='
+            if (this.peek() == 61) {
+                this.advance();
+                span.end = this.pos;
+                return new Token("LessEqual", "<=", span);
+            }
+            return new Token("Less", "<", span);
+        }
+
+        if (c == 62) { // '>' or '>='
+            if (this.peek() == 61) {
+                this.advance();
+                span.end = this.pos;
+                return new Token("GreaterEqual", ">=", span);
+            }
+            return new Token("Greater", ">", span);
+        }
+
+        if (c == 38 && this.peek() == 38) { // '&&'
+            this.advance();
+            span.end = this.pos;
+            return new Token("AmpAmp", "&&", span);
+        }
+
+        if (c == 124 && this.peek() == 124) { // '||'
+            this.advance();
+            span.end = this.pos;
+            return new Token("PipePipe", "||", span);
+        }
+
+        return new Token("Unknown", this.src.charAt(startPos), span);
+    }
+
+    /// Tokenizes the entire source buffer until EOF into an array of tokens.
+    ///
+    /// @returns Complete array of `Token` instances.
+    /// @since v0.1.0
+    func tokenize(): Token[] {
+        Token[] list = [];
+        bool tokenizing = true;
+        while (tokenizing) {
+            Token tok = this.nextToken();
+            list.push(tok);
+            if (tok.kind == "EOF") {
+                tokenizing = false;
+            }
+        }
+        return list;
+    }
+}
+
+/// Recursive-Descent Parser allocating AST nodes in an Arena Memory Domain.
+///
+/// Implements standard precedence climbing for expressions and parses declarations,
+/// classes, interfaces, namespaces, imports, and statements.
+///
+/// @example
+/// ```syntra
+/// Arena arena = new Arena();
+/// Parser parser = new Parser(tokens, arena);
+/// AstNode ast = parser.parseProgram();
+/// ```
+/// @since v0.1.0
+class Parser {
+    /// Array of input tokens produced by the lexer.
+    public Token[] tokens;
+
+    /// Current token stream index cursor.
+    public int pos;
+
+    /// Total count of input tokens.
+    public int count;
+
+    /// Scoped memory arena allocating AST node lifetimes.
+    public Arena arena;
+
+    /// Constructs a parser instance over the token array.
+    ///
+    /// @param tokens Input token sequence.
+    /// @param arena Memory arena for node allocations.
+    /// @since v0.1.0
+    new(Token[] tokens, Arena arena) {
+        this.tokens = tokens;
+        this.pos = 0;
+        this.count = tokens.length();
+        this.arena = arena;
+    }
+
+    /// Allocates an AST node directly in the attached memory arena.
+    ///
+    /// @param kind AST node discriminator tag.
+    /// @param name Name string or operator symbol.
+    /// @param intVal Numeric literal payload.
+    /// @param span Source location span.
+    /// @returns Arena-allocated `AstNode`.
+    /// @since v0.1.0
+    func allocNode(string kind, string name, int intVal, Span span): AstNode {
+        return this.arena.alloc(new AstNode(kind, name, intVal, span));
+    }
+
+    /// Checks if the parser cursor is past the end of tokens or at the `EOF` token.
+    ///
+    /// @returns `true` if at EOF; `false` otherwise.
+    /// @since v0.1.0
+    func isEof(): bool {
+        return this.pos >= this.count || this.tokens[this.pos].kind == "EOF";
+    }
+
+    /// Peeks at the current token without consuming it.
+    ///
+    /// @returns The current `Token`.
+    /// @since v0.1.0
+    func peek(): Token {
+        if (this.pos >= this.count) {
+            Span eofSpan = new Span(0, 0, 0, 0);
+            return new Token("EOF", "", eofSpan);
+        }
+        return this.tokens[this.pos];
+    }
+
+    /// Returns the kind tag of the current token.
+    ///
+    /// @returns Token kind string.
+    /// @since v0.1.0
+    func peekKind(): string {
+        return this.peek().kind;
+    }
+
+    /// Consumes and returns the current token, advancing the cursor.
+    ///
+    /// @returns Consumed `Token`.
+    /// @since v0.1.0
+    func advance(): Token {
+        Token t = this.peek();
+        if (this.pos < this.count) {
+            this.pos = this.pos + 1;
+        }
+        return t;
+    }
+
+    /// Checks whether the current token matches the specified kind without consuming it.
+    ///
+    /// @param kind Token kind tag to check.
+    /// @returns `true` if matched; `false` otherwise.
+    /// @since v0.1.0
+    func check(string kind): bool {
+        return this.peekKind() == kind;
+    }
+
+    /// Consumes the current token if it matches `kind`.
+    ///
+    /// @param kind Token kind tag to match.
+    /// @returns `true` if matched and consumed; `false` otherwise.
+    /// @since v0.1.0
+    func matchToken(string kind): bool {
+        if (this.check(kind)) {
+            this.advance();
+            return true;
+        }
+        return false;
+    }
+
+    /// Asserts that the current token matches `kind` and consumes it, emitting an error otherwise.
+    ///
+    /// @param kind Expected token kind tag.
+    /// @param errMsg Error message printed if expectation fails.
+    /// @returns Consumed `Token`.
+    /// @since v0.1.0
+    func consume(string kind, string errMsg): Token {
+        if (this.check(kind)) {
+            return this.advance();
+        }
+        println("PARSER ERROR at " + this.peek().span.toString() + ": " + errMsg + " (got '" + this.peekKind() + "')");
+        return this.peek();
+    }
+
+    // --- Expression Parsing with Precedence Climbing ---
+
+    /// Parses an expression starting at the lowest precedence level (assignments).
+    ///
+    /// @returns Root expression `AstNode`.
+    /// @since v0.1.0
+    func parseExpression(): AstNode {
+        return this.parseAssignment();
+    }
+
+    /// Parses assignment expressions (`a = b = c`).
+    ///
+    /// @returns Assignment or higher-precedence expression node.
+    /// @since v0.1.0
+    func parseAssignment(): AstNode {
+        AstNode expr = this.parseLogicalOr();
+
+        if (this.matchToken("Assign")) {
+            Token eqTok = this.tokens[this.pos - 1];
+            AstNode value = this.parseAssignment();
+            AstNode assignNode = this.allocNode("Assignment", "=", 0, eqTok.span);
+            assignNode.addChild(expr);
+            assignNode.addChild(value);
+            return assignNode;
+        }
+
+        return expr;
+    }
+
+    /// Parses logical OR expressions (`||`).
+    ///
+    /// @returns Expression `AstNode`.
+    /// @since v0.1.0
+    func parseLogicalOr(): AstNode {
+        AstNode expr = this.parseLogicalAnd();
+
+        while (this.matchToken("PipePipe")) {
+            Token opTok = this.tokens[this.pos - 1];
+            AstNode right = this.parseLogicalAnd();
+            AstNode bin = this.allocNode("BinaryExpr", "||", 0, opTok.span);
+            bin.addChild(expr);
+            bin.addChild(right);
+            expr = bin;
+        }
+
+        return expr;
+    }
+
+    /// Parses logical AND expressions (`&&`).
+    ///
+    /// @returns Expression `AstNode`.
+    /// @since v0.1.0
+    func parseLogicalAnd(): AstNode {
+        AstNode expr = this.parseEquality();
+
+        while (this.matchToken("AmpAmp")) {
+            Token opTok = this.tokens[this.pos - 1];
+            AstNode right = this.parseEquality();
+            AstNode bin = this.allocNode("BinaryExpr", "&&", 0, opTok.span);
+            bin.addChild(expr);
+            bin.addChild(right);
+            expr = bin;
+        }
+
+        return expr;
+    }
+
+    /// Parses equality expressions (`==`, `!=`).
+    ///
+    /// @returns Expression `AstNode`.
+    /// @since v0.1.0
+    func parseEquality(): AstNode {
+        AstNode expr = this.parseComparison();
+
+        while (this.check("EqualEqual") || this.check("NotEqual")) {
+            Token opTok = this.advance();
+            AstNode right = this.parseComparison();
+            AstNode bin = this.allocNode("BinaryExpr", opTok.text, 0, opTok.span);
+            bin.addChild(expr);
+            bin.addChild(right);
+            expr = bin;
+        }
+
+        return expr;
+    }
+
+    /// Parses relational comparisons (`<`, `<=`, `>`, `>=`).
+    ///
+    /// @returns Expression `AstNode`.
+    /// @since v0.1.0
+    func parseComparison(): AstNode {
+        AstNode expr = this.parseTerm();
+
+        while (this.check("Less") || this.check("LessEqual") || this.check("Greater") || this.check("GreaterEqual")) {
+            Token opTok = this.advance();
+            AstNode right = this.parseTerm();
+            AstNode bin = this.allocNode("BinaryExpr", opTok.text, 0, opTok.span);
+            bin.addChild(expr);
+            bin.addChild(right);
+            expr = bin;
+        }
+
+        return expr;
+    }
+
+    /// Parses additive binary operations (`+`, `-`).
+    ///
+    /// @returns Expression `AstNode`.
+    /// @since v0.1.0
+    func parseTerm(): AstNode {
+        AstNode expr = this.parseFactor();
+
+        while (this.check("Plus") || this.check("Minus")) {
+            Token opTok = this.advance();
+            AstNode right = this.parseFactor();
+            AstNode bin = this.allocNode("BinaryExpr", opTok.text, 0, opTok.span);
+            bin.addChild(expr);
+            bin.addChild(right);
+            expr = bin;
+        }
+
+        return expr;
+    }
+
+    /// Parses multiplicative binary operations (`*`, `/`, `%`).
+    ///
+    /// @returns Expression `AstNode`.
+    /// @since v0.1.0
+    func parseFactor(): AstNode {
+        AstNode expr = this.parseUnary();
+
+        while (this.check("Star") || this.check("Slash") || this.check("Percent")) {
+            Token opTok = this.advance();
+            AstNode right = this.parseUnary();
+            AstNode bin = this.allocNode("BinaryExpr", opTok.text, 0, opTok.span);
+            bin.addChild(expr);
+            bin.addChild(right);
+            expr = bin;
+        }
+
+        return expr;
+    }
+
+    /// Parses prefix unary operations (`!`, `-`).
+    ///
+    /// @returns Expression `AstNode`.
+    /// @since v0.1.0
+    func parseUnary(): AstNode {
+        if (this.check("Bang") || this.check("Minus")) {
+            Token opTok = this.advance();
+            AstNode right = this.parseUnary();
+            AstNode un = this.allocNode("UnaryExpr", opTok.text, 0, opTok.span);
+            un.addChild(right);
+            return un;
+        }
+
+        return this.parsePostfix();
+    }
+
+    /// Parses postfix operations: method/function calls `()`, field access `.`, and array indexing `[]`.
+    ///
+    /// @returns Expression `AstNode`.
+    /// @since v0.1.0
+    func parsePostfix(): AstNode {
+        AstNode expr = this.parsePrimary();
+        bool looping = true;
+
+        while (looping) {
+            if (this.matchToken("LParen")) { // Function Call: expr(arg1, arg2)
+                Token lparen = this.tokens[this.pos - 1];
+                AstNode callNode = this.allocNode("CallExpr", "", 0, lparen.span);
+                callNode.addChild(expr);
+
+                if (this.check("RParen") == false) {
+                    bool moreArgs = true;
+                    while (moreArgs) {
+                        callNode.addChild(this.parseExpression());
+                        if (this.matchToken("Comma") == false) {
+                            moreArgs = false;
+                        }
+                    }
+                }
+                this.consume("RParen", "Expected ')' after call arguments");
+                expr = callNode;
+            } else if (this.matchToken("Dot")) { // Member Access: expr.member
+                Token memberTok = this.consume("Identifier", "Expected member identifier after '.'");
+                AstNode memberNode = this.allocNode("MemberAccess", memberTok.text, 0, memberTok.span);
+                memberNode.addChild(expr);
+                expr = memberNode;
+            } else if (this.matchToken("LBracket")) { // Index Access: expr[index]
+                Token lbracket = this.tokens[this.pos - 1];
+                AstNode indexExpr = this.parseExpression();
+                this.consume("RBracket", "Expected ']' after index expression");
+                AstNode indexNode = this.allocNode("IndexExpr", "", 0, lbracket.span);
+                indexNode.addChild(expr);
+                indexNode.addChild(indexExpr);
+                expr = indexNode;
+            } else {
+                looping = false;
+            }
+        }
+
+        return expr;
+    }
+
+    /// Parses primary atomic expressions (literals, identifiers, `this`, `new`, grouping, array literals).
+    ///
+    /// @returns Primary expression `AstNode`.
+    /// @since v0.1.0
+    func parsePrimary(): AstNode {
+        Token tok = this.peek();
+
+        if (this.matchToken("IntLit")) {
+            return this.allocNode("IntLit", tok.text, tok.text.toInt(), tok.span);
+        }
+        if (this.matchToken("StringLit")) {
+            return this.allocNode("StringLit", tok.text, 0, tok.span);
+        }
+        if (this.matchToken("KwTrue")) {
+            return this.allocNode("BoolLit", "true", 1, tok.span);
+        }
+        if (this.matchToken("KwFalse")) {
+            return this.allocNode("BoolLit", "false", 0, tok.span);
+        }
+        if (this.matchToken("Identifier")) {
+            return this.allocNode("Identifier", tok.text, 0, tok.span);
+        }
+        if (this.matchToken("KwThis")) {
+            return this.allocNode("ThisExpr", "this", 0, tok.span);
+        }
+
+        if (this.matchToken("KwNew")) { // new ClassName(args...)
+            Token clsTok = this.consume("Identifier", "Expected class identifier after 'new'");
+            AstNode newNode = this.allocNode("NewExpr", clsTok.text, 0, tok.span);
+            if (this.matchToken("LParen")) {
+                if (this.check("RParen") == false) {
+                    bool moreArgs = true;
+                    while (moreArgs) {
+                        newNode.addChild(this.parseExpression());
+                        if (this.matchToken("Comma") == false) {
+                            moreArgs = false;
+                        }
+                    }
+                }
+                this.consume("RParen", "Expected ')' after constructor arguments");
+            }
+            return newNode;
+        }
+
+        if (this.matchToken("LParen")) { // Grouped: (expr)
+            AstNode inner = this.parseExpression();
+            this.consume("RParen", "Expected ')' after grouped expression");
+            return inner;
+        }
+
+        if (this.matchToken("LBracket")) { // Array literal: [a, b, c]
+            AstNode arrNode = this.allocNode("ArrayLit", "", 0, tok.span);
+            if (this.check("RBracket") == false) {
+                bool moreElems = true;
+                while (moreElems) {
+                    arrNode.addChild(this.parseExpression());
+                    if (this.matchToken("Comma") == false) {
+                        moreElems = false;
+                    }
+                }
+            }
+            this.consume("RBracket", "Expected ']' after array elements");
+            return arrNode;
+        }
+
+        println("UNEXPECTED TOKEN in parsePrimary: " + tok.toString());
+        this.advance();
+        return this.allocNode("ErrorNode", tok.text, 0, tok.span);
+    }
+
+    // --- Statement Parsing ---
+
+    /// Dispatches statement parsing (imports, namespaces, variable declarations, control flow, blocks, expression statements).
+    ///
+    /// @returns Statement `AstNode`.
+    /// @since v0.1.0
+    func parseStatement(): AstNode {
+        if (this.check("KwImport")) {
+            return this.parseImportDecl();
+        }
+
+        if (this.check("KwNamespace")) {
+            return this.parseNamespaceDecl();
+        }
+
+        // VarDecl: type name = init; or let name = init;
+        if (this.check("KwInt") || this.check("KwFloat") || this.check("KwBool") || this.check("KwString") || this.check("KwLet") || this.check("KwConst")) {
+            return this.parseVarDecl();
+        }
+
+        // Also check if it's a CustomTypeName varName = init; or CustomTypeName[] varName = init;
+        if (this.check("Identifier")) {
+            if (this.pos + 1 < this.count && this.tokens[this.pos + 1].kind == "Identifier") {
+                return this.parseVarDecl();
+            }
+            if (this.pos + 3 < this.count && this.tokens[this.pos + 1].kind == "LBracket" && this.tokens[this.pos + 2].kind == "RBracket" && this.tokens[this.pos + 3].kind == "Identifier") {
+                return this.parseVarDecl();
+            }
+        }
+
+        if (this.check("KwIf")) {
+            return this.parseIfStatement();
+        }
+
+        if (this.check("KwWhile")) {
+            return this.parseWhileStatement();
+        }
+
+        if (this.check("KwReturn")) {
+            return this.parseReturnStatement();
+        }
+
+        if (this.check("LBrace")) {
+            return this.parseBlock();
+        }
+
+        // Expression statement: expr;
+        AstNode expr = this.parseExpression();
+        this.matchToken("Semicolon");
+        AstNode exprStmt = this.allocNode("ExprStmt", "", 0, expr.span);
+        exprStmt.addChild(expr);
+        return exprStmt;
+    }
+
+    /// Parses a variable declaration statement (`int x = 42;`).
+    ///
+    /// @returns `VarDecl` AST node.
+    /// @since v0.1.0
+    func parseVarDecl(): AstNode {
+        Token typeTok = this.advance();
+        string typeName = typeTok.text;
+
+        // Check for array type: int[]
+        if (this.matchToken("LBracket")) {
+            this.consume("RBracket", "Expected ']' for array type declaration");
+            typeName = typeName + "[]";
+        }
+
+        Token nameTok = this.consume("Identifier", "Expected variable name");
+        AstNode varNode = this.allocNode("VarDecl", nameTok.text, 0, typeTok.span);
+        varNode.addChild(this.allocNode("Type", typeName, 0, typeTok.span));
+
+        if (this.matchToken("Assign")) {
+            AstNode initVal = this.parseExpression();
+            varNode.addChild(initVal);
+        }
+
+        this.matchToken("Semicolon");
+        return varNode;
+    }
+
+    /// Parses an `if-else` conditional statement.
+    ///
+    /// @returns `IfStmt` AST node.
+    /// @since v0.1.0
+    func parseIfStatement(): AstNode {
+        Token ifTok = this.consume("KwIf", "Expected 'if'");
+        AstNode cond = this.parseExpression();
+
+        AstNode thenBlock = this.parseStatement();
+        AstNode ifNode = this.allocNode("IfStmt", "", 0, ifTok.span);
+        ifNode.addChild(cond);
+        ifNode.addChild(thenBlock);
+
+        if (this.matchToken("KwElse")) {
+            AstNode elseBlock = this.parseStatement();
+            ifNode.addChild(elseBlock);
+        }
+
+        return ifNode;
+    }
+
+    /// Parses a `while` loop statement.
+    ///
+    /// @returns `WhileStmt` AST node.
+    /// @since v0.1.0
+    func parseWhileStatement(): AstNode {
+        Token whileTok = this.consume("KwWhile", "Expected 'while'");
+        AstNode cond = this.parseExpression();
+
+        AstNode body = this.parseStatement();
+        AstNode whileNode = this.allocNode("WhileStmt", "", 0, whileTok.span);
+        whileNode.addChild(cond);
+        whileNode.addChild(body);
+        return whileNode;
+    }
+
+    /// Parses an `import` statement declaration (`import "std.http";`).
+    ///
+    /// @returns `ImportDecl` AST node.
+    /// @since v0.1.0
+    func parseImportDecl(): AstNode {
+        Token importTok = this.consume("KwImport", "Expected 'import'");
+        string path = "";
+        if (this.check("StringLit")) {
+            Token strTok = this.advance();
+            path = strTok.text;
+        } else {
+            Token identTok = this.consume("Identifier", "Expected module name after 'import'");
+            path = identTok.text;
+            while (this.matchToken("Dot")) {
+                Token partTok = this.consume("Identifier", "Expected identifier after '.'");
+                path = path + "." + partTok.text;
+            }
+        }
+        this.matchToken("Semicolon");
+        return this.allocNode("ImportDecl", path, 0, importTok.span);
+    }
+
+    /// Parses a `namespace Name { ... }` block declaration.
+    ///
+    /// @returns `NamespaceDecl` AST node.
+    /// @since v0.1.0
+    func parseNamespaceDecl(): AstNode {
+        Token nsTok = this.consume("KwNamespace", "Expected 'namespace'");
+        Token nameTok = this.consume("Identifier", "Expected namespace name");
+        this.consume("LBrace", "Expected '{' after namespace name");
+        AstNode nsNode = this.allocNode("NamespaceDecl", nameTok.text, 0, nsTok.span);
+
+        while (this.check("RBrace") == false && this.isEof() == false) {
+            if (this.check("KwFunc")) {
+                nsNode.addChild(this.parseFunctionDecl());
+            } else if (this.check("KwClass")) {
+                nsNode.addChild(this.parseClassDecl());
+            } else if (this.check("KwNamespace")) {
+                nsNode.addChild(this.parseNamespaceDecl());
+            } else if (this.check("KwImport")) {
+                nsNode.addChild(this.parseImportDecl());
+            } else {
+                nsNode.addChild(this.parseStatement());
+            }
+        }
+
+        this.consume("RBrace", "Expected '}' at end of namespace body");
+        return nsNode;
+    }
+
+    /// Parses a `return` statement (`return expr;` or `return;`).
+    ///
+    /// @returns `ReturnStmt` AST node.
+    /// @since v0.1.0
+    func parseReturnStatement(): AstNode {
+        Token retTok = this.consume("KwReturn", "Expected 'return'");
+        AstNode retNode = this.allocNode("ReturnStmt", "", 0, retTok.span);
+
+        if (this.check("Semicolon") == false) {
+            AstNode val = this.parseExpression();
+            retNode.addChild(val);
+        }
+
+        this.matchToken("Semicolon");
+        return retNode;
+    }
+
+    /// Parses a curly-brace delimited statement block `{ stmt1; stmt2; }`.
+    ///
+    /// @returns `Block` AST node.
+    /// @since v0.1.0
+    func parseBlock(): AstNode {
+        Token lbrace = this.consume("LBrace", "Expected '{'");
+        AstNode blockNode = this.allocNode("Block", "", 0, lbrace.span);
+
+        while (this.check("RBrace") == false && this.isEof() == false) {
+            blockNode.addChild(this.parseStatement());
+        }
+
+        this.consume("RBrace", "Expected '}' at end of block");
+        return blockNode;
+    }
+
+    // --- Declaration Parsing ---
+
+    /// Parses a function declaration (`func name(params): returnType { body }`).
+    ///
+    /// @returns `FunctionDecl` AST node.
+    /// @since v0.1.0
+    func parseFunctionDecl(): AstNode {
+        Token fnTok = this.advance(); // "func" or "fn"
+        Token nameTok = this.consume("Identifier", "Expected function name");
+        AstNode funcNode = this.allocNode("FunctionDecl", nameTok.text, 0, fnTok.span);
+
+        this.consume("LParen", "Expected '(' after function name");
+        AstNode paramsNode = this.allocNode("Params", "", 0, fnTok.span);
+
+        if (this.check("RParen") == false) {
+            bool moreParams = true;
+            while (moreParams) {
+                Token pTypeTok = this.advance();
+                string pType = pTypeTok.text;
+                if (this.matchToken("LBracket")) {
+                    this.consume("RBracket", "Expected ']' for array parameter type");
+                    pType = pType + "[]";
+                }
+                Token pNameTok = this.consume("Identifier", "Expected parameter name");
+                AstNode paramNode = this.allocNode("Param", pNameTok.text, 0, pTypeTok.span);
+                paramNode.addChild(this.allocNode("Type", pType, 0, pTypeTok.span));
+                paramsNode.addChild(paramNode);
+
+                if (this.matchToken("Comma") == false) {
+                    moreParams = false;
+                }
+            }
+        }
+        this.consume("RParen", "Expected ')' after function parameters");
+        funcNode.addChild(paramsNode);
+
+        string returnType = "void";
+        if (this.matchToken("Colon")) {
+            Token rTypeTok = this.advance();
+            returnType = rTypeTok.text;
+            if (this.matchToken("LBracket")) {
+                this.consume("RBracket", "Expected ']' for array return type");
+                returnType = returnType + "[]";
+            }
+        }
+        funcNode.addChild(this.allocNode("ReturnType", returnType, 0, fnTok.span));
+
+        AstNode body = this.parseBlock();
+        funcNode.addChild(body);
+        return funcNode;
+    }
+
+    /// Parses a class declaration with fields, constructor, and methods (`class Name { ... }`).
+    ///
+    /// @returns `ClassDecl` AST node.
+    /// @since v0.1.0
+    func parseClassDecl(): AstNode {
+        Token clsTok = this.consume("KwClass", "Expected 'class'");
+        Token nameTok = this.consume("Identifier", "Expected class name");
+        AstNode classNode = this.allocNode("ClassDecl", nameTok.text, 0, clsTok.span);
+
+        this.consume("LBrace", "Expected '{' for class body");
+
+        while (this.check("RBrace") == false && this.isEof() == false) {
+            // Skip modifiers: public, private, static
+            while (this.check("KwPublic") || this.check("KwPrivate") || this.check("KwStatic")) {
+                this.advance();
+            }
+
+            if (this.check("KwFunc") || this.check("Identifier") && this.peek().text == "fn") {
+                classNode.addChild(this.parseFunctionDecl());
+            } else if (this.check("KwNew") && this.pos + 1 < this.count && this.tokens[this.pos + 1].kind == "LParen") {
+                // Constructor: new(params...) { ... }
+                Token ctorTok = this.advance();
+                AstNode ctorNode = this.allocNode("Constructor", nameTok.text, 0, ctorTok.span);
+                this.consume("LParen", "Expected '(' after constructor name");
+                AstNode ctorParams = this.allocNode("Params", "", 0, ctorTok.span);
+                if (this.check("RParen") == false) {
+                    bool moreParams = true;
+                    while (moreParams) {
+                        Token cpTypeTok = this.advance();
+                        string cpType = cpTypeTok.text;
+                        if (this.matchToken("LBracket")) {
+                            this.consume("RBracket", "Expected ']'");
+                            cpType = cpType + "[]";
+                        }
+                        Token cpNameTok = this.consume("Identifier", "Expected parameter name");
+                        AstNode cpNode = this.allocNode("Param", cpNameTok.text, 0, cpTypeTok.span);
+                        cpNode.addChild(this.allocNode("Type", cpType, 0, cpTypeTok.span));
+                        ctorParams.addChild(cpNode);
+                        if (this.matchToken("Comma") == false) {
+                            moreParams = false;
+                        }
+                    }
+                }
+                this.consume("RParen", "Expected ')' after constructor params");
+                ctorNode.addChild(ctorParams);
+                ctorNode.addChild(this.parseBlock());
+                classNode.addChild(ctorNode);
+            } else {
+                // Field declaration: type fieldName;
+                classNode.addChild(this.parseVarDecl());
+            }
+        }
+
+        this.consume("RBrace", "Expected '}' at end of class body");
+        return classNode;
+    }
+
+    /// Parses a complete compilation unit into a `Program` AST root node.
+    ///
+    /// Consumes tokens until EOF, parsing top-level functions, classes, namespaces, and statements.
+    ///
+    /// @returns The root `Program` AST node.
+    /// @since v0.1.0
+    func parseProgram(): AstNode {
+        Span progSpan = new Span(0, 0, 1, 1);
+        AstNode prog = this.allocNode("Program", "", 0, progSpan);
+
+        while (this.isEof() == false) {
+            if (this.check("KwFunc")) {
+                prog.addChild(this.parseFunctionDecl());
+            } else if (this.check("KwClass")) {
+                prog.addChild(this.parseClassDecl());
+            } else if (this.check("KwNamespace")) {
+                prog.addChild(this.parseNamespaceDecl());
+            } else if (this.check("KwImport")) {
+                prog.addChild(this.parseImportDecl());
+            } else {
+                // Top-level statements
+                prog.addChild(this.parseStatement());
+            }
+        }
+
+        return prog;
+    }
+}

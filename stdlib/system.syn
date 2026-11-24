@@ -1,0 +1,150 @@
+// Syntra Standard Library: System & Process Subsystem
+// Provides command-line arguments, environment variables, time, and exit controls.
+
+/// The `System` namespace provides foundational operating system primitives,
+/// process lifecycle management, standard console I/O, execution timers, and
+/// access to the host environment.
+///
+/// All functions in this namespace interface directly with the runtime kernel
+/// without intermediate allocation overhead.
+///
+/// ```syntra
+/// import System;
+///
+/// func main(): void {
+///     System.println("Application started at " + System.timeMs() + " ms");
+///     let user = System.getEnv("USER");
+///     System.println("Running as user: " + user);
+/// }
+/// ```
+///
+/// @since v0.1.0
+namespace System {
+    /// Retrieves the array of command-line arguments passed to the program upon invocation.
+    ///
+    /// The first entry typically represents the active binary or executed script path,
+    /// followed by any user-supplied flags, arguments, and switches.
+    ///
+    /// ```syntra
+    /// let args = System.args();
+    /// for arg in args {
+    ///     System.println("Arg: " + arg);
+    /// }
+    /// ```
+    ///
+    /// @return An array of strings representing command-line arguments.
+    /// @since v0.1.0
+    func args(): string[] {
+        return System.args();
+    }
+
+    /// Prints a message to standard output (`stdout`) followed by an operating system newline.
+    ///
+    /// ```syntra
+    /// System.println("Processing completed successfully.");
+    /// ```
+    ///
+    /// @param msg The string payload to display on stdout.
+    /// @return void
+    /// @since v0.1.0
+    func println(string msg) {
+        System.println(msg);
+    }
+
+    /// Prints a message to standard output (`stdout`) without appending a trailing newline.
+    ///
+    /// Useful for progress indicators, interactive command prompts, and structured terminal logs.
+    ///
+    /// ```syntra
+    /// System.print("Progress: [");
+    /// System.print("==========");
+    /// System.println("] 100%");
+    /// ```
+    ///
+    /// @param msg The string payload to display on stdout.
+    /// @return void
+    /// @since v0.1.0
+    func print(string msg) {
+        System.print(msg);
+    }
+
+    /// Terminates the calling process immediately with the specified exit code.
+    ///
+    /// Conventionally, an exit code of `0` denotes clean, successful termination,
+    /// while non-zero codes indicate errors or abnormal abort conditions.
+    ///
+    /// ```syntra
+    /// if (!isValid) {
+    ///     System.println("Fatal validation error.");
+    ///     System.exit(1);
+    /// }
+    /// ```
+    ///
+    /// @param code Operating system process return code (0 for success, >0 for errors).
+    /// @return void
+    /// @since v0.1.0
+    func exit(int code) {
+        System.exit(code);
+    }
+
+    /// Reads an environment variable by name from the current process environment.
+    ///
+    /// If the environment variable is unset or inaccessible, this function returns
+    /// an empty string (`""`) rather than throwing an exception.
+    ///
+    /// ```syntra
+    /// let path = System.getEnv("PATH");
+    /// let port = System.getEnv("PORT");
+    /// ```
+    ///
+    /// @param key The case-sensitive name of the environment variable to look up.
+    /// @return The string value of the environment variable, or `""` if unset.
+    /// @since v0.1.0
+    func getEnv(string key): string {
+        return System.getEnv(key);
+    }
+
+    /// Returns the current Unix epoch time in milliseconds.
+    ///
+    /// Measures monotonic wall-clock elapsed time since 00:00:00 UTC, January 1, 1970.
+    ///
+    /// ```syntra
+    /// let start = System.timeMs();
+    /// doComputation();
+    /// let elapsed = System.timeMs() - start;
+    /// System.println("Duration: " + elapsed + " ms");
+    /// ```
+    ///
+    /// @return 64-bit integer timestamp in milliseconds.
+    /// @since v0.1.0
+    func timeMs(): int {
+        return System.timeMs();
+    }
+
+    /// Spawns a subshell process executing the specified command and returns its termination exit code.
+    ///
+    /// Blocks the current fiber until the child process terminates.
+    ///
+    /// ```syntra
+    /// let status = System.exec("git status --short");
+    /// if (status != 0) {
+    ///     System.println("Git command failed.");
+    /// }
+    /// ```
+    ///
+    /// @param cmd The shell command string to execute.
+    /// @return Process exit status code returned by the OS.
+    /// @throws RuntimeException If process creation fails or shell is unreachable.
+    /// @since v0.1.0
+    func exec(string cmd): int {
+        return System.exec(cmd);
+    }
+
+    /// Frees or recycles the allocated memory of an object or dynamic string.
+    ///
+    /// @param val The value or string to free.
+    /// @since v0.1.0
+    func free(string val): void {
+        System.free(val);
+    }
+}

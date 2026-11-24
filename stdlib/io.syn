@@ -1,0 +1,111 @@
+// Syntra Standard Library: I/O Subsystem
+// Provides standard file and stream operations.
+
+/// Check whether a file or directory exists on the filesystem at the given path.
+///
+/// Performs a non-throwing filesystem metadata query.
+///
+/// ```syntra
+/// if (fileExists("config/settings.json")) {
+///     let conf = readFile("config/settings.json");
+/// }
+/// ```
+///
+/// @param path Filesystem path string (relative to workspace or absolute).
+/// @return `true` if target path exists and is accessible; `false` otherwise.
+/// @since v0.1.0
+func fileExists(string path): bool {
+    return File.exists(path);
+}
+
+/// Reads the entire contents of a file into a UTF-8 string.
+///
+/// Opens the target file in read-only mode and reads all bytes to completion.
+///
+/// ```syntra
+/// try {
+///     let content = readFile("data/input.txt");
+///     System.println("File length: " + content.length());
+/// } catch (err) {
+///     System.println("Failed to read: " + err);
+/// }
+/// ```
+///
+/// @param path Target filesystem path.
+/// @return The decoded UTF-8 string contents of the file.
+/// @throws RuntimeException If the file does not exist, permission is denied, or I/O fails.
+/// @since v0.1.0
+func readFile(string path): string {
+    return File.readText(path);
+}
+
+/// Writes string text contents to a target file on disk.
+///
+/// If the file already exists, it is truncated and replaced. If it does not exist,
+/// it is created with standard permissions.
+///
+/// ```syntra
+/// let success = writeFile("logs/app.log", "Initialized application.\n");
+/// if (success) {
+///     System.println("Log recorded.");
+/// }
+/// ```
+///
+/// @param path Target filesystem path to write.
+/// @param content UTF-8 string data to write.
+/// @return `true` if write succeeded; `false` if an error occurred.
+/// @since v0.1.0
+func writeFile(string path, string content): bool {
+    return File.writeText(path, content);
+}
+
+/// Appends string text contents to the end of a file on disk.
+///
+/// If the file does not exist, it is created. Preserves all existing file contents.
+///
+/// ```syntra
+/// appendFile("logs/audit.log", "User logged in at " + System.timeMs() + "\n");
+/// ```
+///
+/// @param path Target filesystem path to append.
+/// @param content UTF-8 string payload to append.
+/// @return `true` on successful append; `false` otherwise.
+/// @since v0.1.0
+func appendFile(string path, string content): bool {
+    return File.appendText(path, content);
+}
+
+/// Deletes a file from the filesystem.
+///
+/// Permanently unlinks the target file path.
+///
+/// ```syntra
+/// if (fileExists("temp/cache.bin")) {
+///     deleteFile("temp/cache.bin");
+/// }
+/// ```
+///
+/// @param path Target filesystem path to remove.
+/// @return `true` if file was successfully deleted; `false` otherwise.
+/// @since v0.1.0
+func deleteFile(string path): bool {
+    return File.delete(path);
+}
+
+/// Retrieves the size of a file in bytes.
+///
+/// Returns `-1` if the file does not exist or metadata cannot be retrieved.
+///
+/// ```syntra
+/// let bytes = fileSize("assets/image.png");
+/// if (bytes > 0) {
+///     System.println("Asset size: " + bytes + " bytes");
+/// }
+/// ```
+///
+/// @param path Target filesystem path to inspect.
+/// @return 64-bit integer file size in bytes, or `-1` on error.
+/// @since v0.1.0
+func fileSize(string path): int {
+    return File.size(path);
+}

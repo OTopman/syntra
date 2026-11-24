@@ -1,0 +1,26 @@
+/// Test multi-file module imports in Syntra.
+import modules.math_utils;
+import modules.geometry;
+
+func main(): int {
+    println("=== Multi-File Module Test ===");
+
+    int sum = math_utils.add(30, 12);
+    println("math_utils.add(30, 12) = " + sum);
+
+    int prod = math_utils.multiply(6, 7);
+    println("math_utils.multiply(6, 7) = " + prod);
+
+    int rect_area = geometry.area(10, 5);
+    println("geometry.area(10, 5) = " + rect_area);
+
+    Point pt = new Point(15, 25);
+    println("Point distance: " + pt.manhattan_distance());
+
+    if (sum == 42) && (prod == 42) && (rect_area == 50) && (pt.manhattan_distance() == 40) {
+        println("Multi-file module resolution PASSED!");
+        return 42;
+    }
+
+    return 0;
+}

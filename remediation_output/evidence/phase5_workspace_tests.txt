@@ -1,0 +1,252 @@
+   Compiling syntra_backend_cranelift v0.1.0 (/Users/Topman/Documents/Projects/aether/crates/backend_cranelift)
+   Compiling syntra_sandbox v0.1.0 (/Users/Topman/Documents/Projects/aether/crates/sandbox)
+   Compiling syntra_intelligence v0.1.0 (/Users/Topman/Documents/Projects/aether/crates/intelligence)
+   Compiling syntra_opt v0.1.0 (/Users/Topman/Documents/Projects/aether/crates/opt)
+   Compiling syntra_cli v0.1.0 (/Users/Topman/Documents/Projects/aether/crates/cli)
+   Compiling syntra_provenance v0.1.0 (/Users/Topman/Documents/Projects/aether/crates/provenance)
+   Compiling syntra_analysis v0.1.0 (/Users/Topman/Documents/Projects/aether/crates/analysis)
+   Compiling syntra_air v0.1.0 (/Users/Topman/Documents/Projects/aether/crates/air)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.38s
+     Running unittests src/lib.rs (target/debug/deps/syntra_air-5310ac45a0cdc9b6)
+
+running 2 tests
+test tests::test_guard_verification ... ok
+test tests::test_sir_type_aliases_compatibility ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/syntra_analysis-af923022674cb9b1)
+
+running 3 tests
+test tests::test_incremental_invalidation_cache ... ok
+test tests::test_effect_analysis_io_detection ... ok
+test tests::test_escape_analysis_and_callgraph ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/syntra_backend_cranelift-6e03feaa54ca0c0a)
+
+running 8 tests
+test tests::test_native_cross_target_isa_arm64_and_x86_64 ... ok
+test tests::test_native_runtime_gc_direct_c_api ... ok
+test tests::test_native_gc_reclamation_loop ... ok
+test tests::test_native_compile_and_link_return_code ... ok
+test tests::test_native_compile_function_calls_and_recursion ... ok
+test tests::test_native_compile_float_arithmetic ... ok
+test tests::test_native_channel_select_concurrency ... ok
+test tests::test_native_compile_void_main ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.63s
+
+     Running unittests src/lib.rs (target/debug/deps/syntra_cli-55366e2f9d8d0cfb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/syn.rs (target/debug/deps/syn-e04c63660276a85d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/syntra.rs (target/debug/deps/syntra-8f062ef84ebdba5f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/test_package_integrity.rs (target/debug/deps/test_package_integrity-13d0909d85bfc817)
+
+running 4 tests
+test test_sha256_known_vectors ... ok
+test test_directory_tree_hash_determinism ... ok
+test test_tampering_file_content_detected ... ok
+test test_tampering_add_or_delete_file_detected ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/syntra_diagnostics-049cc0f542da0692)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/syntra_frontend-7d7f334336529835)
+
+running 12 tests
+test tests::test_module_loader_resolves_imports ... ok
+test loader::tests::test_package_manifest_toml_backward_compat ... ok
+test loader::tests::test_package_manifest_syntra_dsl ... ok
+test loader::tests::test_package_manifest_git_dependencies ... ok
+test tests::test_type_checking_mismatch_fails ... ok
+test tests::test_system_and_error_handling_type_check ... ok
+test tests::test_async_await_type_check_valid ... ok
+test tests::test_async_await_type_mismatch_fails ... ok
+test tests::test_type_checking_valid_program ... ok
+test tests::test_string_methods_type_check ... ok
+test tests::test_file_io_type_check ... ok
+test tests::test_maps_and_json_and_lambdas_type_check ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/syntra_intelligence-37f0a7dbf6a7e33b)
+
+running 8 tests
+test dataset::tests::test_poison_data_quarantine ... ok
+test tests::test_sls_model_evaluation_and_promotion_gate ... ok
+test tests::test_sls_bounded_inference_and_fallback ... ok
+test tests::test_planner_conflict_pruning ... ok
+test tests::test_sls_model_rollback_and_revocation ... ok
+test dataset::tests::test_training_record_roundtrip ... ok
+test dataset::tests::test_leakage_free_split ... ok
+test tests::test_coordinator_agent_and_planner_pipeline ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/syntra_opt-be9a964034065de1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/syntra_provenance-5f103965f727b9d4)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/syntra_runtime-316e55d040d92221)
+
+running 22 tests
+test sar::tests::test_sar_worker_scale_up_and_down ... ok
+test sar::tests::test_sar_disabled_by_default_run020 ... ok
+test sar::tests::test_sar_memory_pressure_adaptation ... ok
+test guards::tests::test_guard_validation_success_and_violation ... ok
+test code_cache::tests::test_code_cache_lru_and_active_pinning ... ok
+test deopt::tests::test_deopt_state_reconstruction_and_blacklisting ... ok
+test sar::tests::test_sar_background_compilation_and_guard_deopt_loop ... ok
+test profile::tests::test_profile_synlock_roundtrip ... ok
+test tests::test_repl_eval_line ... ok
+test websocket::tests::test_base64_encode ... ok
+test websocket::tests::test_client_masked_frame_write_and_read ... ok
+test tests::test_system_and_error_handling_runtime ... ok
+test websocket::tests::test_client_xor_unmasking ... ok
+test tests::test_runtime_array_sum_and_methods ... ok
+test tests::test_math_namespace_multi_args ... ok
+test tests::test_string_operations_and_chaining ... ok
+test websocket::tests::test_rfc6455_handshake_vector ... ok
+test websocket::tests::test_server_unmasked_frame_write ... ok
+test websocket::tests::test_sha1_known_hashes ... ok
+test tests::test_maps_json_and_functional_runtime ... ok
+test tests::test_file_io_runtime_and_oop ... ok
+test tests::test_concurrency_tasks_and_channels_runtime ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/lib.rs (target/debug/deps/syntra_sandbox-781b98c88ec9f0c2)
+
+running 2 tests
+test tests::test_pareto_dominance ... ok
+test tests::test_candidate_generation ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/test_sandbox_isolation.rs (target/debug/deps/test_sandbox_isolation-3b6f7ad547be63fc)
+
+running 5 tests
+test test_verifier_rejects_timed_out_candidate ... ok
+test test_sandbox_directory_cleanup_on_drop ... ok
+test test_sandbox_execution_timeout_kills_infinite_loop ... ok
+test test_sandbox_output_truncation_limits_runaway_output ... ok
+test test_sandbox_environment_isolation_prevents_secret_leakage ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.85s
+
+     Running unittests src/lib.rs (target/debug/deps/syntra_syntax-e243293a36e1df2c)
+
+running 9 tests
+test tests::test_parse_custom_dto ... ok
+test tests::test_parse_arrays_and_loops ... ok
+test tests::test_parse_doc_comments_and_namespace ... ok
+test tests::test_parse_control_flow_variants ... ok
+test tests::test_parse_generics_and_lambdas ... ok
+test tests::test_parse_async_await ... ok
+test tests::test_parse_await_precedence ... ok
+test tests::test_parse_try_catch_finally_and_interpolation ... ok
+test tests::test_parse_stdlib_http ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests syntra_air
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests syntra_analysis
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests syntra_backend_cranelift
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests syntra_cli
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests syntra_diagnostics
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests syntra_frontend
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests syntra_intelligence
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests syntra_opt
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests syntra_provenance
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests syntra_runtime
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests syntra_sandbox
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests syntra_syntax
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

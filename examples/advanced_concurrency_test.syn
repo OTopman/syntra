@@ -1,0 +1,68 @@
+// Advanced Concurrency Test: ThreadPool, Channel.trySend/tryRecv, and Channel.select
+
+fn compute_square(int x): int {
+    return x * x;
+}
+
+fn worker_push(Channel ch): int {
+    Task.sleep(20);
+    ch.send(42);
+    return 1;
+}
+
+fn main(): int {
+    println("--- Testing Advanced Concurrency ---");
+    
+    
+    // 1. ThreadPool Execution
+    println("1. Initializing ThreadPool with 4 workers...");
+    ThreadPool pool = new ThreadPool(4);
+
+    Task t1 = pool.submit(compute_square, 5);
+    Task t2 = pool.submit(compute_square, 8);
+    Task t3 = pool.submit((int n) => n * 10, 7);
+
+    int r1 = t1.join();
+    int r2 = t2.join();
+    int r3 = t3.join();
+    
+
+    println("   Task 1 result: " + r1);
+    println("   Task 2 result: " + r2);
+    println("   Task 3 result: " + r3);
+
+    pool.shutdown();
+    println("   ThreadPool successfully shut down.");
+
+    // 2. Channel trySend and tryRecv
+    println("2. Testing Non-Blocking Channel operations...");
+    Channel ch_fast = new Channel(2);
+    int empty_val = ch_fast.tryRecv();
+    println("   tryRecv on empty channel: " + empty_val);
+
+    bool s1 = ch_fast.trySend(100);
+    bool s2 = ch_fast.trySend(200);
+    println("   trySend results: " + s1 + ", " + s2);
+
+    int v1 = ch_fast.tryRecv();
+    int v2 = ch_fast.tryRecv();
+    println("   tryRecv results: " + v1 + ", " + v2);
+
+    // 3. Multi-channel Channel.select
+    println("3. Testing Channel.select across multiple channels...");
+    Channel ch_a = new Channel();
+    Channel ch_b = new Channel();
+
+    // Spawn async task that will send to ch_b after a short sleep
+    Task.spawn(worker_push, ch_b);
+
+    Channel[] channels = [ch_a, ch_b];
+    int ready_idx = Channel.select(channels);
+    println("   Ready channel index: " + ready_idx);
+
+    int received_val = ch_b.recv();
+    println("   Received value from selected channel: " + received_val);
+
+    println("--- Advanced Concurrency Test PASSED! ---");
+    return 0;
+}

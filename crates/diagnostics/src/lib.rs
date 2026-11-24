@@ -34,7 +34,7 @@ impl From<Range<usize>> for Span {
     }
 }
 
-/// A structured diagnostic message conforming to Aether specifications.
+/// A structured diagnostic message conforming to Syntra specifications.
 #[derive(Debug, Clone)]
 pub struct Diagnostic {
     pub code: &'static str,
@@ -83,5 +83,41 @@ impl Diagnostic {
         }
 
         let _ = report.finish().eprint((filename, Source::from(source)));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_span_creation_and_merge() {
+        let s1 = Span::new(5, 10);
+        let s2 = Span::new(8, 20);
+        let merged = s1.merge(s2);
+        assert_eq!(merged.start, 5);
+        assert_eq!(merged.end, 20);
+        assert_eq!(merged.to_range(), 5..20);
+
+        let from_range = Span::from(3..15);
+        assert_eq!(from_range.start, 3);
+        assert_eq!(from_range.end, 15);
+    }
+
+    #[test]
+    fn test_diagnostic_builder_and_fields() {
+        let span = Span::new(10, 25);
+        let diag = Diagnostic::error("DIAG-001", "Invalid token encountered", span)
+            .with_label("unexpected identifier here")
+            .with_note("consider using 'func' instead of 'def'");
+
+        assert_eq!(diag.code, "DIAG-001");
+        assert_eq!(diag.message, "Invalid token encountered");
+        assert_eq!(diag.span, span);
+        assert_eq!(diag.label, Some("unexpected identifier here".to_string()));
+        assert_eq!(
+            diag.note,
+            Some("consider using 'func' instead of 'def'".to_string())
+        );
     }
 }

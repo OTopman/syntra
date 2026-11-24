@@ -1,0 +1,27 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+     Running tests/test_approval_integration.rs (target/debug/deps/test_approval_integration-d024cf099a88fd67)
+
+running 2 tests
+test test_approval_baseline_candidate_disables_optimization ... ok
+test test_approval_gate_manifest_and_build_integration ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.57s
+
+   Compiling syntra_runtime v0.1.0 (/Users/Topman/Documents/Projects/aether/crates/runtime)
+   Compiling syntra_provenance v0.1.0 (/Users/Topman/Documents/Projects/aether/crates/provenance)
+   Compiling syntra_backend_cranelift v0.1.0 (/Users/Topman/Documents/Projects/aether/crates/backend_cranelift)
+   Compiling syntra_analysis v0.1.0 (/Users/Topman/Documents/Projects/aether/crates/analysis)
+   Compiling syntra_opt v0.1.0 (/Users/Topman/Documents/Projects/aether/crates/opt)
+   Compiling syntra_intelligence v0.1.0 (/Users/Topman/Documents/Projects/aether/crates/intelligence)
+   Compiling syntra_sandbox v0.1.0 (/Users/Topman/Documents/Projects/aether/crates/sandbox)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.93s
+     Running unittests src/lib.rs (target/debug/deps/syntra_sandbox-5a221250139bdae4)
+
+running 4 tests
+test tests::test_approved_strategy_missing ... ok
+test tests::test_pareto_dominance ... ok
+test tests::test_candidate_generation ... ok
+test tests::test_approved_strategy_roundtrip_and_kind_mapping ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

@@ -1,0 +1,52 @@
+/// High-performance geometry calculations and spatial tools.
+namespace Geometry {
+    /// Computes the approximate area of a circle given its radius.
+    ///
+    /// ### Formula
+    /// Area = PI * r * r (approximated with PI = 3)
+    ///
+    /// @param radius The radius of the circle in units.
+    /// @return Approximate integer area.
+    func calculate_circle_area(int radius): int {
+        return 3 * radius * radius;
+    }
+
+    /// Computes the perimeter of a rectangle.
+    func rectangle_perimeter(int width, int height): int {
+        return 2 * (width + height);
+    }
+}
+
+/// Represents an active adventurer in the Syntra universe.
+class Player {
+    /// The player's unique character name.
+    public string name;
+
+    /// Current experience level.
+    public int level;
+
+    /// Initializes a new Player instance.
+    new(string name, int level) {
+        this.name = name;
+        this.level = level;
+    }
+
+    /// Returns the combat power rating of this player.
+    public func get_power(): int {
+        return this.level * 100;
+    }
+}
+
+/// Main application entry point demonstrating namespaces and docs.
+func main(): int {
+    int circle_area = Geometry.calculate_circle_area(10);
+    int rect_perim = Geometry.rectangle_perimeter(20, 15);
+
+    println("Circle area (radius 10): " + circle_area);
+    println("Rectangle perimeter (20x15): " + rect_perim);
+
+    Player hero = new Player("Syntraius", 25);
+    println("Hero " + hero.name + " power level: " + hero.get_power());
+
+    return circle_area + rect_perim;
+}

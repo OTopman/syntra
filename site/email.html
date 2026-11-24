@@ -1,0 +1,2628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module: email - Syntra Documentation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top-nav">
+<div class="nav-left">
+<button class="mobile-toggle" id="mobileToggle" aria-label="Toggle Navigation">☰</button>
+<a href="index.html" class="brand-link">
+<span class="brand-logo">🔮</span>
+<span class="brand-name">Syntra</span>
+<span class="brand-badge">Docs</span>
+</a>
+</div>
+<div class="nav-center">
+<div class="search-container">
+<span class="search-icon">🔍</span>
+<input type="text" id="searchInput" placeholder="Search in email or all symbols... (/)" autocomplete="off">
+<span class="search-shortcut">/</span>
+<div id="searchResults" class="search-dropdown hidden"></div>
+</div>
+</div>
+<div class="nav-right">
+<a href="index.html" class="nav-link">Modules</a>
+<button id="themeToggle" class="theme-toggle" title="Toggle Dark / Light theme">🌙</button>
+</div>
+</header>
+<div class="layout-wrapper">
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-section">
+<h4 class="sidebar-title">Standard Library</h4>
+<ul class="sidebar-nav">
+<li><a href="air.html">air</a></li>
+<li><a href="checker.html">checker</a></li>
+<li><a href="codegen.html">codegen</a></li>
+<li><a href="concurrency.html">concurrency</a></li>
+<li><a href="crypto.html">crypto</a></li>
+<li><a href="email.html" class="active">email</a></li>
+<li><a href="file.html">file</a></li>
+<li><a href="http.html">http</a></li>
+<li><a href="io.html">io</a></li>
+<li><a href="json.html">json</a></li>
+<li><a href="loader.html">loader</a></li>
+<li><a href="map.html">map</a></li>
+<li><a href="net.html">net</a></li>
+<li><a href="syntax.html">syntax</a></li>
+<li><a href="system.html">system</a></li>
+<li><a href="web.html">web</a></li>
+</ul>
+</div>
+<div class="sidebar-section toc-section">
+<h4 class="sidebar-title">On This Page</h4>
+<ul class="sidebar-toc">
+<li><span class="toc-group">Classes</span><ul>
+<li><a href="#class-EmailAddress">EmailAddress</a></li>
+<li><a href="#class-EmailAttachment">EmailAttachment</a></li>
+<li><a href="#class-EmailMessage">EmailMessage</a></li>
+<li><a href="#class-MimeSerializer">MimeSerializer</a></li>
+<li><a href="#class-EmailParser">EmailParser</a></li>
+<li><a href="#class-DkimConfig">DkimConfig</a></li>
+<li><a href="#class-EmailSendResult">EmailSendResult</a></li>
+<li><a href="#class-TestInboxTransport">TestInboxTransport</a></li>
+<li><a href="#class-SmtpTransport">SmtpTransport</a></li>
+<li><a href="#class-ResendTransport">ResendTransport</a></li>
+<li><a href="#class-SendGridTransport">SendGridTransport</a></li>
+<li><a href="#class-PostmarkTransport">PostmarkTransport</a></li>
+<li><a href="#class-MailgunTransport">MailgunTransport</a></li>
+</ul></li>
+</ul>
+</div>
+</aside>
+<main class="content-main">
+<nav class="breadcrumbs">
+<a href="index.html">Home</a> &gt; <a href="index.html#modules">Standard Library</a> &gt; <span class="current">email</span>
+</nav>
+<header class="page-header">
+<div class="page-title-row">
+<span class="header-icon">✉️</span>
+<h1>email</h1>
+<span class="badge category">Email & MIME Engine</span>
+</div>
+<div class="module-lead"><p>Enterprise-grade, RFC-compliant email composition, MIME serialization, inbound parsing, DKIM canonicalization, SMTP client, Cloud REST API transports, and in-memory test runner. Standards compliant: - RFC 5321: Simple Mail Transfer Protocol (SMTP client, EHLO, AUTH LOGIN/PLAIN) - RFC 5322: Internet Message Format (Headers, Date, Message-ID, Address specs) - RFC 2045/2046/2047: MIME Multipart, Attachments, UTF-8 Encoded-Words - RFC 6376: DomainKeys Identified Mail (DKIM) Canonicalization &amp; Body Hashing - RFC 4648: Base64 Content-Transfer-Encoding for binary attachments</p>
+</div>
+</header>
+<section id="class-EmailAddress" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>EmailAddress</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Represents a validated, structured RFC 5322 email address (display name and addr-spec).</p>
+<p>Handles formatting and parsing of address strings like <code class="inline-code">&quot;Alice Smith &lt;alice@example.com&gt;&quot;</code> or bare addresses like <code class="inline-code">&quot;alice@example.com&quot;</code>. Automatically sanitizes CRLF sequences to eliminate SMTP header injection vulnerabilities.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let addr = EmailAddress.parse(&quot;Alice Smith &lt;alice@example.com&gt;&quot;);
+System.println(&quot;Name: &quot; + addr.name);       // &quot;Alice Smith&quot;
+System.println(&quot;Email: &quot; + addr.address);   // &quot;alice@example.com&quot;
+System.println(&quot;Formatted: &quot; + addr.format()); // &quot;Alice Smith &lt;alice@example.com&gt;&quot;</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Optional human-readable display name (e.g. <code class="inline-code">&quot;Alice Smith&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>address</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>The mailbox address specification (e.g. <code class="inline-code">&quot;alice@example.com&quot;</code>).</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-EmailAddress-of" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailAddress-of" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">of</span>(<span class="param-type">string</span> <span class="param-name">address</span>, <span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">EmailAddress</span>
+</div>
+<div class="doc-text"><p>Constructs an <code class="inline-code">EmailAddress</code> with an address and optional display name.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>address</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The email address string (e.g. <code class="inline-code">&quot;user@domain.com&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Optional display name string (e.g. <code class="inline-code">&quot;User Name&quot;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-EmailAddress-parse" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailAddress-parse" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parse</span>(<span class="param-type">string</span> <span class="param-name">raw</span>) -&gt; <span class="return-type">EmailAddress</span>
+</div>
+<div class="doc-text"><p>Parses an RFC 5322 mailbox string into an <code class="inline-code">EmailAddress</code> structure.</p>
+<p>Accepts <code class="inline-code">&quot;Name &lt;email@domain.com&gt;&quot;</code> or <code class="inline-code">&quot;email@domain.com&quot;</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>raw</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The raw mailbox input string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailAddress</span> &mdash; Parsed <code class="inline-code">EmailAddress</code> instance.</p>
+</div>
+</div>
+<div id="method-EmailAddress-format" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailAddress-format" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">format</span>() -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Formats the address according to RFC 5322 mailbox formatting rules.</p>
+<p>If <code class="inline-code">name</code> is present, returns <code class="inline-code">&quot;Name &lt;address&gt;&quot;</code>. Otherwise returns <code class="inline-code">&quot;address&quot;</code>.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Formatted RFC 5322 address string.</p>
+</div>
+</div>
+<div id="method-EmailAddress-isValid" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailAddress-isValid" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">isValid</span>() -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Validates whether the email address format contains a valid local part and domain.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if the address contains <code class="inline-code">@</code> and a valid domain dot; otherwise <code class="inline-code">false</code>.</p>
+</div>
+</div>
+<div id="method-EmailAddress-cleanHeader" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailAddress-cleanHeader" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">cleanHeader</span>(<span class="param-type">string</span> <span class="param-name">s</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Strips carriage returns (<code class="inline-code">\r</code>) and newlines (<code class="inline-code">\n</code>) from header strings to prevent CRLF injection.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>s</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Untrusted header input string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Sanitized single-line header string.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-EmailAttachment" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>EmailAttachment</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Represents an email attachment or embedded inline MIME body part.</p>
+<p>Supports binary files (encoded via RFC 4648 Base64) and text payloads. Can be referenced in HTML templates via Content-ID (<code class="inline-code">cid:imageId</code>).</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let doc = EmailAttachment.fromText(&quot;notes.txt&quot;, &quot;Meeting notes...&quot;, &quot;text/plain&quot;);
+let img = EmailAttachment.inline(&quot;logo&quot;, &quot;logo.png&quot;, b64Data, &quot;image/png&quot;);</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>filename</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Attachment filename displayed in the recipient's mail client (e.g. <code class="inline-code">&quot;invoice.pdf&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Base64-encoded or raw text payload data.</td>
+</tr>
+<tr>
+<td><code>contentType</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>MIME content type string (e.g. <code class="inline-code">&quot;application/pdf&quot;</code>, <code class="inline-code">&quot;image/png&quot;</code>, <code class="inline-code">&quot;text/plain&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>cid</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Optional Content-ID for referencing inline images within HTML (<code class="inline-code">cid:logo</code>).</td>
+</tr>
+<tr>
+<td><code>isInline</code></td>
+<td><span class="type-pill">bool</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Flag indicating whether this part should be displayed inline rather than as a downloaded file.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-EmailAttachment-fromText" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailAttachment-fromText" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">fromText</span>(<span class="param-type">string</span> <span class="param-name">filename</span>, <span class="param-type">string</span> <span class="param-name">text</span>, <span class="param-type">string</span> <span class="param-name">contentType</span>) -&gt; <span class="return-type">EmailAttachment</span>
+</div>
+<div class="doc-text"><p>Constructs an attachment from a plain text string payload.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>filename</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Desired filename string.</td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The text body payload.</td>
+</tr>
+<tr>
+<td><code>contentType</code></td>
+<td><span class="type-pill">string</span></td>
+<td>MIME content type (defaults to <code class="inline-code">&quot;text/plain&quot;</code> if empty).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailAttachment</span> &mdash; Configured <code class="inline-code">EmailAttachment</code>.</p>
+</div>
+</div>
+<div id="method-EmailAttachment-fromBase64" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailAttachment-fromBase64" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">fromBase64</span>(<span class="param-type">string</span> <span class="param-name">filename</span>, <span class="param-type">string</span> <span class="param-name">base64Content</span>, <span class="param-type">string</span> <span class="param-name">contentType</span>) -&gt; <span class="return-type">EmailAttachment</span>
+</div>
+<div class="doc-text"><p>Constructs an attachment from a Base64-encoded binary payload.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>filename</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Desired filename string.</td>
+</tr>
+<tr>
+<td><code>base64Content</code></td>
+<td><span class="type-pill">string</span></td>
+<td>RFC 4648 Base64 encoded string data.</td>
+</tr>
+<tr>
+<td><code>contentType</code></td>
+<td><span class="type-pill">string</span></td>
+<td>MIME content type (e.g. <code class="inline-code">&quot;application/pdf&quot;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailAttachment</span> &mdash; Configured <code class="inline-code">EmailAttachment</code>.</p>
+</div>
+</div>
+<div id="method-EmailAttachment-inline" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailAttachment-inline" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">inline</span>(<span class="param-type">string</span> <span class="param-name">cid</span>, <span class="param-type">string</span> <span class="param-name">filename</span>, <span class="param-type">string</span> <span class="param-name">base64Content</span>, <span class="param-type">string</span> <span class="param-name">contentType</span>) -&gt; <span class="return-type">EmailAttachment</span>
+</div>
+<div class="doc-text"><p>Constructs an embedded inline image attachment accessible via <code class="inline-code">&lt;img src=&quot;cid:id&quot;&gt;</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>cid</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Content-ID identifier string.</td>
+</tr>
+<tr>
+<td><code>filename</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Asset filename string.</td>
+</tr>
+<tr>
+<td><code>base64Content</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Base64 encoded image data.</td>
+</tr>
+<tr>
+<td><code>contentType</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Image MIME type (e.g. <code class="inline-code">&quot;image/png&quot;</code>, <code class="inline-code">&quot;image/jpeg&quot;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailAttachment</span> &mdash; Configured inline <code class="inline-code">EmailAttachment</code>.</p>
+</div>
+</div>
+<div id="method-EmailAttachment-size" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailAttachment-size" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">size</span>() -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>Returns the estimated decoded byte length of the attachment content.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Size in bytes.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-EmailMessage" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>EmailMessage</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Fluent builder and container for composing RFC 5322 email messages.</p>
+<p>Supports multiple recipients (<code class="inline-code">to</code>, <code class="inline-code">cc</code>, <code class="inline-code">bcc</code>), <code class="inline-code">replyTo</code>, subject sanitization, HTML body, plain text alternative body, custom headers, attachments, and template merging.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let msg = EmailMessage.create()
+    .from(&quot;support@myapp.com&quot;, &quot;My App Support&quot;)
+    .to(&quot;alice@example.com&quot;, &quot;Alice&quot;)
+    .subject(&quot;Your Monthly Report&quot;)
+    .html(&quot;&lt;h1&gt;Monthly Report&lt;/h1&gt;&lt;p&gt;See attached summary.&lt;/p&gt;&quot;)
+    .text(&quot;Monthly Report: See attached summary.&quot;)
+    .attachText(&quot;summary.csv&quot;, &quot;id,item,cost\n1,Pro Plan,49.00&quot;, &quot;text/csv&quot;);</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>from</code></td>
+<td><span class="type-pill">EmailAddress</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Originating sender address.</td>
+</tr>
+<tr>
+<td><code>to</code></td>
+<td><span class="type-pill">EmailAddress[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Primary recipient addresses.</td>
+</tr>
+<tr>
+<td><code>cc</code></td>
+<td><span class="type-pill">EmailAddress[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Carbon copy recipient addresses.</td>
+</tr>
+<tr>
+<td><code>bcc</code></td>
+<td><span class="type-pill">EmailAddress[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Blind carbon copy recipient addresses (excluded from outgoing MIME headers).</td>
+</tr>
+<tr>
+<td><code>replyTo</code></td>
+<td><span class="type-pill">EmailAddress</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Optional Reply-To destination address.</td>
+</tr>
+<tr>
+<td><code>subject</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Message subject header line (CRLF sanitized).</td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Plain text fallback email body.</td>
+</tr>
+<tr>
+<td><code>html</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>HTML formatted email body.</td>
+</tr>
+<tr>
+<td><code>headers</code></td>
+<td><span class="type-pill">Map</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Custom email headers map (e.g. <code class="inline-code">X-Priority</code>, <code class="inline-code">X-Entity-ID</code>).</td>
+</tr>
+<tr>
+<td><code>attachments</code></td>
+<td><span class="type-pill">EmailAttachment[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>List of file and inline attachments.</td>
+</tr>
+<tr>
+<td><code>messageId</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Globally unique Message-ID header (e.g. <code class="inline-code">&lt;12345.67890@domain.com&gt;</code>).</td>
+</tr>
+<tr>
+<td><code>date</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Creation timestamp string.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-EmailMessage-create" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-create" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">create</span>() -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Instantiates a new, empty <code class="inline-code">EmailMessage</code> builder.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; A fresh <code class="inline-code">EmailMessage</code> ready for fluent composition.</p>
+</div>
+</div>
+<div id="method-EmailMessage-from" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-from" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">from</span>(<span class="param-type">string</span> <span class="param-name">address</span>, <span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Sets the <code class="inline-code">From</code> sender address and optional display name.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>address</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Sender email address.</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Optional display name string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; <code class="inline-code">this</code> builder instance for chaining.</p>
+</div>
+</div>
+<div id="method-EmailMessage-to" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-to" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">to</span>(<span class="param-type">string</span> <span class="param-name">address</span>, <span class="param-type">string</span> <span class="param-name">name</span>) -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Adds a primary recipient (<code class="inline-code">To</code>) address.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>address</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Recipient email address.</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Optional display name string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; <code class="inline-code">this</code> builder instance for chaining.</p>
+</div>
+</div>
+<div id="method-EmailMessage-toRaw" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-toRaw" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">toRaw</span>(<span class="param-type">string</span> <span class="param-name">raw</span>) -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Adds a primary recipient (<code class="inline-code">To</code>) from a raw address string.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>raw</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Recipient string (e.g. <code class="inline-code">&quot;Alice &lt;alice@domain.com&gt;&quot;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; <code class="inline-code">this</code> builder instance for chaining.</p>
+</div>
+</div>
+<div id="method-EmailMessage-cc" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-cc" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">cc</span>(<span class="param-type">string</span> <span class="param-name">address</span>) -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Adds a carbon copy (<code class="inline-code">Cc</code>) recipient address.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>address</code></td>
+<td><span class="type-pill">string</span></td>
+<td>CC email address.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; <code class="inline-code">this</code> builder instance for chaining.</p>
+</div>
+</div>
+<div id="method-EmailMessage-bcc" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-bcc" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">bcc</span>(<span class="param-type">string</span> <span class="param-name">address</span>) -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Adds a blind carbon copy (<code class="inline-code">Bcc</code>) recipient address.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>address</code></td>
+<td><span class="type-pill">string</span></td>
+<td>BCC email address.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; <code class="inline-code">this</code> builder instance for chaining.</p>
+</div>
+</div>
+<div id="method-EmailMessage-replyTo" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-replyTo" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">replyTo</span>(<span class="param-type">string</span> <span class="param-name">address</span>) -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Sets the <code class="inline-code">Reply-To</code> address header.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>address</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Reply-To email address.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; <code class="inline-code">this</code> builder instance for chaining.</p>
+</div>
+</div>
+<div id="method-EmailMessage-subject" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-subject" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">subject</span>(<span class="param-type">string</span> <span class="param-name">subject</span>) -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Sets the email subject line, automatically stripping CRLF to prevent injection attacks.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>subject</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Email subject string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; <code class="inline-code">this</code> builder instance for chaining.</p>
+</div>
+</div>
+<div id="method-EmailMessage-text" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-text" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">text</span>(<span class="param-type">string</span> <span class="param-name">text</span>) -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Sets the plain text version of the message body.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>text</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Plain text content string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; <code class="inline-code">this</code> builder instance for chaining.</p>
+</div>
+</div>
+<div id="method-EmailMessage-html" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-html" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">html</span>(<span class="param-type">string</span> <span class="param-name">html</span>) -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Sets the HTML formatted version of the message body.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>html</code></td>
+<td><span class="type-pill">string</span></td>
+<td>HTML markup content string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; <code class="inline-code">this</code> builder instance for chaining.</p>
+</div>
+</div>
+<div id="method-EmailMessage-header" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-header" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">header</span>(<span class="param-type">string</span> <span class="param-name">key</span>, <span class="param-type">string</span> <span class="param-name">value</span>) -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Sets a custom email header key and value.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>key</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Header field name (e.g. <code class="inline-code">&quot;X-Campaign-ID&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Header value string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; <code class="inline-code">this</code> builder instance for chaining.</p>
+</div>
+</div>
+<div id="method-EmailMessage-attach" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-attach" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">attach</span>(<span class="param-type">EmailAttachment</span> <span class="param-name">att</span>) -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Attaches an <code class="inline-code">EmailAttachment</code> to the message.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>att</code></td>
+<td><span class="type-pill">EmailAttachment</span></td>
+<td>Configured attachment instance.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; <code class="inline-code">this</code> builder instance for chaining.</p>
+</div>
+</div>
+<div id="method-EmailMessage-attachText" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-attachText" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">attachText</span>(<span class="param-type">string</span> <span class="param-name">filename</span>, <span class="param-type">string</span> <span class="param-name">text</span>, <span class="param-type">string</span> <span class="param-name">contentType</span>) -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Ergonomic shortcut to attach a text file.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>filename</code></td>
+<td><span class="type-pill">string</span></td>
+<td>File name.</td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Text content.</td>
+</tr>
+<tr>
+<td><code>contentType</code></td>
+<td><span class="type-pill">string</span></td>
+<td>MIME type.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; <code class="inline-code">this</code> builder instance for chaining.</p>
+</div>
+</div>
+<div id="method-EmailMessage-attachBase64" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-attachBase64" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">attachBase64</span>(<span class="param-type">string</span> <span class="param-name">filename</span>, <span class="param-type">string</span> <span class="param-name">base64Content</span>, <span class="param-type">string</span> <span class="param-name">contentType</span>) -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Ergonomic shortcut to attach a Base64-encoded binary file.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>filename</code></td>
+<td><span class="type-pill">string</span></td>
+<td>File name.</td>
+</tr>
+<tr>
+<td><code>base64Content</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Encoded byte data.</td>
+</tr>
+<tr>
+<td><code>contentType</code></td>
+<td><span class="type-pill">string</span></td>
+<td>MIME type.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; <code class="inline-code">this</code> builder instance for chaining.</p>
+</div>
+</div>
+<div id="method-EmailMessage-attachInline" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-attachInline" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">attachInline</span>(<span class="param-type">string</span> <span class="param-name">cid</span>, <span class="param-type">string</span> <span class="param-name">filename</span>, <span class="param-type">string</span> <span class="param-name">base64Content</span>, <span class="param-type">string</span> <span class="param-name">contentType</span>) -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Ergonomic shortcut to attach an embedded inline image.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>cid</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Content-ID.</td>
+</tr>
+<tr>
+<td><code>filename</code></td>
+<td><span class="type-pill">string</span></td>
+<td>File name.</td>
+</tr>
+<tr>
+<td><code>base64Content</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Image byte data.</td>
+</tr>
+<tr>
+<td><code>contentType</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Image MIME type.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; <code class="inline-code">this</code> builder instance for chaining.</p>
+</div>
+</div>
+<div id="method-EmailMessage-renderHtml" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-renderHtml" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">renderHtml</span>(<span class="param-type">string</span> <span class="param-name">template</span>, <span class="param-type">Map</span> <span class="param-name">vars</span>) -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Merges dynamic variables into an HTML template string (<code class="inline-code">{{key}}</code> syntax) and assigns it as <code class="inline-code">html</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>template</code></td>
+<td><span class="type-pill">string</span></td>
+<td>HTML template containing placeholders like <code class="inline-code">{{name}}</code> or <code class="inline-code">{{link}}</code>.</td>
+</tr>
+<tr>
+<td><code>vars</code></td>
+<td><span class="type-pill">Map</span></td>
+<td>Key-value map of variable substitutions.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; <code class="inline-code">this</code> builder instance for chaining.</p>
+</div>
+</div>
+<div id="method-EmailMessage-renderText" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-renderText" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">renderText</span>(<span class="param-type">string</span> <span class="param-name">template</span>, <span class="param-type">Map</span> <span class="param-name">vars</span>) -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Merges dynamic variables into a plain text template string (<code class="inline-code">{{key}}</code> syntax) and assigns it as <code class="inline-code">text</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>template</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Plain text template string.</td>
+</tr>
+<tr>
+<td><code>vars</code></td>
+<td><span class="type-pill">Map</span></td>
+<td>Key-value map of variable substitutions.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; <code class="inline-code">this</code> builder instance for chaining.</p>
+</div>
+</div>
+<div id="method-EmailMessage-toMime" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-toMime" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">toMime</span>() -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Serializes this email message into complete RFC 5322 MIME wire format.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Full RFC 5322 compliant MIME document string.</p>
+</div>
+</div>
+<div id="method-EmailMessage-interpolateTemplate" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailMessage-interpolateTemplate" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">interpolateTemplate</span>(<span class="param-type">string</span> <span class="param-name">tpl</span>, <span class="param-type">Map</span> <span class="param-name">vars</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Helper utility to substitute <code class="inline-code">{{key}}</code> placeholders with values from a map.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>tpl</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Input template string.</td>
+</tr>
+<tr>
+<td><code>vars</code></td>
+<td><span class="type-pill">Map</span></td>
+<td>Variable substitution mapping.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Resulting string with all matched placeholders replaced.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-MimeSerializer" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>MimeSerializer</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Serializes structured <code class="inline-code">EmailMessage</code> models into RFC 5322 and MIME (RFC 2045/2046) documents.</p>
+<p>Automatically handles <code class="inline-code">multipart/mixed</code> for attachments, <code class="inline-code">multipart/alternative</code> for dual HTML/Text, and RFC 2047 UTF-8 encoded-word formatting for non-ASCII subjects.</p>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-MimeSerializer-serialize" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-MimeSerializer-serialize" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">serialize</span>(<span class="param-type">EmailMessage</span> <span class="param-name">msg</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Compiles an <code class="inline-code">EmailMessage</code> into an RFC 5322 formatted MIME string.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>msg</code></td>
+<td><span class="type-pill">EmailMessage</span></td>
+<td>The message to compile.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Wire-format MIME text.</p>
+</div>
+</div>
+<div id="method-MimeSerializer-encodeHeaderWords" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-MimeSerializer-encodeHeaderWords" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">encodeHeaderWords</span>(<span class="param-type">string</span> <span class="param-name">s</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Encodes header text containing non-ASCII or special characters using RFC 2047 <code class="inline-code">=?UTF-8?B?...?=</code> words.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>s</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Raw header string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Encoded RFC 2047 string if non-ASCII detected, or original string if pure ASCII.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-EmailParser" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>EmailParser</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Inbound RFC 5322 and MIME email parser.</p>
+<p>Decodes raw <code class="inline-code">.eml</code> files or inbound webhooks (from SendGrid, AWS SES, Postmark, Mailgun) into structured <code class="inline-code">EmailMessage</code> models, extracting headers, text, HTML, and base64 attachments.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let msg = EmailParser.parse(rawEmlString);
+System.println(&quot;From: &quot; + msg.from.format());
+System.println(&quot;Subject: &quot; + msg.subject);
+System.println(&quot;Attachments: &quot; + msg.attachments.length());</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-EmailParser-parse" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailParser-parse" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parse</span>(<span class="param-type">string</span> <span class="param-name">rawMime</span>) -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Parses an RFC 5322 / MIME text string into an <code class="inline-code">EmailMessage</code> object.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>rawMime</code></td>
+<td><span class="type-pill">string</span></td>
+<td>The complete raw MIME document string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; Fully populated <code class="inline-code">EmailMessage</code>.</p>
+</div>
+</div>
+<div id="method-EmailParser-extractBoundary" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailParser-extractBoundary" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">extractBoundary</span>(<span class="param-type">string</span> <span class="param-name">ct</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Extracts the MIME boundary parameter from a <code class="inline-code">Content-Type</code> header string.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>ct</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Header string like <code class="inline-code">multipart/mixed; boundary=&quot;====123====&quot;</code>.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Extracted boundary string, or <code class="inline-code">&quot;&quot;</code> if missing.</p>
+</div>
+</div>
+<div id="method-EmailParser-parseMultipartBody" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailParser-parseMultipartBody" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseMultipartBody</span>(<span class="param-type">EmailMessage</span> <span class="param-name">msg</span>, <span class="param-type">string</span> <span class="param-name">body</span>, <span class="param-type">string</span> <span class="param-name">boundary</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Splits a multipart body by boundary and extracts child parts.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>msg</code></td>
+<td><span class="type-pill">EmailMessage</span></td>
+<td>Output <code class="inline-code">EmailMessage</code> to populate.</td>
+</tr>
+<tr>
+<td><code>body</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Full body content.</td>
+</tr>
+<tr>
+<td><code>boundary</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Delimiter boundary string.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-EmailParser-parseMimePart" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailParser-parseMimePart" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">parseMimePart</span>(<span class="param-type">EmailMessage</span> <span class="param-name">msg</span>, <span class="param-type">string</span> <span class="param-name">partRaw</span>) -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Processes a single extracted MIME part and updates the message.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>msg</code></td>
+<td><span class="type-pill">EmailMessage</span></td>
+<td>Destination <code class="inline-code">EmailMessage</code>.</td>
+</tr>
+<tr>
+<td><code>partRaw</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Raw text of the MIME part.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-EmailParser-decodeHeaderWords" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailParser-decodeHeaderWords" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">decodeHeaderWords</span>(<span class="param-type">string</span> <span class="param-name">s</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Decodes an RFC 2047 <code class="inline-code">=?UTF-8?B?...?=</code> encoded-word string.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>s</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Encoded or plaintext header string.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Decoded human-readable UTF-8 string.</p>
+</div>
+</div>
+<div id="method-EmailParser-splitLines" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailParser-splitLines" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">splitLines</span>(<span class="param-type">string</span> <span class="param-name">s</span>) -&gt; <span class="return-type">string[]</span>
+</div>
+<div class="doc-text"><p>Splits a string by newline delimiters (<code class="inline-code">\n</code>).</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>s</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Input text.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string[]</span> &mdash; Array of line strings.</p>
+</div>
+</div>
+<div id="method-EmailParser-verifyWebhookSignature" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailParser-verifyWebhookSignature" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">verifyWebhookSignature</span>(<span class="param-type">string</span> <span class="param-name">payload</span>, <span class="param-type">string</span> <span class="param-name">signature</span>, <span class="param-type">string</span> <span class="param-name">secret</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Verifies the HMAC-SHA256 signature of an inbound webhook payload.</p>
+<p>Protects incoming email webhook endpoints from spoofing using constant-time comparison.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>payload</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Raw HTTP request body string.</td>
+</tr>
+<tr>
+<td><code>signature</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Expected hex HMAC signature provided in request headers.</td>
+</tr>
+<tr>
+<td><code>secret</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Shared webhook signing secret key.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if signature matches; otherwise <code class="inline-code">false</code>.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-DkimConfig" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>DkimConfig</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>RFC 6376 DomainKeys Identified Mail (DKIM) Canonicalization and Verification Engine.</p>
+<p>Implements <code class="inline-code">relaxed/relaxed</code> and <code class="inline-code">simple/simple</code> canonicalization, SHA-256 body hashing (<code class="inline-code">bh=</code>), and builds RFC 6376 compliant <code class="inline-code">DKIM-Signature</code> header fields.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let dkim = new DkimConfig(&quot;s1&quot;, &quot;example.com&quot;, &quot;rsa_private_key_pem&quot;);
+string bodyHash = dkim.computeBodyHash(msg.text, &quot;relaxed&quot;);
+string dkimHeader = dkim.formatHeader(&quot;from:to:subject:date&quot;, bodyHash, &quot;sig_b64&quot;);</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>selector</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>DKIM DNS selector tag (<code class="inline-code">s=</code>).</td>
+</tr>
+<tr>
+<td><code>domain</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Signing domain tag (<code class="inline-code">d=</code>).</td>
+</tr>
+<tr>
+<td><code>privateKey</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Signing private key (PEM or hex).</td>
+</tr>
+<tr>
+<td><code>canonicalization</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Canonicalization algorithm (e.g. <code class="inline-code">&quot;relaxed/relaxed&quot;</code> or <code class="inline-code">&quot;simple/simple&quot;</code>).</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-DkimConfig-of" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-DkimConfig-of" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">of</span>(<span class="param-type">string</span> <span class="param-name">selector</span>, <span class="param-type">string</span> <span class="param-name">domain</span>, <span class="param-type">string</span> <span class="param-name">privateKey</span>) -&gt; <span class="return-type">DkimConfig</span>
+</div>
+<div class="doc-text"><p>Constructs a DKIM configuration instance.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>selector</code></td>
+<td><span class="type-pill">string</span></td>
+<td>DNS key selector (e.g. <code class="inline-code">&quot;s1&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>domain</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Domain name (e.g. <code class="inline-code">&quot;example.com&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>privateKey</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Private key string for cryptographic signing.</td>
+</tr>
+</tbody></table></div>
+</div>
+</div>
+<div id="method-DkimConfig-computeBodyHash" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-DkimConfig-computeBodyHash" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">computeBodyHash</span>(<span class="param-type">string</span> <span class="param-name">body</span>, <span class="param-type">string</span> <span class="param-name">mode</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Computes the cryptographic RFC 6376 SHA-256 body hash (<code class="inline-code">bh=</code>) encoded in Base64.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>body</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Email body payload string.</td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Canonicalization mode (<code class="inline-code">&quot;relaxed&quot;</code> or <code class="inline-code">&quot;simple&quot;</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Base64 encoded SHA-256 body hash.</p>
+</div>
+</div>
+<div id="method-DkimConfig-canonicalizeRelaxedHeader" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-DkimConfig-canonicalizeRelaxedHeader" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">canonicalizeRelaxedHeader</span>(<span class="param-type">string</span> <span class="param-name">name</span>, <span class="param-type">string</span> <span class="param-name">value</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Canonicalizes a single header field line under relaxed rules (RFC 6376 §3.4.2).</p>
+<p>Lowercases header name, trims surrounding whitespace, and compresses multiple spaces.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Header key name.</td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Header value.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Canonicalized header string line.</p>
+</div>
+</div>
+<div id="method-DkimConfig-formatHeader" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-DkimConfig-formatHeader" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">formatHeader</span>(<span class="param-type">string</span> <span class="param-name">headerList</span>, <span class="param-type">string</span> <span class="param-name">bodyHash</span>, <span class="param-type">string</span> <span class="param-name">signatureBase64</span>) -&gt; <span class="return-type">string</span>
+</div>
+<div class="doc-text"><p>Assembles an RFC 6376 formatted <code class="inline-code">DKIM-Signature</code> header value string.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>headerList</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Colon-separated signed header names (e.g. <code class="inline-code">&quot;from:to:subject:date&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>bodyHash</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Base64 body hash computed via <code class="inline-code">computeBodyHash</code>.</td>
+</tr>
+<tr>
+<td><code>signatureBase64</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Base64 cryptographic signature (<code class="inline-code">b=</code>).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">string</span> &mdash; Formatted DKIM-Signature header string.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-EmailSendResult" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>EmailSendResult</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Result envelope returned by email transports upon delivery attempt.</p>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>success</code></td>
+<td><span class="type-pill">bool</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Flag indicating whether message was accepted by the remote transport.</td>
+</tr>
+<tr>
+<td><code>messageId</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>The Message-ID or provider confirmation identifier.</td>
+</tr>
+<tr>
+<td><code>statusCode</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>HTTP or SMTP response status code (e.g. 200, 250).</td>
+</tr>
+<tr>
+<td><code>error</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Error description string if delivery failed.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-EmailSendResult-ok" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailSendResult-ok" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">ok</span>(<span class="param-type">string</span> <span class="param-name">messageId</span>, <span class="param-type">int</span> <span class="param-name">code</span>) -&gt; <span class="return-type">EmailSendResult</span>
+</div>
+<div class="doc-text"><p>Factory for successful delivery result.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>messageId</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Unique message identifier.</td>
+</tr>
+<tr>
+<td><code>code</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Success status code (typically 250 for SMTP, 200 for HTTP).</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailSendResult</span> &mdash; Initialized <code class="inline-code">EmailSendResult</code>.</p>
+</div>
+</div>
+<div id="method-EmailSendResult-fail" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-EmailSendResult-fail" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">fail</span>(<span class="param-type">string</span> <span class="param-name">errorMessage</span>, <span class="param-type">int</span> <span class="param-name">code</span>) -&gt; <span class="return-type">EmailSendResult</span>
+</div>
+<div class="doc-text"><p>Factory for failed delivery result.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>errorMessage</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Descriptive failure message.</td>
+</tr>
+<tr>
+<td><code>code</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Error status code.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailSendResult</span> &mdash; Initialized error <code class="inline-code">EmailSendResult</code>.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-TestInboxTransport" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>TestInboxTransport</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Zero-network, in-memory email test inbox for automated unit testing.</p>
+<p>Captures sent messages in memory, providing inspection assertions like <code class="inline-code">.count()</code>, <code class="inline-code">.last()</code>, <code class="inline-code">.containsTo()</code>, and <code class="inline-code">.containsSubject()</code>.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let testInbox = new TestInboxTransport();
+authService.sendActivation(testInbox, &quot;user@domain.com&quot;);
+
+assert(testInbox.count() == 1);
+assert(testInbox.containsTo(&quot;user@domain.com&quot;));</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>messages</code></td>
+<td><span class="type-pill">EmailMessage[]</span></td>
+<td><span class="badge pub">public</span></td>
+<td>In-memory queue of captured messages.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-TestInboxTransport-create" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TestInboxTransport-create" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">create</span>() -&gt; <span class="return-type">TestInboxTransport</span>
+</div>
+<div class="doc-text"><p>Constructs an empty <code class="inline-code">TestInboxTransport</code>.</p>
+</div>
+</div>
+<div id="method-TestInboxTransport-send" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TestInboxTransport-send" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">send</span>(<span class="param-type">EmailMessage</span> <span class="param-name">msg</span>) -&gt; <span class="return-type">EmailSendResult</span>
+</div>
+<div class="doc-text"><p>Captures the email message into memory and returns success.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>msg</code></td>
+<td><span class="type-pill">EmailMessage</span></td>
+<td>The email message being dispatched.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailSendResult</span> &mdash; Successful <code class="inline-code">EmailSendResult</code>.</p>
+</div>
+</div>
+<div id="method-TestInboxTransport-count" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TestInboxTransport-count" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">count</span>() -&gt; <span class="return-type">int</span>
+</div>
+<div class="doc-text"><p>Returns the number of captured messages.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">int</span> &mdash; Total count of sent emails.</p>
+</div>
+</div>
+<div id="method-TestInboxTransport-last" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TestInboxTransport-last" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">last</span>() -&gt; <span class="return-type">EmailMessage</span>
+</div>
+<div class="doc-text"><p>Returns the most recently captured email message.</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailMessage</span> &mdash; Latest <code class="inline-code">EmailMessage</code>.</p>
+</div>
+</div>
+<div id="method-TestInboxTransport-clear" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TestInboxTransport-clear" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">clear</span>() -&gt; <span class="return-type">void</span>
+</div>
+<div class="doc-text"><p>Clears all captured emails from the test inbox.</p>
+</div>
+</div>
+<div id="method-TestInboxTransport-containsTo" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TestInboxTransport-containsTo" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">containsTo</span>(<span class="param-type">string</span> <span class="param-name">targetEmail</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks if any captured message was addressed to the specified email address.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>targetEmail</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Email address to search for.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if at least one email contains recipient; otherwise <code class="inline-code">false</code>.</p>
+</div>
+</div>
+<div id="method-TestInboxTransport-containsSubject" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-TestInboxTransport-containsSubject" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">containsSubject</span>(<span class="param-type">string</span> <span class="param-name">sub</span>) -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Checks if any captured message contains the specified substring in its subject.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>sub</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Substring to look for.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if matched; otherwise <code class="inline-code">false</code>.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-SmtpTransport" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>SmtpTransport</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>High-performance RFC 5321 SMTP client transport.</p>
+<p>Connects via raw TCP sockets, negotiates <code class="inline-code">EHLO</code>, performs <code class="inline-code">AUTH LOGIN</code> or <code class="inline-code">AUTH PLAIN</code> credentials exchange, handles recipient routing, streams MIME payloads, and incorporates exponential backoff retry resiliency for transient errors.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let smtp = SmtpTransport.of(&quot;smtp.mailgun.org&quot;, 587, &quot;user&quot;, &quot;secret&quot;);
+if (smtp.verify()) {
+    let res = smtp.send(msg);
+}</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>host</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Remote SMTP relay server hostname or IP address (e.g. <code class="inline-code">&quot;smtp.mailgun.org&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Remote SMTP TCP port (conventionally 587 for submission, 465 for SMTPS, 25 for relay).</td>
+</tr>
+<tr>
+<td><code>username</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>SMTP authentication username.</td>
+</tr>
+<tr>
+<td><code>password</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>SMTP authentication password.</td>
+</tr>
+<tr>
+<td><code>maxRetries</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Maximum retry attempts on transient network errors.</td>
+</tr>
+<tr>
+<td><code>retryDelayMs</code></td>
+<td><span class="type-pill">int</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Initial delay in milliseconds for exponential backoff retries.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-SmtpTransport-of" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-SmtpTransport-of" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">of</span>(<span class="param-type">string</span> <span class="param-name">host</span>, <span class="param-type">int</span> <span class="param-name">port</span>, <span class="param-type">string</span> <span class="param-name">username</span>, <span class="param-type">string</span> <span class="param-name">password</span>) -&gt; <span class="return-type">SmtpTransport</span>
+</div>
+<div class="doc-text"><p>Constructs an <code class="inline-code">SmtpTransport</code> instance.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>host</code></td>
+<td><span class="type-pill">string</span></td>
+<td>SMTP server hostname.</td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td><span class="type-pill">int</span></td>
+<td>Target TCP port number.</td>
+</tr>
+<tr>
+<td><code>username</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Auth username (leave empty for unauthenticated relay).</td>
+</tr>
+<tr>
+<td><code>password</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Auth password.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">SmtpTransport</span> &mdash; Configured <code class="inline-code">SmtpTransport</code>.</p>
+</div>
+</div>
+<div id="method-SmtpTransport-verify" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-SmtpTransport-verify" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">verify</span>() -&gt; <span class="return-type">bool</span>
+</div>
+<div class="doc-text"><p>Verifies connectivity and credentials against the SMTP server.</p>
+<p>Executes handshake (<code class="inline-code">EHLO</code>), performs authentication, and cleanly disconnects (<code class="inline-code">QUIT</code>).</p>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">bool</span> &mdash; <code class="inline-code">true</code> if server accepted handshake and credentials; otherwise <code class="inline-code">false</code>.</p>
+</div>
+</div>
+<div id="method-SmtpTransport-send" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-SmtpTransport-send" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">send</span>(<span class="param-type">EmailMessage</span> <span class="param-name">msg</span>) -&gt; <span class="return-type">EmailSendResult</span>
+</div>
+<div class="doc-text"><p>Sends an <code class="inline-code">EmailMessage</code> via SMTP with automatic exponential backoff retries.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>msg</code></td>
+<td><span class="type-pill">EmailMessage</span></td>
+<td>The message to transmit.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailSendResult</span> &mdash; <code class="inline-code">EmailSendResult</code> indicating delivery status.</p>
+</div>
+</div>
+<div id="method-SmtpTransport-sendOnce" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-SmtpTransport-sendOnce" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">sendOnce</span>(<span class="param-type">EmailMessage</span> <span class="param-name">msg</span>) -&gt; <span class="return-type">EmailSendResult</span>
+</div>
+<div class="doc-text"><p>Executes a single SMTP delivery transaction.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>msg</code></td>
+<td><span class="type-pill">EmailMessage</span></td>
+<td>The message to transmit.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailSendResult</span> &mdash; Result of the delivery transaction.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-ResendTransport" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>ResendTransport</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Cloud REST API transport for Resend (https://resend.com).</p>
+<p>Delivers emails natively over HTTPS with zero third-party dependencies.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let resend = ResendTransport.of(&quot;re_123456789&quot;);
+let res = resend.send(msg);</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>apiKey</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Resend API authorization token (<code class="inline-code">re_...</code>).</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-ResendTransport-of" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ResendTransport-of" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">of</span>(<span class="param-type">string</span> <span class="param-name">apiKey</span>) -&gt; <span class="return-type">ResendTransport</span>
+</div>
+<div class="doc-text"><p>Constructs a <code class="inline-code">ResendTransport</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>apiKey</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Resend API Bearer token.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">ResendTransport</span> &mdash; Configured <code class="inline-code">ResendTransport</code>.</p>
+</div>
+</div>
+<div id="method-ResendTransport-send" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-ResendTransport-send" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">send</span>(<span class="param-type">EmailMessage</span> <span class="param-name">msg</span>) -&gt; <span class="return-type">EmailSendResult</span>
+</div>
+<div class="doc-text"><p>Dispatches an email via Resend's REST API.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>msg</code></td>
+<td><span class="type-pill">EmailMessage</span></td>
+<td>Message to deliver.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailSendResult</span> &mdash; Delivery result status.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-SendGridTransport" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>SendGridTransport</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Cloud REST API transport for Twilio SendGrid v3 Mail Send API.</p>
+<p>Delivers emails natively over HTTPS with zero third-party dependencies.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let sendgrid = SendGridTransport.of(&quot;SG.123456789&quot;);
+let res = sendgrid.send(msg);</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>apiKey</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>SendGrid API authorization token (<code class="inline-code">SG....</code>).</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-SendGridTransport-of" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-SendGridTransport-of" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">of</span>(<span class="param-type">string</span> <span class="param-name">apiKey</span>) -&gt; <span class="return-type">SendGridTransport</span>
+</div>
+<div class="doc-text"><p>Constructs a <code class="inline-code">SendGridTransport</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>apiKey</code></td>
+<td><span class="type-pill">string</span></td>
+<td>SendGrid Bearer API key.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">SendGridTransport</span> &mdash; Configured <code class="inline-code">SendGridTransport</code>.</p>
+</div>
+</div>
+<div id="method-SendGridTransport-send" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-SendGridTransport-send" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">send</span>(<span class="param-type">EmailMessage</span> <span class="param-name">msg</span>) -&gt; <span class="return-type">EmailSendResult</span>
+</div>
+<div class="doc-text"><p>Dispatches an email via the SendGrid v3 Mail Send API.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>msg</code></td>
+<td><span class="type-pill">EmailMessage</span></td>
+<td>Message to deliver.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailSendResult</span> &mdash; Delivery result status.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-PostmarkTransport" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>PostmarkTransport</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Cloud REST API transport for Postmark (https://postmarkapp.com).</p>
+<p>Delivers transactional emails over HTTPS via the Postmark <code class="inline-code">/email</code> API.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let postmark = PostmarkTransport.of(&quot;postmark-server-token&quot;);
+let res = postmark.send(msg);</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>serverToken</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Postmark server API token.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-PostmarkTransport-of" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-PostmarkTransport-of" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">of</span>(<span class="param-type">string</span> <span class="param-name">token</span>) -&gt; <span class="return-type">PostmarkTransport</span>
+</div>
+<div class="doc-text"><p>Constructs a <code class="inline-code">PostmarkTransport</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>token</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Postmark server API token.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">PostmarkTransport</span> &mdash; Configured <code class="inline-code">PostmarkTransport</code>.</p>
+</div>
+</div>
+<div id="method-PostmarkTransport-send" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-PostmarkTransport-send" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">send</span>(<span class="param-type">EmailMessage</span> <span class="param-name">msg</span>) -&gt; <span class="return-type">EmailSendResult</span>
+</div>
+<div class="doc-text"><p>Dispatches an email via the Postmark REST API.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>msg</code></td>
+<td><span class="type-pill">EmailMessage</span></td>
+<td>Message to deliver.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailSendResult</span> &mdash; Delivery result status.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="class-MailgunTransport" class="api-section card-section">
+<div class="section-title-bar">
+<span class="kind-tag class">class</span>
+<h2>MailgunTransport</h2>
+</div>
+<div class="since-badge"><span class="badge pill since">Since v0.1.0</span></div>
+<div class="doc-text"><p>Cloud REST API transport for Mailgun (https://mailgun.com).</p>
+<p>Delivers high-volume emails over HTTPS via the Mailgun v3 Messages API.</p>
+</div>
+<div class="example-box">
+<h4 class="example-title">Example</h4>
+<div class="code-card">
+<div class="code-header">
+<span class="code-lang">syntra</span>
+<button class="copy-button" onclick="copySnippet(this)" title="Copy code to clipboard">Copy</button>
+</div>
+<pre><code class="language-syntra">let mailgun = MailgunTransport.of(&quot;mg.example.com&quot;, &quot;key-123456789&quot;);
+let res = mailgun.send(msg);</code></pre>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Fields</h3>
+<div class="table-responsive">
+<table class="api-table">
+<thead><tr><th>Field</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>domain</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Mailgun verified sending domain.</td>
+</tr>
+<tr>
+<td><code>apiKey</code></td>
+<td><span class="type-pill">string</span></td>
+<td><span class="badge pub">public</span></td>
+<td>Mailgun API key.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="members-group">
+<h3 class="members-heading">Methods</h3>
+<div id="method-MailgunTransport-of" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge static">static</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-MailgunTransport-of" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">of</span>(<span class="param-type">string</span> <span class="param-name">domain</span>, <span class="param-type">string</span> <span class="param-name">apiKey</span>) -&gt; <span class="return-type">MailgunTransport</span>
+</div>
+<div class="doc-text"><p>Constructs a <code class="inline-code">MailgunTransport</code>.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>domain</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Sending domain (e.g. <code class="inline-code">&quot;mg.mydomain.com&quot;</code>).</td>
+</tr>
+<tr>
+<td><code>apiKey</code></td>
+<td><span class="type-pill">string</span></td>
+<td>Mailgun API key.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">MailgunTransport</span> &mdash; Configured <code class="inline-code">MailgunTransport</code>.</p>
+</div>
+</div>
+<div id="method-MailgunTransport-send" class="method-card">
+<div class="method-card-header">
+<div class="method-badges">
+<span class="badge pub">public</span>
+<span class="badge since">Since v0.1.0</span>
+</div>
+<a href="#method-MailgunTransport-send" class="anchor-link" title="Permanent link">#</a>
+</div>
+<div class="method-signature">
+<span class="keyword">func</span> <span class="method-name">send</span>(<span class="param-type">EmailMessage</span> <span class="param-name">msg</span>) -&gt; <span class="return-type">EmailSendResult</span>
+</div>
+<div class="doc-text"><p>Dispatches an email via the Mailgun v3 Messages API.</p>
+</div>
+<div class="params-section">
+<h5 class="sub-title">Parameters</h5>
+<div class="table-responsive"><table class="params-table">
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+<td><code>msg</code></td>
+<td><span class="type-pill">EmailMessage</span></td>
+<td>Message to deliver.</td>
+</tr>
+</tbody></table></div>
+</div>
+<div class="returns-section">
+<h5 class="sub-title">Returns</h5><p><span class="type-pill">EmailSendResult</span> &mdash; Delivery result status.</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<footer class="site-footer">
+<div class="footer-inner">
+<p>Built with ❤️ by the Syntra Language Team • Version 0.1.0 • Spec 2026</p>
+<p class="footer-sub">High-performance Whole-Program Adaptive Programming Platform</p>
+</div>
+</footer>
+<script src="search.js"></script>
+</body>
+</html>

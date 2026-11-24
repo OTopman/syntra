@@ -1,0 +1,58 @@
+// Syntra Standard Library: Networking Subsystem
+// Provides socket-level networking primitives (TcpListener, TcpStream)
+
+/// Binds a TCP listener socket to the specified local port.
+///
+/// Listens for incoming TCP connections on all local network interfaces (`0.0.0.0`).
+///
+/// ```syntra
+/// let listener = listen(8080);
+/// System.println("Listening for connections on port 8080...");
+/// let stream = listener.accept();
+/// ```
+///
+/// @param port Local TCP port number to bind (1-65535).
+/// @return A `TcpListener` instance listening on the given port.
+/// @throws NetworkException If the port is already bound or access is denied.
+/// @since v0.1.0
+func listen(int port): TcpListener {
+    return TcpListener.listen(port);
+}
+
+/// Establishes an active outgoing TCP stream connection to `host:port`.
+///
+/// Performs DNS resolution and initiates the TCP three-way handshake.
+///
+/// ```syntra
+/// let stream = connect("127.0.0.1", 8080);
+/// stream.write("GET / HTTP/1.1\r\nHost: localhost\r\n\r\n");
+/// let response = stream.readText();
+/// ```
+///
+/// @param host Hostname or IP address string (e.g. `"127.0.0.1"` or `"api.example.com"`).
+/// @param port Remote TCP port number to connect to.
+/// @return An active connected `TcpStream` handle.
+/// @throws NetworkException If connection is refused, times out, or host unreachable.
+/// @since v0.1.0
+func connect(string host, int port): TcpStream {
+    return TcpStream.connect(host, port);
+}
+
+/// Launches the native high-performance multi-core HTTP reactor.
+///
+/// Uses kernel event notification (`kqueue` on macOS/BSD, `epoll` on Linux) to
+/// distribute incoming HTTP requests across worker threads with zero-copy I/O.
+///
+/// ```syntra
+/// // Launch HTTP reactor on port 8080 across 4 worker threads
+/// serveHttpReactor(8080, 4);
+/// ```
+///
+/// @param port Port number to listen on.
+/// @param workers Number of dedicated reactor worker threads.
+/// @return Status return code (0 for normal exit).
+/// @throws NetworkException If socket cannot be bound.
+/// @since v0.1.0
+func serveHttpReactor(int port, int workers): int {
+    return TcpListener.serveReactor(port, workers);
+}
