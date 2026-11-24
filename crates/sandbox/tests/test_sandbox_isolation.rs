@@ -3,6 +3,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 use syntra_sandbox::candidate::Candidate;
+use syntra_sandbox::config::EnforcementMode;
 use syntra_sandbox::runner::{RunOutput, SandboxRunner};
 use syntra_sandbox::verifier::EquivalenceVerifier;
 
@@ -18,7 +19,9 @@ fn make_executable_script(path: &PathBuf, content: &str) {
 #[test]
 fn test_sandbox_execution_timeout_kills_infinite_loop() {
     let run_id = format!("test_timeout_{}", std::process::id());
-    let runner = SandboxRunner::new(run_id).with_timeout(Duration::from_millis(200));
+    let runner = SandboxRunner::new(run_id)
+        .with_enforcement_mode(EnforcementMode::Guarded)
+        .with_timeout(Duration::from_millis(200));
 
     let candidate_dir = runner.candidate_dir("cand_infinite_loop");
     fs::create_dir_all(&candidate_dir).unwrap();
@@ -55,7 +58,7 @@ fn test_sandbox_environment_isolation_prevents_secret_leakage() {
     std::env::set_var("AWS_SECRET_ACCESS_KEY", "super_secret_aws_key");
 
     let run_id = format!("test_env_isolation_{}", std::process::id());
-    let runner = SandboxRunner::new(run_id);
+    let runner = SandboxRunner::new(run_id).with_enforcement_mode(EnforcementMode::Guarded);
 
     let candidate_dir = runner.candidate_dir("cand_inspect_env");
     fs::create_dir_all(&candidate_dir).unwrap();
@@ -92,7 +95,9 @@ fn test_sandbox_environment_isolation_prevents_secret_leakage() {
 #[test]
 fn test_sandbox_output_truncation_limits_runaway_output() {
     let run_id = format!("test_trunc_{}", std::process::id());
-    let runner = SandboxRunner::new(run_id).with_max_output_bytes(256);
+    let runner = SandboxRunner::new(run_id)
+        .with_enforcement_mode(EnforcementMode::Guarded)
+        .with_max_output_bytes(256);
 
     let candidate_dir = runner.candidate_dir("cand_runaway_output");
     fs::create_dir_all(&candidate_dir).unwrap();

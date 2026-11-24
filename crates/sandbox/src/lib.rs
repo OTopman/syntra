@@ -1,6 +1,12 @@
 pub mod benchmark;
 pub mod candidate;
+pub mod capabilities;
+pub mod config;
+pub mod error;
+pub mod platform;
 pub mod runner;
+pub mod supervisor;
+pub mod traits;
 pub mod verifier;
 
 use benchmark::{BenchmarkEvaluator, BenchmarkMetrics};

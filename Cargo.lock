@@ -771,6 +771,7 @@ dependencies = [
 name = "syntra_sandbox"
 version = "0.1.0"
 dependencies = [
+ "libc",
  "syntra_air",
  "syntra_analysis",
  "syntra_backend_cranelift",
@@ -780,6 +781,7 @@ dependencies = [
  "syntra_opt",
  "syntra_provenance",
  "syntra_syntax",
+ "windows-sys",
 ]
 
 [[package]]
