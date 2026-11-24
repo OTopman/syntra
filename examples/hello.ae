@@ -1,0 +1,60 @@
+// Welcome to Aether!
+// A full OOP example showcasing classes, interfaces, constructors, methods, and clean datatypes.
+
+interface Damageable {
+    func take_damage(int amount): void;
+    func is_alive(): bool;
+}
+
+class Player implements Damageable {
+    public string name;
+    public int health;
+    private int score;
+
+    new(string name, int health) {
+        this.name = name;
+        this.health = health;
+        this.score = 0;
+    }
+
+    public func take_damage(int amount): void {
+        this.health = this.health - amount;
+        println(this.name + " took " + amount + " damage! Health remaining: " + this.health);
+    }
+
+    public func is_alive(): bool {
+        return this.health > 0;
+    }
+
+    public func add_score(int points): void {
+        this.score = this.score + points;
+        println("+" + points + " points added! Total score: " + this.score);
+    }
+
+    public func get_score(): int {
+        return this.score;
+    }
+}
+
+func main(): int {
+    const int STARTING_HEALTH = 100;
+    
+    println("--- Starting Aether Adventure ---");
+    Player hero = new Player("Knight", STARTING_HEALTH);
+    println("Created hero: " + hero.name + " with " + hero.health + " HP.");
+
+    println("\n[Battle Commences]");
+    hero.take_damage(35);
+    hero.add_score(150);
+
+    println("\n[Battle Assessment]");
+    if hero.is_alive() {
+        int final_score = hero.get_score();
+        println("Victory! Hero survived with " + hero.health + " HP.");
+        println("Final Score: " + final_score);
+        return final_score;
+    } else {
+        println("Defeat! Hero fell in battle.");
+        return 0;
+    }
+}

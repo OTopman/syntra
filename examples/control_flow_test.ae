@@ -1,0 +1,25 @@
+func main(): int {
+    int x = 15;
+
+    // 1. Without parentheses (modern Swift/Rust style)
+    if x + 5 >= 20 {
+        int total1 = x * 2;
+    }
+
+    // 2. With parentheses (C#/Java/TypeScript style)
+    if (x + 5 >= 20) {
+        int total2 = x * 2;
+    }
+
+    // 3. While loop without parentheses
+    while x > 10 {
+        x = x - 1;
+    }
+
+    // 4. While loop with parentheses
+    while (x > 5) {
+        x = x - 1;
+    }
+
+    return x;
+}

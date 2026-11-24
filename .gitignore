@@ -1,0 +1,12 @@
+/target
+.DS_Store
+*.swp
+*~
+.env
+.env.local
+node_modules
+build
+dist
+.turbo
+.parcel-cache
+.next
