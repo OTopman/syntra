@@ -1,0 +1,22 @@
+
+running 17 tests
+test test_lockfile_schema_validation_rejects_unsupported_version ... ok
+test test_lockfile_schema_validation_rejects_malformed_syntax ... ok
+test test_lockfile_schema_validation_rejects_duplicate_entries ... ok
+test test_git_dependency_missing_commit_detected ... ok
+test test_sha256_known_vectors ... ok
+test test_missing_package_directory_fails_explicitly ... ok
+test test_lockfile_missing_and_unexpected_dependencies_detected ... ok
+test test_directory_tree_hash_determinism ... ok
+test test_path_traversal_symlink_rejected ... ok
+test test_tampering_executable_permission_detected ... ok
+test test_tampering_file_content_detected ... ok
+test test_tampering_add_or_delete_file_detected ... ok
+test test_unreadable_file_fails_explicitly ... ok
+test test_symlink_target_tampering_and_valid_handling ... ok
+test test_tampering_rename_file_detected ... ok
+test test_unsupported_fifo_fails_explicitly ... ok
+test test_git_dependency_altered_commit_detected ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+

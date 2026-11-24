@@ -125,4 +125,111 @@ Running `cargo test --workspace` demonstrated that all 59 existing baseline test
 | Workspace Non-Regression | 59/59 baseline pass | 63/63 passing | **MET** |
 | CLI Verification | Clean exit codes | Verified code 0 | **MET** |
 
-**Conclusion:** Phase 1 is **COMPLETE and VERIFIED**. FIND-001 is closed. The platform is ready to transition to **Phase 2: SECE Security & Process Isolation (FIND-002)**.
+**Conclusion:** Phase 1 was initially closed, but subsequently **reopened for deep security correction** following independent review. See Section 5 below.
+
+---
+
+## 5. Phase 1 Reopening: Deep Security Correction & Adversarial Hardening
+
+### A. Weaknesses Identified in Subsequent Peer Review
+A critical post-remediation inspection of `crates/cli/src/package.rs` identified that the initial Phase 1 remediation, while replacing DJB2, left several severe security and robustness gaps:
+1. **Fail-Open Fallback in Hashing:** In `compute_dependency_checksum`, when `hash_directory_tree_sha256` failed, the code fell back to hashing dependency names, URLs, or paths (`hash_bytes_sha256(git.as_bytes())`). This created a dangerous fail-open bypass.
+2. **Silent Directory Traversal Error Swallowing:** `collect_source_files_recursive` used `if let Ok(entries) = fs::read_dir(dir)` and `.flatten()`, silently dropping I/O and permission errors.
+3. **Omission of File Permissions and Symlink Targets:** Executable permissions (`0755` vs `0644`) and symlink targets were omitted from the tree hash.
+4. **Path Traversal Risks:** Symlinks could escape the package root (e.g. `../../secret.txt` or `/etc/passwd`) without triggering verification failure.
+5. **Fragile Line-by-Line Lockfile Parsing:** Lockfile verification used naive string prefix matching (`line.starts_with("name =")`), ignoring schema validation, duplicate entries, malformed checksums, or unexpected dependencies.
+6. **Silent Lockfile Regeneration on Install:** `syn install` silently regenerated lockfiles even when existing lockfiles failed verification.
+
+### B. Corrected Implementation Details
+
+#### 1. Canonical SHA-256 Tree Hashing (`hash_directory_tree_sha256`)
+- **Canonical Entry Representation:** Every entry in the tree is represented by:
+  ```
+  ENTRY
+  path:<normalized_relative_path_with_forward_slashes>
+  mode:<0755_if_executable_else_0644>
+  type:<file|symlink>
+  size:<byte_count> | target:<symlink_target>
+  <bytes>
+  END_ENTRY
+  ```
+- **Symlink Path Containment (`validate_and_normalize_symlink_target`):**
+  - Absolute symlinks are strictly rejected (`Absolute symlink rejected in package`).
+  - Relative symlink targets are normalized and validated to ensure they cannot escape the package root. Any traversal attempt returning above the root causes immediate `Err`.
+- **Unsupported Filesystem Objects:** FIFOs, sockets, block devices, and character devices are rejected with explicit errors.
+- **Strict Error Propagation:** Any `fs::read_dir`, `metadata`, `symlink_metadata`, or `fs::read` failure immediately aborts with an explicit `Err`.
+
+#### 2. Complete Elimination of Fail-Open Checksums
+- `compute_dependency_checksum` now returns `Result<LockPackageEntry, String>`.
+- If Git resolution fails, commit resolution fails, path dependency is missing, or directory tree hashing fails, it returns an explicit `Err`.
+- Zero invented, metadata-only, or URL fallback hashes.
+
+#### 3. Structured Lockfile Parser & Schema Validation (`Lockfile::parse`)
+- Implemented a validated state-machine parser:
+  - Enforces `version = 1`.
+  - Parses and validates `[package]` table (`name`, `version`).
+  - Parses and validates `[[packages]]` tables (`name`, `version`, `source`, optional `commit`, `checksum`).
+  - Strictly rejects **duplicate package entries**.
+  - Strictly validates that checksums are exact 64-character hexadecimal digests.
+  - Strictly validates that Git dependencies include a valid 40-character hexadecimal commit hash.
+  - Rejects unknown sections and malformed syntax.
+
+#### 4. End-to-End Verification & Installation Enforcement
+- `verify_locked_dependencies`:
+  - Detects **missing dependencies** (present in manifest, missing from lockfile).
+  - Detects **unexpected dependencies** (in lockfile, not in manifest).
+  - Detects **tampered file content, added files, deleted files, renamed files, and changed permissions**.
+  - Detects **altered or mismatched Git commits**.
+- `install_dependencies`:
+  - Enforces lockfile verification before proceeding.
+  - If verification fails, immediately aborts with exit code 1; **never** regenerates or overwrites the lockfile to conceal tampering.
+
+---
+
+## 6. Comprehensive Adversarial Test Suite (17 Tests)
+
+The test suite in [`crates/cli/tests/test_package_integrity.rs`](file:///Users/Topman/Documents/Projects/aether/crates/cli/tests/test_package_integrity.rs) was expanded to 17 rigorous adversarial scenarios:
+
+| Test Name | Scenario Tested | Outcome |
+| :--- | :--- | :--- |
+| `test_sha256_known_vectors` | NIST FIPS 180-4 standard vectors (empty string, hello world) | **PASSED** |
+| `test_directory_tree_hash_determinism` | 100% deterministic digest across repeated runs and platforms | **PASSED** |
+| `test_tampering_file_content_detected` | 1-byte alteration in source file | **PASSED** (Rejected) |
+| `test_tampering_add_or_delete_file_detected` | Injecting unauthorized files or deleting source files | **PASSED** (Rejected) |
+| `test_tampering_rename_file_detected` | Renaming a file in the dependency tree | **PASSED** (Rejected) |
+| `test_tampering_executable_permission_detected` | Changing mode `0644` to `0755` executable | **PASSED** (Rejected) |
+| `test_symlink_target_tampering_and_valid_handling` | Modifying symlink target path | **PASSED** (Rejected) |
+| `test_path_traversal_symlink_rejected` | Symlinks attempting `../../` escape or absolute target `/etc/passwd` | **PASSED** (Rejected) |
+| `test_missing_package_directory_fails_explicitly` | Missing dependency directory fails cleanly (zero fallback) | **PASSED** (Rejected) |
+| `test_unreadable_file_fails_explicitly` | Unreadable file (`0o000` perms) triggers explicit I/O failure | **PASSED** (Rejected) |
+| `test_unsupported_fifo_fails_explicitly` | Named pipe (FIFO) rejected as unsupported filesystem object | **PASSED** (Rejected) |
+| `test_git_dependency_altered_commit_detected` | Git repository commit mismatch against recorded lockfile | **PASSED** (Rejected) |
+| `test_git_dependency_missing_commit_detected` | Lockfile Git entry missing required commit hash | **PASSED** (Rejected) |
+| `test_lockfile_schema_validation_rejects_unsupported_version` | Unsupported schema `version = 99` | **PASSED** (Rejected) |
+| `test_lockfile_schema_validation_rejects_malformed_syntax` | Malformed checksum length / non-hex string | **PASSED** (Rejected) |
+| `test_lockfile_schema_validation_rejects_duplicate_entries` | Duplicate `[[packages]]` entries for same package | **PASSED** (Rejected) |
+| `test_lockfile_missing_and_unexpected_dependencies_detected` | Manifest vs lockfile mismatch (missing and extra packages) | **PASSED** (Rejected) |
+
+**Verification Command & Results:**
+- `cargo test -p syntra_cli --test test_package_integrity`: **17 passed; 0 failed; 0 ignored** in 0.27s.
+- `cargo test --workspace`: **104 passed; 0 failed; 0 ignored** in 12.1s.
+- `cargo clippy --workspace --all-targets`: **0 warnings**.
+- `cargo fmt --check`: **Clean formatting (0 diffs)**.
+
+Evidence Logs:
+- `remediation_output/evidence/phase1_reopened_package_integrity_tests.txt`
+- `remediation_output/evidence/phase1_reopened_workspace_tests.txt`
+
+---
+
+## 7. Remaining Limitations & Threat Model Assumptions
+
+1. **Registry Distribution:** Currently, registry dependencies are verified after extraction into `.syntra/packages/<name>`. Future work will implement direct cryptographic signature verification over the `.synpkg` archive payload.
+2. **Cross-Platform File Modes:** Executable permission bit tracking (`0755` vs `0644`) is natively enforced on Unix/POSIX filesystems. Non-Unix filesystems (Windows NTFS/FAT32 without POSIX permissions) normalize file modes to standard non-executable entries.
+3. **Hardlink Handling:** Hardlinks are hashed as standard regular files with identical contents; hardlink cycle prevention is guaranteed by directory-only recursion.
+
+---
+
+## 8. Final Phase 1 Recommendation
+
+Phase 1 has now been comprehensively corrected, hardened, and verified with 17 adversarial tests. All fail-open fallbacks and traversal vulnerabilities have been eliminated. **Phase 1 is ready for independent review.** Do not proceed to Phase 2 without separate authorization.

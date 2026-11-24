@@ -60,19 +60,22 @@ Every finding identified in the architectural audit and subsequent investigation
 - **Affected Files:** `crates/cli/src/package.rs`, `Package.lock`, `syntra.lock`, `crates/frontend/src/loader.rs`
 - **Severity:** **CRITICAL** (CWE-328, CWE-353)
 - **Remediation Phase:** **Phase 1**
-- **Implementation Status:** **Resolved (Verified in Phase 1)**
-- **Remediation Details:** Replaced DJB2 hashing with canonical SHA-256 tree hashing over dependency contents and Git commit trees. Implemented strict checksum verification in `verify_locked_dependencies`, `install_dependencies`, and `syn lock --check`.
+- **Implementation Status:** **Resolved (Verified with Hardened Adversarial Suite in Phase 1 Reopening)**
+- **Remediation Details:** 
+  1. Replaced DJB2 hashing with canonical SHA-256 tree hashing (`hash_directory_tree_sha256`) accounting for normalized relative paths, file content bytes, entry types, symlink target strings, and executable permission bits (`0755` vs `0644`).
+  2. Implemented symlink containment validation (`validate_and_normalize_symlink_target`) to strictly reject absolute symlinks and path traversal attempts (`../../`).
+  3. Rejected unsupported filesystem objects (FIFOs, sockets, character/block devices) with explicit errors.
+  4. Completely removed all fail-open fallbacks in `compute_dependency_checksum`.
+  5. Implemented structured state-machine lockfile parser and schema validator (`Lockfile::parse`) validating version = 1, tables, duplicate entries, 64-hex content digests, and 40-hex Git commit revisions.
+  6. Enforced lockfile integrity verification on `install_dependencies` and `lock_dependencies`, aborting immediately on tampering without silent regeneration.
 - **Regression Tests Verified:**
-  - `test_sha256_known_vectors`: Passed (NIST test vectors verified).
-  - `test_directory_tree_hash_determinism`: Passed (deterministic 64-char hex digest).
-  - `test_tampering_file_content_detected`: Passed (1-byte modification rejected).
-  - `test_tampering_add_or_delete_file_detected`: Passed (unauthorized file addition/deletion rejected).
-  - Workspace test suite non-regression: 63/63 tests passing (0 failures).
+  - 17/17 package integrity adversarial tests passing (`crates/cli/tests/test_package_integrity.rs`): NIST standard vectors, determinism, content tampering, file add/delete/rename, executable permission changes, symlink retargeting, path traversal rejection, missing dependency directory failure, unreadable file I/O failure, unsupported FIFO rejection, Git commit tampering, schema syntax/version/duplicate entry rejection, and missing/unexpected dependency detection.
+  - Workspace test suite non-regression: 104/104 tests passing (0 failures, 0 ignored).
 - **Evidence Files:**
-  - `remediation_output/02-security-remediation.md`
-  - `remediation_output/evidence/phase1_package_integrity_tests.txt`
-  - `remediation_output/evidence/phase1_workspace_tests.txt`
-- **Remaining Limitations:** None.
+  - `remediation_output/02-security-remediation.md` (Sections 1 through 8)
+  - `remediation_output/evidence/phase1_reopened_package_integrity_tests.txt`
+  - `remediation_output/evidence/phase1_reopened_workspace_tests.txt`
+- **Remaining Limitations:** Registry dependencies currently verify contents upon extraction into `.syntra/packages/<name>`. Executable permission tracking reflects Unix/POSIX file mode bits; Windows systems normalize mode bits to standard non-executable entries. Hardlink cycle prevention is guaranteed by directory-only recursion.
 - **Final Disposition:** **CLOSED — VERIFIED.**
 
 ---

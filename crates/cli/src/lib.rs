@@ -1223,35 +1223,49 @@ fn install_dependencies() {
 
     // Verify existing lockfile integrity if present
     if lock_path.exists() {
-        if let Ok(existing) = fs::read_to_string(&lock_path) {
-            if let Err(mismatches) =
-                package::verify_locked_dependencies(manifest_dir, &manifest, &existing)
-            {
-                for m in &mismatches {
-                    eprintln!("❌ Security Error: {m}");
-                }
-                eprintln!("❌ Dependency verification failed! Run 'syn lock' to update if changes were intentional.");
+        let existing = match fs::read_to_string(&lock_path) {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("❌ Error reading lockfile {}: {e}", lock_path.display());
                 exit(1);
             }
+        };
+
+        if let Err(mismatches) =
+            package::verify_locked_dependencies(manifest_dir, &manifest, &existing)
+        {
+            for m in &mismatches {
+                eprintln!("❌ Security Error: {m}");
+            }
+            eprintln!("❌ Dependency verification failed! Run 'syn lock' to update if changes were intentional.");
+            exit(1);
         }
-    }
+        println!("✅ Verified dependencies against {primary_lock}");
+    } else {
+        let (lock_content, resolved_count) =
+            match package::generate_lock_content(manifest_dir, &manifest) {
+                Ok(res) => res,
+                Err(e) => {
+                    eprintln!("❌ Error resolving dependencies: {e}");
+                    exit(1);
+                }
+            };
+        if let Err(e) = fs::write(&lock_path, &lock_content) {
+            eprintln!("❌ Failed to write {primary_lock}: {e}");
+            exit(1);
+        }
+        // Also write syntra.lock for backward compatibility if Package.lock was written
+        if is_syn {
+            let _ = fs::write(manifest_dir.join("syntra.lock"), &lock_content);
+        }
 
-    let (lock_content, resolved_count) = package::generate_lock_content(manifest_dir, &manifest);
-    if let Err(e) = fs::write(&lock_path, &lock_content) {
-        eprintln!("❌ Failed to write {primary_lock}: {e}");
-        exit(1);
+        println!(
+            "📦 Resolved {} dependenc{}.",
+            resolved_count,
+            if resolved_count == 1 { "y" } else { "ies" }
+        );
+        println!("🔒 Generated {primary_lock}");
     }
-    // Also write syntra.lock for backward compatibility if Package.lock was written
-    if is_syn {
-        let _ = fs::write(manifest_dir.join("syntra.lock"), &lock_content);
-    }
-
-    println!(
-        "📦 Resolved {} dependenc{}.",
-        resolved_count,
-        if resolved_count == 1 { "y" } else { "ies" }
-    );
-    println!("🔒 Generated {primary_lock}");
 }
 
 fn analyze_file(file: &PathBuf) {

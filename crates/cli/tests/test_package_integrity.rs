@@ -1,7 +1,9 @@
 use std::fs;
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 use syntra_cli::package::{
     generate_lock_content, hash_bytes_sha256, hash_directory_tree_sha256,
-    verify_locked_dependencies,
+    verify_locked_dependencies, Lockfile,
 };
 use syntra_frontend::{PackageDependency, PackageManifest};
 
@@ -79,7 +81,8 @@ fn test_tampering_file_content_detected() {
     };
 
     // 1. Generate canonical lockfile
-    let (lock_content, count) = generate_lock_content(&tmp, &manifest);
+    let (lock_content, count) =
+        generate_lock_content(&tmp, &manifest).expect("Lock generation failed");
     assert_eq!(count, 1);
     assert!(lock_content.contains("name = \"math_lib\""));
     assert!(lock_content.contains("checksum = \""));
@@ -135,7 +138,7 @@ fn test_tampering_add_or_delete_file_detected() {
         ..Default::default()
     };
 
-    let (lock_content, _) = generate_lock_content(&tmp, &manifest);
+    let (lock_content, _) = generate_lock_content(&tmp, &manifest).expect("Lock generation failed");
     assert!(verify_locked_dependencies(&tmp, &manifest, &lock_content).is_ok());
 
     // Inject unauthorized extra file
@@ -157,6 +160,548 @@ fn test_tampering_add_or_delete_file_detected() {
         verify_deleted.is_err(),
         "Deleted file in dependency tree MUST be rejected"
     );
+
+    let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+fn test_tampering_rename_file_detected() {
+    let tmp =
+        std::env::temp_dir().join(format!("syntra_test_tamper_rename_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+
+    let dep_dir = tmp.join("deps").join("logger");
+    fs::create_dir_all(dep_dir.join("src")).unwrap();
+    fs::write(
+        dep_dir.join("src").join("log.syn"),
+        "func log(string s): void {}",
+    )
+    .unwrap();
+
+    let manifest = PackageManifest {
+        name: "test_rename".to_string(),
+        version: "0.1.0".to_string(),
+        edition: "2026".to_string(),
+        dependencies: vec![PackageDependency {
+            name: "logger".to_string(),
+            version: Some("0.1.0".to_string()),
+            path: Some("deps/logger".to_string()),
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+
+    let (lock_content, _) = generate_lock_content(&tmp, &manifest).expect("Lock generation failed");
+    assert!(verify_locked_dependencies(&tmp, &manifest, &lock_content).is_ok());
+
+    // Rename log.syn to logger.syn with identical content
+    fs::rename(
+        dep_dir.join("src").join("log.syn"),
+        dep_dir.join("src").join("logger.syn"),
+    )
+    .unwrap();
+
+    let verify_renamed = verify_locked_dependencies(&tmp, &manifest, &lock_content);
+    assert!(
+        verify_renamed.is_err(),
+        "Renaming a file in dependency tree MUST be detected"
+    );
+
+    let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+#[cfg(unix)]
+fn test_tampering_executable_permission_detected() {
+    let tmp = std::env::temp_dir().join(format!("syntra_test_tamper_perms_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+
+    let dep_dir = tmp.join("deps").join("tool_pkg");
+    fs::create_dir_all(dep_dir.join("src")).unwrap();
+    let script = dep_dir.join("src").join("run.sh");
+    fs::write(&script, "#!/bin/sh\necho hi\n").unwrap();
+
+    // Set non-executable mode (0644)
+    fs::set_permissions(&script, fs::Permissions::from_mode(0o644)).unwrap();
+
+    let manifest = PackageManifest {
+        name: "test_perms".to_string(),
+        version: "0.1.0".to_string(),
+        edition: "2026".to_string(),
+        dependencies: vec![PackageDependency {
+            name: "tool_pkg".to_string(),
+            version: Some("0.1.0".to_string()),
+            path: Some("deps/tool_pkg".to_string()),
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+
+    let (lock_content, _) = generate_lock_content(&tmp, &manifest).expect("Lock generation failed");
+    assert!(verify_locked_dependencies(&tmp, &manifest, &lock_content).is_ok());
+
+    // Alter executable permission bit: set 0755
+    fs::set_permissions(&script, fs::Permissions::from_mode(0o755)).unwrap();
+
+    let verify_perm_tampered = verify_locked_dependencies(&tmp, &manifest, &lock_content);
+    assert!(
+        verify_perm_tampered.is_err(),
+        "Changing executable permissions MUST alter tree hash and be rejected"
+    );
+
+    let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+#[cfg(unix)]
+fn test_symlink_target_tampering_and_valid_handling() {
+    let tmp = std::env::temp_dir().join(format!("syntra_test_symlink_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+
+    let dep_dir = tmp.join("deps").join("sym_lib");
+    fs::create_dir_all(dep_dir.join("src")).unwrap();
+    fs::write(
+        dep_dir.join("src").join("target1.syn"),
+        "func t1(): void {}",
+    )
+    .unwrap();
+    fs::write(
+        dep_dir.join("src").join("target2.syn"),
+        "func t2(): void {}",
+    )
+    .unwrap();
+
+    // Create relative symlink: alias.syn -> target1.syn
+    std::os::unix::fs::symlink("target1.syn", dep_dir.join("src").join("alias.syn")).unwrap();
+
+    let manifest = PackageManifest {
+        name: "test_symlink".to_string(),
+        version: "0.1.0".to_string(),
+        edition: "2026".to_string(),
+        dependencies: vec![PackageDependency {
+            name: "sym_lib".to_string(),
+            version: Some("1.0.0".to_string()),
+            path: Some("deps/sym_lib".to_string()),
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+
+    let (lock_content, _) = generate_lock_content(&tmp, &manifest).expect("Lock generation failed");
+    assert!(verify_locked_dependencies(&tmp, &manifest, &lock_content).is_ok());
+
+    // Retarget symlink: alias.syn -> target2.syn
+    fs::remove_file(dep_dir.join("src").join("alias.syn")).unwrap();
+    std::os::unix::fs::symlink("target2.syn", dep_dir.join("src").join("alias.syn")).unwrap();
+
+    let verify_retargeted = verify_locked_dependencies(&tmp, &manifest, &lock_content);
+    assert!(
+        verify_retargeted.is_err(),
+        "Changing symlink target MUST alter tree hash and be rejected"
+    );
+
+    let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+#[cfg(unix)]
+fn test_path_traversal_symlink_rejected() {
+    let tmp = std::env::temp_dir().join(format!("syntra_test_traversal_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+
+    let dep_dir = tmp.join("deps").join("evil_lib");
+    fs::create_dir_all(dep_dir.join("src")).unwrap();
+    fs::write(dep_dir.join("src").join("main.syn"), "func main(): void {}").unwrap();
+
+    // Symlink that attempts to escape package root
+    std::os::unix::fs::symlink("../../outside.txt", dep_dir.join("src").join("escape.syn"))
+        .unwrap();
+
+    let hash_res = hash_directory_tree_sha256(&dep_dir);
+    assert!(
+        hash_res.is_err(),
+        "Symlink pointing outside package root MUST be rejected with traversal error"
+    );
+    let err = hash_res.unwrap_err();
+    assert!(
+        err.contains("Path traversal attempt") || err.contains("escapes package root"),
+        "Error message must specify path traversal attempt: {err}"
+    );
+
+    // Absolute symlink must also be rejected
+    fs::remove_file(dep_dir.join("src").join("escape.syn")).unwrap();
+    std::os::unix::fs::symlink("/etc/passwd", dep_dir.join("src").join("abs_escape.syn")).unwrap();
+
+    let abs_hash_res = hash_directory_tree_sha256(&dep_dir);
+    assert!(
+        abs_hash_res.is_err(),
+        "Absolute symlink MUST be rejected with traversal error"
+    );
+    assert!(abs_hash_res
+        .unwrap_err()
+        .contains("Absolute symlink rejected"));
+
+    let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+fn test_missing_package_directory_fails_explicitly() {
+    let tmp = std::env::temp_dir().join(format!("syntra_test_missing_dir_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+    fs::create_dir_all(&tmp).unwrap();
+
+    let manifest = PackageManifest {
+        name: "test_missing".to_string(),
+        version: "0.1.0".to_string(),
+        edition: "2026".to_string(),
+        dependencies: vec![PackageDependency {
+            name: "non_existent_dep".to_string(),
+            version: Some("1.0.0".to_string()),
+            path: Some("deps/missing".to_string()),
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+
+    // Must NOT fall back to URL or name hashing; MUST return explicit Err
+    let lock_res = generate_lock_content(&tmp, &manifest);
+    assert!(
+        lock_res.is_err(),
+        "Missing dependency directory MUST fail lock generation, never fall back"
+    );
+    let err = lock_res.unwrap_err();
+    assert!(err.contains("does not exist at"));
+
+    let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+fn test_lockfile_schema_validation_rejects_malformed_syntax() {
+    let malformed_toml = r#"
+version = 1
+[package]
+name = "demo"
+version = "0.1.0"
+
+[[packages]]
+name = "dep"
+version = "1.0.0"
+source = "path:deps/dep"
+checksum = "not_a_hex_checksum"
+"#;
+
+    let res = Lockfile::parse(malformed_toml);
+    assert!(
+        res.is_err(),
+        "Lockfile with malformed checksum MUST fail schema validation"
+    );
+    assert!(res.unwrap_err().contains("Malformed SHA-256 checksum"));
+}
+
+#[test]
+fn test_lockfile_schema_validation_rejects_duplicate_entries() {
+    let duplicate_toml = r#"
+version = 1
+[package]
+name = "demo"
+version = "0.1.0"
+
+[[packages]]
+name = "dup_lib"
+version = "1.0.0"
+source = "path:deps/dup"
+checksum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+[[packages]]
+name = "dup_lib"
+version = "1.0.0"
+source = "path:deps/dup"
+checksum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+"#;
+
+    let res = Lockfile::parse(duplicate_toml);
+    assert!(
+        res.is_err(),
+        "Lockfile with duplicate package entries MUST be rejected"
+    );
+    assert!(res.unwrap_err().contains("Duplicate package entry"));
+}
+
+#[test]
+fn test_lockfile_schema_validation_rejects_unsupported_version() {
+    let invalid_version_toml = r#"
+version = 99
+[package]
+name = "demo"
+version = "0.1.0"
+"#;
+
+    let res = Lockfile::parse(invalid_version_toml);
+    assert!(
+        res.is_err(),
+        "Unsupported lockfile schema version MUST be rejected"
+    );
+    assert!(res
+        .unwrap_err()
+        .contains("Unsupported lockfile schema version"));
+}
+
+#[test]
+fn test_lockfile_missing_and_unexpected_dependencies_detected() {
+    let tmp =
+        std::env::temp_dir().join(format!("syntra_test_missing_unexp_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+
+    let dep_a = tmp.join("deps").join("dep_a");
+    fs::create_dir_all(dep_a.join("src")).unwrap();
+    fs::write(dep_a.join("src").join("a.syn"), "func a(): void {}").unwrap();
+
+    let manifest = PackageManifest {
+        name: "test_mismatch".to_string(),
+        version: "0.1.0".to_string(),
+        edition: "2026".to_string(),
+        dependencies: vec![
+            PackageDependency {
+                name: "dep_a".to_string(),
+                version: Some("1.0.0".to_string()),
+                path: Some("deps/dep_a".to_string()),
+                ..Default::default()
+            },
+            PackageDependency {
+                name: "dep_b".to_string(),
+                version: Some("1.0.0".to_string()),
+                path: Some("deps/dep_b".to_string()),
+                ..Default::default()
+            },
+        ],
+        ..Default::default()
+    };
+
+    // Lockfile only contains dep_a and an unmanifested dep_c
+    let lock_content = r#"
+version = 1
+[package]
+name = "test_mismatch"
+version = "0.1.0"
+
+[[packages]]
+name = "dep_a"
+version = "1.0.0"
+source = "path:deps/dep_a"
+checksum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+[[packages]]
+name = "dep_c"
+version = "1.0.0"
+source = "path:deps/dep_c"
+checksum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+"#;
+
+    let verify_res = verify_locked_dependencies(&tmp, &manifest, lock_content);
+    assert!(verify_res.is_err());
+    let errs = verify_res.unwrap_err();
+
+    assert!(errs
+        .iter()
+        .any(|e| e.contains("missing from lockfile") && e.contains("dep_b")));
+    assert!(errs
+        .iter()
+        .any(|e| e.contains("unexpected dependency 'dep_c'")));
+
+    let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+fn test_git_dependency_missing_commit_detected() {
+    let tmp = std::env::temp_dir().join(format!("syntra_test_git_commit_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+
+    let lock_content = r#"
+version = 1
+[package]
+name = "test_git"
+version = "0.1.0"
+
+[[packages]]
+name = "remote_git_lib"
+version = "1.0.0"
+source = "git+https://github.com/example/lib.git#main"
+checksum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+"#;
+
+    let res = Lockfile::parse(lock_content);
+    assert!(
+        res.is_err(),
+        "Git dependency in lockfile without commit hash MUST be rejected"
+    );
+    assert!(res
+        .unwrap_err()
+        .contains("Missing 'commit' for git dependency"));
+}
+
+#[test]
+#[cfg(unix)]
+fn test_unreadable_file_fails_explicitly() {
+    let tmp = std::env::temp_dir().join(format!("syntra_test_unreadable_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+
+    let dep_dir = tmp.join("deps").join("locked_pkg");
+    fs::create_dir_all(dep_dir.join("src")).unwrap();
+    let secret_file = dep_dir.join("src").join("secret.syn");
+    fs::write(&secret_file, "func secret(): void {}").unwrap();
+
+    // Remove all read permissions (0000)
+    fs::set_permissions(&secret_file, fs::Permissions::from_mode(0o000)).unwrap();
+
+    let res = hash_directory_tree_sha256(&dep_dir);
+    // Restore permissions so cleanup works
+    let _ = fs::set_permissions(&secret_file, fs::Permissions::from_mode(0o644));
+
+    assert!(
+        res.is_err(),
+        "Unreadable file in dependency tree MUST return explicit error, never be silently skipped"
+    );
+    let err = res.unwrap_err();
+    assert!(err.contains("Failed to read file") || err.contains("Permission denied"));
+
+    let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+#[cfg(unix)]
+fn test_unsupported_fifo_fails_explicitly() {
+    let tmp = std::env::temp_dir().join(format!("syntra_test_fifo_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+
+    let dep_dir = tmp.join("deps").join("fifo_pkg");
+    fs::create_dir_all(dep_dir.join("src")).unwrap();
+    let fifo_path = dep_dir.join("src").join("my_fifo");
+
+    // Create a FIFO via system mkfifo
+    let status = std::process::Command::new("mkfifo")
+        .arg(&fifo_path)
+        .status();
+
+    if let Ok(st) = status {
+        if st.success() {
+            let res = hash_directory_tree_sha256(&dep_dir);
+            assert!(
+                res.is_err(),
+                "FIFO in package tree MUST be rejected as unsupported filesystem object"
+            );
+            let err = res.unwrap_err();
+            assert!(err.contains("Unsupported filesystem object"));
+        }
+    }
+
+    let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+fn test_git_dependency_altered_commit_detected() {
+    let tmp = std::env::temp_dir().join(format!("syntra_test_git_tamper_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+
+    // 1. Initialize a real local git repo as our dependency
+    let git_repo = tmp.join("git_dep");
+    fs::create_dir_all(git_repo.join("src")).unwrap();
+    fs::write(
+        git_repo.join("src").join("lib.syn"),
+        "func git_lib(): void {}",
+    )
+    .unwrap();
+
+    let _ = std::process::Command::new("git")
+        .current_dir(&git_repo)
+        .args(["init", "--quiet"])
+        .status();
+    let _ = std::process::Command::new("git")
+        .current_dir(&git_repo)
+        .args(["config", "user.email", "test@syntra.lang"])
+        .status();
+    let _ = std::process::Command::new("git")
+        .current_dir(&git_repo)
+        .args(["config", "user.name", "Syntra Test"])
+        .status();
+    let _ = std::process::Command::new("git")
+        .current_dir(&git_repo)
+        .args(["config", "commit.gpgsign", "false"])
+        .status();
+    let _ = std::process::Command::new("git")
+        .current_dir(&git_repo)
+        .args(["add", "."])
+        .status();
+    let mut commit_cmd = std::process::Command::new("git");
+    commit_cmd
+        .current_dir(&git_repo)
+        .env("GIT_CONFIG_GLOBAL", "/dev/null")
+        .env("GIT_CONFIG_SYSTEM", "/dev/null")
+        .args([
+            "-c",
+            "commit.gpgsign=false",
+            "commit",
+            "-m",
+            "Initial commit",
+            "--quiet",
+            "--no-gpg-sign",
+        ]);
+    let commit_status = commit_cmd
+        .status()
+        .expect("git commit command failed to execute");
+    assert!(commit_status.success(), "Initial git commit must succeed");
+
+    let commit1 = std::process::Command::new("git")
+        .current_dir(&git_repo)
+        .args(["rev-parse", "HEAD"])
+        .output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+        .unwrap();
+
+    let tree_hash = hash_directory_tree_sha256(&git_repo).unwrap();
+
+    // 2. Lockfile records commit1
+    let manifest = PackageManifest {
+        name: "app".to_string(),
+        version: "0.1.0".to_string(),
+        edition: "2026".to_string(),
+        dependencies: vec![PackageDependency {
+            name: "git_dep".to_string(),
+            version: Some("1.0.0".to_string()),
+            git: Some(git_repo.to_string_lossy().to_string()),
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+
+    let lock_content = format!(
+        r#"
+version = 1
+[package]
+name = "app"
+version = "0.1.0"
+
+[[packages]]
+name = "git_dep"
+version = "1.0.0"
+source = "git+{url}"
+commit = "{commit1}"
+checksum = "{tree_hash}"
+"#,
+        url = git_repo.to_string_lossy(),
+        commit1 = commit1,
+        tree_hash = tree_hash
+    );
+
+    // 3. Fake a second commit by tampering the commit recorded in lockfile
+    let tampered_lock = lock_content.replace(&commit1, "0000000000000000000000000000000000000000");
+
+    let verify_tampered = verify_locked_dependencies(&tmp, &manifest, &tampered_lock);
+    assert!(
+        verify_tampered.is_err(),
+        "Altered Git revision commit MUST be detected and rejected"
+    );
+    let errs = verify_tampered.unwrap_err();
+    assert!(errs.iter().any(|e| e.contains("Git revision mismatch")));
 
     let _ = fs::remove_dir_all(&tmp);
 }
