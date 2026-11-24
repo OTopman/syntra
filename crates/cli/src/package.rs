@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
 use std::fs;
@@ -442,80 +443,32 @@ pub fn parse_toml_string(raw: &str, line_num: usize) -> Result<String, String> {
 }
 
 /// Structured representation of a package recorded in the lockfile
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct LockPackageEntry {
     pub name: String,
     pub version: String,
     pub source: String,
+    #[serde(default)]
     pub commit: Option<String>,
     pub checksum: String,
 }
 
-#[derive(Default)]
-struct LockPackageEntryBuilder {
-    name: Option<String>,
-    version: Option<String>,
-    source: Option<String>,
-    commit: Option<String>,
-    checksum: Option<String>,
-    seen_keys: HashSet<String>,
-}
-
-impl LockPackageEntryBuilder {
-    fn build(self, line_num: usize) -> Result<LockPackageEntry, String> {
-        let name = self
-            .name
-            .ok_or_else(|| format!("Line {line_num}: Missing 'name' in [[packages]]"))?;
-        let version = self
-            .version
-            .ok_or_else(|| format!("Line {line_num}: Missing 'version' for package '{name}'"))?;
-        let source = self
-            .source
-            .ok_or_else(|| format!("Line {line_num}: Missing 'source' for package '{name}'"))?;
-        let checksum = self
-            .checksum
-            .ok_or_else(|| format!("Line {line_num}: Missing 'checksum' for package '{name}'"))?;
-
-        let clean_csum = if let Some(stripped) = checksum.strip_prefix("sha256:") {
-            stripped
-        } else {
-            &checksum
-        };
-        if clean_csum.len() != 64 || !clean_csum.chars().all(|c| c.is_ascii_hexdigit()) {
-            return Err(format!(
-                "Line {line_num}: Malformed SHA-256 checksum '{checksum}' for package '{name}' (must be 64 hexadecimal characters)"
-            ));
-        }
-
-        if source.starts_with("git+") {
-            if let Some(commit) = &self.commit {
-                if commit.len() != 40 || !commit.chars().all(|c| c.is_ascii_hexdigit()) {
-                    return Err(format!(
-                        "Line {line_num}: Invalid git commit hash '{commit}' for package '{name}' (must be 40 hexadecimal characters)"
-                    ));
-                }
-            } else {
-                return Err(format!(
-                    "Line {line_num}: Missing 'commit' for git dependency '{name}'"
-                ));
-            }
-        }
-
-        Ok(LockPackageEntry {
-            name,
-            version,
-            source,
-            commit: self.commit,
-            checksum: clean_csum.to_lowercase(),
-        })
-    }
-}
-
 /// Root package declaration in lockfile
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct LockRootPackage {
     pub name: String,
     pub version: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct LockfileSchema {
+    pub version: u32,
+    pub package: LockRootPackage,
+    #[serde(default)]
+    pub packages: Vec<LockPackageEntry>,
 }
 
 /// Fully parsed, validated schema representation of a Syntra lockfile
@@ -528,172 +481,61 @@ pub struct Lockfile {
 
 impl Lockfile {
     pub fn parse(input: &str) -> Result<Self, String> {
-        let mut version = None;
-        let mut root_name = None;
-        let mut root_version = None;
-        let mut packages = Vec::new();
+        let mut schema: LockfileSchema =
+            toml::from_str(input).map_err(|e| format!("Lockfile schema validation failed: {e}"))?;
 
-        enum Section {
-            TopLevel,
-            Package,
-            Packages,
+        if schema.version != 1 {
+            return Err(format!(
+                "Unsupported lockfile schema version '{}'; expected version = 1",
+                schema.version
+            ));
         }
 
-        let mut current_section = Section::TopLevel;
-        let mut current_pkg: Option<LockPackageEntryBuilder> = None;
         let mut seen_packages = HashSet::new();
-        let mut seen_top_level_keys = HashSet::new();
-        let mut package_section_seen = false;
-        let mut package_seen_keys = HashSet::new();
-
-        for (line_idx, line) in input.lines().enumerate() {
-            let line_num = line_idx + 1;
-            let trimmed = line.trim();
-            if trimmed.is_empty() || trimmed.starts_with('#') {
-                continue;
-            }
-
-            if trimmed == "[package]" {
-                if package_section_seen {
-                    return Err(format!(
-                        "Line {line_num}: Duplicate [package] section in lockfile"
-                    ));
-                }
-                package_section_seen = true;
-
-                if let Some(builder) = current_pkg.take() {
-                    let entry = builder.build(line_num)?;
-                    if !seen_packages.insert(entry.name.clone()) {
-                        return Err(format!(
-                            "Line {line_num}: Duplicate package entry in lockfile: '{}'",
-                            entry.name
-                        ));
-                    }
-                    packages.push(entry);
-                }
-                current_section = Section::Package;
-                continue;
-            }
-
-            if trimmed == "[[packages]]" {
-                if let Some(builder) = current_pkg.take() {
-                    let entry = builder.build(line_num)?;
-                    if !seen_packages.insert(entry.name.clone()) {
-                        return Err(format!(
-                            "Line {line_num}: Duplicate package entry in lockfile: '{}'",
-                            entry.name
-                        ));
-                    }
-                    packages.push(entry);
-                }
-                current_section = Section::Packages;
-                current_pkg = Some(LockPackageEntryBuilder::default());
-                continue;
-            }
-
-            let (key, val) = trimmed.split_once('=').ok_or_else(|| {
-                format!(
-                    "Line {line_num}: Invalid syntax in lockfile: expected key = value, found '{trimmed}'"
-                )
-            })?;
-            let key = key.trim();
-            let val = val.trim();
-
-            match current_section {
-                Section::TopLevel => {
-                    if !seen_top_level_keys.insert(key.to_string()) {
-                        return Err(format!(
-                            "Line {line_num}: Duplicate top-level key '{key}' in lockfile"
-                        ));
-                    }
-                    if key == "version" {
-                        let v = val.parse::<u32>().map_err(|_| {
-                            format!("Line {line_num}: Invalid schema version '{val}'")
-                        })?;
-                        if v != 1 {
-                            return Err(format!(
-                                "Line {line_num}: Unsupported lockfile schema version '{v}'; expected version = 1"
-                            ));
-                        }
-                        version = Some(v);
-                    } else {
-                        return Err(format!(
-                            "Line {line_num}: Unexpected top-level key '{key}' in lockfile"
-                        ));
-                    }
-                }
-                Section::Package => {
-                    if !package_seen_keys.insert(key.to_string()) {
-                        return Err(format!(
-                            "Line {line_num}: Duplicate key '{key}' in [package] section"
-                        ));
-                    }
-                    let parsed_val = parse_toml_string(val, line_num)?;
-                    match key {
-                        "name" => root_name = Some(parsed_val),
-                        "version" => root_version = Some(parsed_val),
-                        _ => {
-                            return Err(format!(
-                                "Line {line_num}: Unknown key '{key}' in [package] section"
-                            ))
-                        }
-                    }
-                }
-                Section::Packages => {
-                    let builder = current_pkg.as_mut().ok_or_else(|| {
-                        format!(
-                            "Line {line_num}: Key '{key}' found outside of [[packages]] section"
-                        )
-                    })?;
-                    if !builder.seen_keys.insert(key.to_string()) {
-                        return Err(format!(
-                            "Line {line_num}: Duplicate key '{key}' in [[packages]] block"
-                        ));
-                    }
-                    let parsed_val = parse_toml_string(val, line_num)?;
-                    match key {
-                        "name" => builder.name = Some(parsed_val),
-                        "version" => builder.version = Some(parsed_val),
-                        "source" => builder.source = Some(parsed_val),
-                        "commit" => builder.commit = Some(parsed_val),
-                        "checksum" => builder.checksum = Some(parsed_val),
-                        _ => {
-                            return Err(format!(
-                                "Line {line_num}: Unknown key '{key}' in [[packages]] section"
-                            ))
-                        }
-                    }
-                }
-            }
-        }
-
-        if let Some(builder) = current_pkg.take() {
-            let entry = builder.build(input.lines().count())?;
-            if !seen_packages.insert(entry.name.clone()) {
+        for pkg in &schema.packages {
+            if !seen_packages.insert(pkg.name.clone()) {
                 return Err(format!(
                     "Duplicate package entry in lockfile: '{}'",
-                    entry.name
+                    pkg.name
                 ));
             }
-            packages.push(entry);
         }
 
-        let version =
-            version.ok_or_else(|| "Missing required 'version' field in lockfile".to_string())?;
-        let root_name = root_name.ok_or_else(|| {
-            "Missing required 'name' in [package] section of lockfile".to_string()
-        })?;
-        let root_version = root_version.ok_or_else(|| {
-            "Missing required 'version' in [package] section of lockfile".to_string()
-        })?;
+        for pkg in &mut schema.packages {
+            let clean_csum = if let Some(stripped) = pkg.checksum.strip_prefix("sha256:") {
+                stripped
+            } else {
+                &pkg.checksum
+            };
+            if clean_csum.len() != 64 || !clean_csum.chars().all(|c| c.is_ascii_hexdigit()) {
+                return Err(format!(
+                    "Malformed SHA-256 checksum '{}' for package '{}' (must be 64 hexadecimal characters)",
+                    pkg.checksum, pkg.name
+                ));
+            }
+            pkg.checksum = clean_csum.to_lowercase();
+
+            if pkg.source.starts_with("git+") {
+                if let Some(commit) = &pkg.commit {
+                    if commit.len() != 40 || !commit.chars().all(|c| c.is_ascii_hexdigit()) {
+                        return Err(format!(
+                            "Invalid git commit hash '{commit}' for package '{}' (must be 40 hexadecimal characters)",
+                            pkg.name
+                        ));
+                    }
+                } else {
+                    return Err(format!(
+                        "Missing 'commit' for git dependency '{}'",
+                        pkg.name
+                    ));
+                }
+            }
+        }
 
         Ok(Lockfile {
-            version,
-            package: LockRootPackage {
-                name: root_name,
-                version: root_version,
-            },
-            packages,
+            version: schema.version,
+            package: schema.package,
+            packages: schema.packages,
         })
     }
 
@@ -1011,6 +853,57 @@ pub fn verify_locked_dependencies(
     } else {
         Err(mismatches)
     }
+}
+
+/// Discovers the active lockfile in a package directory, checking 'Package.lock' first then 'syntra.lock'.
+pub fn find_lockfile(manifest_dir: &Path) -> Option<PathBuf> {
+    let pkg_lock = manifest_dir.join("Package.lock");
+    if pkg_lock.is_file() {
+        return Some(pkg_lock);
+    }
+    let syn_lock = manifest_dir.join("syntra.lock");
+    if syn_lock.is_file() {
+        return Some(syn_lock);
+    }
+    None
+}
+
+/// Verifies package dependencies at compiler consumption time.
+/// Ensures that if a package manifest declares dependencies, a valid lockfile exists
+/// and every dependency on disk matches its recorded content hash and identity.
+pub fn verify_package_consumption(file: &Path) -> Result<(), Vec<String>> {
+    if let Some(manifest_path) = syntra_frontend::find_package_manifest(file) {
+        let manifest_dir = manifest_path.parent().unwrap_or_else(|| Path::new("."));
+        if let Ok(manifest_content) = fs::read_to_string(&manifest_path) {
+            let manifest = syntra_frontend::PackageManifest::parse(&manifest_content);
+            if !manifest.dependencies.is_empty() {
+                let lock_opt = find_lockfile(manifest_dir);
+                match lock_opt {
+                    Some(lock_path) => {
+                        let lock_content = fs::read_to_string(&lock_path).map_err(|e| {
+                            vec![format!(
+                                "Failed to read lockfile '{}': {e}",
+                                lock_path.display()
+                            )]
+                        })?;
+                        verify_locked_dependencies(manifest_dir, &manifest, &lock_content)?;
+                    }
+                    None => {
+                        return Err(vec![format!(
+                            "Package manifest declares {} dependenc{} but no lockfile ('Package.lock' or 'syntra.lock') was found. Run 'syn install' or 'syn lock' first.",
+                            manifest.dependencies.len(),
+                            if manifest.dependencies.len() == 1 {
+                                "y"
+                            } else {
+                                "ies"
+                            }
+                        )]);
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Freeze and verify dependencies (syn lock [--check])

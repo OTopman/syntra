@@ -1,6 +1,6 @@
 # The Syntra Programming Language
 
-[![Workspace Tests](https://img.shields.io/badge/tests-111%2F111%20passing-brightgreen.svg)](crates/)
+[![Workspace Tests](https://img.shields.io/badge/tests-115%2F115%20passing-brightgreen.svg)](crates/)
 [![Language Edition](https://img.shields.io/badge/edition-2026-blue.svg)](specifications/01-master-language-specification.md)
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](Cargo.toml)
 [![VS Code Extension](https://img.shields.io/badge/vscode-TypeScript%20IntelliSense-blueviolet.svg)](editors/vscode/syntra-lang/)

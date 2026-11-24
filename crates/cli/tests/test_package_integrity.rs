@@ -1,6 +1,7 @@
 use std::fs;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
 use syntra_cli::package::{
     generate_lock_content, hash_bytes_sha256, hash_directory_tree_sha256,
     verify_locked_dependencies, Lockfile,
@@ -780,9 +781,7 @@ checksum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
         res.is_err(),
         "Duplicate key within [[packages]] block MUST be rejected"
     );
-    assert!(res
-        .unwrap_err()
-        .contains("Duplicate key 'name' in [[packages]] block"));
+    assert!(res.unwrap_err().to_lowercase().contains("duplicate key"));
 }
 
 #[test]
@@ -800,7 +799,8 @@ version = "0.1.0"
 
     let res = Lockfile::parse(duplicate_section_toml);
     assert!(res.is_err(), "Duplicate [package] section MUST be rejected");
-    assert!(res.unwrap_err().contains("Duplicate [package] section"));
+    let err_msg = res.unwrap_err().to_lowercase();
+    assert!(err_msg.contains("duplicate table") || err_msg.contains("duplicate"));
 
     let duplicate_root_key_toml = r#"
 version = 1
@@ -814,7 +814,8 @@ version = "0.1.0"
     assert!(res_key.is_err(), "Duplicate top-level key MUST be rejected");
     assert!(res_key
         .unwrap_err()
-        .contains("Duplicate top-level key 'version'"));
+        .to_lowercase()
+        .contains("duplicate key"));
 }
 
 #[test]
@@ -850,9 +851,7 @@ version = "0.1.0"
         res_invalid.is_err(),
         "Invalid TOML escape sequence MUST be rejected"
     );
-    assert!(res_invalid
-        .unwrap_err()
-        .contains("Invalid TOML escape sequence"));
+    assert!(res_invalid.unwrap_err().to_lowercase().contains("escape"));
 }
 
 #[test]
@@ -999,5 +998,255 @@ fn test_package_store_readonly_hardening_mitigates_toctou() {
     let _ = fs::set_permissions(&src_file, fs::Permissions::from_mode(0o644));
     let _ = fs::set_permissions(pkg_store.join("src"), fs::Permissions::from_mode(0o755));
     let _ = fs::set_permissions(&pkg_store, fs::Permissions::from_mode(0o755));
+    let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+fn test_toml_lockfile_full_spec_compliance_and_strict_schema() {
+    // 1. Valid TOML with multiline strings, comments, and reordered tables
+    let valid_toml = r#"
+# Global lockfile configuration
+version = 1
+
+# [[packages]] declared before [package] table (arbitrary TOML table order)
+[[packages]]
+name = 'math_lib' # literal string
+version = "1.2.3"
+source = """path:deps/math_lib""" # multiline string
+checksum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+[package]
+name = "my_app"
+version = "0.1.0"
+"#;
+
+    let parsed = Lockfile::parse(valid_toml).expect("Full-spec TOML lockfile must parse cleanly");
+    assert_eq!(parsed.package.name, "my_app");
+    assert_eq!(parsed.packages.len(), 1);
+    assert_eq!(parsed.packages[0].name, "math_lib");
+    assert_eq!(parsed.packages[0].source, "path:deps/math_lib");
+
+    // 2. Strict schema rejection of unknown fields via #[serde(deny_unknown_fields)]
+    let unknown_field_root = r#"
+version = 1
+unexpected_root_key = "malicious"
+[package]
+name = "my_app"
+version = "0.1.0"
+"#;
+    let res_root = Lockfile::parse(unknown_field_root);
+    assert!(res_root.is_err(), "Unknown root key MUST be rejected");
+    assert!(res_root.unwrap_err().contains("unknown field"));
+
+    let unknown_field_pkg = r#"
+version = 1
+[package]
+name = "my_app"
+version = "0.1.0"
+
+[[packages]]
+name = "math_lib"
+version = "1.0.0"
+source = "path:deps/math_lib"
+checksum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+malicious_payload = "rm -rf /"
+"#;
+    let res_pkg = Lockfile::parse(unknown_field_pkg);
+    assert!(res_pkg.is_err(), "Unknown package field MUST be rejected");
+    assert!(res_pkg.unwrap_err().contains("unknown field"));
+}
+
+#[test]
+fn test_compiler_consumption_gates_tampered_dependency() {
+    let tmp = std::env::temp_dir().join(format!("syntra_test_consumption_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+    fs::create_dir_all(tmp.join("src")).unwrap();
+
+    let dep_dir = tmp.join("deps").join("security_lib");
+    fs::create_dir_all(dep_dir.join("src")).unwrap();
+    let dep_src = dep_dir.join("src").join("lib.syn");
+    fs::write(&dep_src, "func check(): bool { return true; }").unwrap();
+
+    let main_syn = tmp.join("src").join("main.syn");
+    fs::write(&main_syn, "import security_lib; func main(): void {}").unwrap();
+
+    let manifest_content = r#"
+[package]
+name = "consumption_app"
+version = "1.0.0"
+
+[dependencies]
+security_lib = { path = "deps/security_lib", version = "1.0.0" }
+"#;
+    fs::write(tmp.join("syntra.toml"), manifest_content).unwrap();
+
+    // 1. Without lockfile, consumption MUST fail
+    let pre_lock = syntra_cli::package::verify_package_consumption(&main_syn);
+    assert!(pre_lock.is_err(), "Consumption without lockfile MUST fail");
+    assert!(pre_lock
+        .unwrap_err()
+        .iter()
+        .any(|e| e.contains("no lockfile ('Package.lock' or 'syntra.lock') was found")));
+
+    // 2. Generate valid lockfile
+    let manifest = syntra_frontend::PackageManifest::parse(manifest_content);
+    let (lock_str, _) = syntra_cli::package::generate_lock_content(&tmp, &manifest).unwrap();
+    fs::write(tmp.join("Package.lock"), &lock_str).unwrap();
+
+    // 3. Verified lockfile -> consumption MUST succeed
+    let clean_res = syntra_cli::package::verify_package_consumption(&main_syn);
+    assert!(
+        clean_res.is_ok(),
+        "Clean dependencies must pass consumption verification"
+    );
+
+    // 4. Tamper with 1 byte in dependency source
+    fs::write(&dep_src, "func check(): bool { return false; }").unwrap();
+
+    // 5. Consumption MUST be rejected at compiler gate
+    let tampered_res = syntra_cli::package::verify_package_consumption(&main_syn);
+    assert!(
+        tampered_res.is_err(),
+        "Tampered dependency MUST be rejected before compiler consumption"
+    );
+    assert!(tampered_res
+        .unwrap_err()
+        .iter()
+        .any(|e| e.contains("Tampering or modification detected")));
+
+    let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+fn test_nested_exclusions_and_precompiled_binaries_included() {
+    let tmp = std::env::temp_dir().join(format!("syntra_test_exclusions_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+
+    // Verify should_exclude unit logic
+    assert!(syntra_cli::package::should_exclude("target", "target"));
+    assert!(syntra_cli::package::should_exclude(
+        "target/debug/bin",
+        "bin"
+    ));
+    assert!(syntra_cli::package::should_exclude(".git/HEAD", "HEAD"));
+    assert!(syntra_cli::package::should_exclude(
+        ".syntra/cache",
+        "cache"
+    ));
+    assert!(syntra_cli::package::should_exclude(
+        "pkg-0.1.0.synpkg",
+        "pkg-0.1.0.synpkg"
+    ));
+
+    // Nested target and internal lockfiles MUST NOT be excluded
+    assert!(!syntra_cli::package::should_exclude(
+        "src/target/output.syn",
+        "output.syn"
+    ));
+    assert!(!syntra_cli::package::should_exclude(
+        "vendor/Cargo.lock",
+        "Cargo.lock"
+    ));
+    assert!(!syntra_cli::package::should_exclude(
+        "lib/libnative.so",
+        "libnative.so"
+    ));
+    assert!(!syntra_cli::package::should_exclude(
+        "lib/libnative.dylib",
+        "libnative.dylib"
+    ));
+    assert!(!syntra_cli::package::should_exclude(
+        "bin/tool.exe",
+        "tool.exe"
+    ));
+
+    // Create real directory tree with nested target and native dylib
+    let pkg_dir = tmp.join("test_pkg");
+    fs::create_dir_all(pkg_dir.join("src").join("target")).unwrap();
+    fs::create_dir_all(pkg_dir.join("lib")).unwrap();
+
+    let nested_file = pkg_dir.join("src").join("target").join("output.syn");
+    let native_lib = pkg_dir.join("lib").join("libnative.dylib");
+    fs::write(&nested_file, "func generated(): int { return 42; }").unwrap();
+    fs::write(&native_lib, [0xCF, 0xFA, 0xED, 0xFE, 0x01, 0x02]).unwrap();
+
+    let hash_orig = syntra_cli::package::hash_directory_tree_sha256(&pkg_dir).unwrap();
+
+    // Mutating nested target file alters tree hash
+    fs::write(&nested_file, "func generated(): int { return 99; }").unwrap();
+    let hash_mod_nested = syntra_cli::package::hash_directory_tree_sha256(&pkg_dir).unwrap();
+    assert_ne!(
+        hash_orig, hash_mod_nested,
+        "Modifying nested target file MUST alter hash"
+    );
+
+    // Restoring nested file and mutating native binary alters tree hash
+    fs::write(&nested_file, "func generated(): int { return 42; }").unwrap();
+    fs::write(&native_lib, [0xCF, 0xFA, 0xED, 0xFE, 0xFF, 0xFF]).unwrap();
+    let hash_mod_bin = syntra_cli::package::hash_directory_tree_sha256(&pkg_dir).unwrap();
+    assert_ne!(
+        hash_orig, hash_mod_bin,
+        "Modifying native binary MUST alter hash"
+    );
+
+    let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+#[cfg(unix)]
+fn test_symlink_chains_and_root_symlinks() {
+    let tmp = std::env::temp_dir().join(format!("syntra_test_symlinks_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+
+    let pkg_dir = tmp.join("sym_pkg");
+    fs::create_dir_all(pkg_dir.join("src")).unwrap();
+    let target_file = pkg_dir.join("src").join("target.syn");
+    fs::write(&target_file, "func target(): void {}").unwrap();
+
+    // 1. Root symlink pointing inside package -> valid
+    let root_symlink = pkg_dir.join("root_link.syn");
+    std::os::unix::fs::symlink(Path::new("src/target.syn"), &root_symlink).unwrap();
+    let hash_with_root_symlink = syntra_cli::package::hash_directory_tree_sha256(&pkg_dir);
+    assert!(
+        hash_with_root_symlink.is_ok(),
+        "Root symlink pointing inside package must be valid"
+    );
+
+    // 2. Root symlink pointing outside package -> MUST fail
+    let escaping_symlink = pkg_dir.join("escape_link");
+    std::os::unix::fs::symlink(Path::new("../secret.txt"), &escaping_symlink).unwrap();
+    let hash_escaped = syntra_cli::package::hash_directory_tree_sha256(&pkg_dir);
+    assert!(
+        hash_escaped.is_err(),
+        "Escaping root symlink MUST be rejected"
+    );
+    assert!(hash_escaped.unwrap_err().contains("Path traversal attempt"));
+    fs::remove_file(&escaping_symlink).unwrap();
+
+    // 3. Symlink chain: link1 -> link2 -> target.syn
+    let link2 = pkg_dir.join("src").join("link2.syn");
+    std::os::unix::fs::symlink(Path::new("target.syn"), &link2).unwrap();
+    let link1 = pkg_dir.join("src").join("link1.syn");
+    std::os::unix::fs::symlink(Path::new("link2.syn"), &link1).unwrap();
+
+    let hash_chain = syntra_cli::package::hash_directory_tree_sha256(&pkg_dir);
+    assert!(
+        hash_chain.is_ok(),
+        "Symlink chains must hash deterministically without following"
+    );
+
+    // 4. Circular symlinks: circular_a -> circular_b -> circular_a
+    let circ_a = pkg_dir.join("src").join("circ_a.syn");
+    let circ_b = pkg_dir.join("src").join("circ_b.syn");
+    std::os::unix::fs::symlink(Path::new("circ_b.syn"), &circ_a).unwrap();
+    std::os::unix::fs::symlink(Path::new("circ_a.syn"), &circ_b).unwrap();
+
+    // MUST NOT hang, deadlock, or enter an infinite loop
+    let hash_circular = syntra_cli::package::hash_directory_tree_sha256(&pkg_dir);
+    assert!(
+        hash_circular.is_ok(),
+        "Circular symlinks must be safely handled without recursion loop"
+    );
+
     let _ = fs::remove_dir_all(&tmp);
 }

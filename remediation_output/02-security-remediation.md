@@ -143,21 +143,21 @@ A critical post-remediation inspection of `crates/cli/src/package.rs` identified
 ### B. Subsequent Critical Audit Feedback & Additional Hardening
 A secondary review of commit `17f88c5` identified four further critical requirements prior to final sign-off:
 1. **Package Exclusions Too Broad:** `should_exclude()` previously excluded `.lock`, `.so`, `.dll`, `.dylib`, `.exe`, `.a`, and `.o` files everywhere in the tree. Because compiled native libraries, executables, or internal lockfiles can dictate runtime behaviour, excluding them allowed malicious substitution of native binaries.
-2. **Lockfile Parser Lacks Full TOML Semantics:** The state-machine parser accepted unescaped quotes, did not process standard TOML string escape sequences (`\"`, `\\`, `\t`, `\n`, `\r`, `\uXXXX`), allowed duplicate keys within the same section to silently overwrite prior values, and allowed repeated root fields.
+2. **Lockfile Parser Lacks Full TOML Semantics:** Custom state-machine parsers or string unescaping heuristics do not achieve full TOML compliance (multiline strings, literal strings, arbitrary table ordering, comments, trailing commas). A recognized TOML parser with strict typed deserialization is required.
 3. **Incomplete Dependency Identity Verification:** `verify_locked_dependencies()` checked content checksums and Git commits, but omitted validating that dependency `version` and dependency `source` matched the resolved manifest, and did not verify the lockfile's root `[package]` identity (`name` and `version`) against the manifest.
-4. **Time-of-Check / Time-of-Use (TOCTOU) Protection:** Directory trees were verified, but without snapshot immutability, concurrent unprivileged processes could tamper with dependency files between verification and compilation/installation.
+4. **Time-of-Check / Time-of-Use (TOCTOU) & Compiler Consumption Gap:** Directory trees were verified at install time, but the compiler did not verify lockfile integrity at consumption time (`syn build`, `syn run`, `syn check`), allowing altered packages on disk to be consumed.
 
-### C. Corrected Implementation Details
+### C. Final Hardened Implementation Details
 
 #### 1. Narrow Package-Root-Relative Exclusions (`should_exclude`)
-- **Strictly Scoped Exclusions:** Exclusions are now evaluated against the package-root-relative path:
+- **Strictly Scoped Exclusions:** Exclusions are evaluated against the package-root-relative path:
   - Root VCS directory: `.git/` only at package root.
   - Root package store: `.syntra/` only at package root.
   - Root build output: `target/` only at package root.
   - Package archive artifacts: `*.synpkg` only at package root.
   - Transient OS artifacts: `.DS_Store`, `Thumbs.db`, `._*` anywhere.
   - Editor swap files: `*.swp`, `*~` anywhere.
-- **Native Binaries & Lockfiles Hashed:** Precompiled shared libraries (`.so`, `.dylib`, `.dll`), static archives (`.a`, `.o`), executables (`.exe`), and nested lockfiles (`*.lock`) are now **strictly hashed into the canonical digest**. Any tampering with shipped native dependencies triggers immediate verification rejection.
+- **Native Binaries & Lockfiles Hashed:** Precompiled shared libraries (`.so`, `.dylib`, `.dll`), static archives (`.a`, `.o`), executables (`.exe`), nested `src/target/` directories, and nested lockfiles (`*.lock`) are now **strictly hashed into the canonical digest**. Any tampering with shipped native dependencies triggers immediate verification rejection.
 
 #### 2. Canonical SHA-256 Tree Hashing (`hash_directory_tree_sha256`)
 - **Canonical Entry Representation:** Every entry in the tree is represented by:
@@ -173,6 +173,8 @@ A secondary review of commit `17f88c5` identified four further critical requirem
 - **Symlink Path Containment (`validate_and_normalize_symlink_target`):**
   - Absolute symlinks are strictly rejected (`Absolute symlink rejected in package`).
   - Relative symlink targets are normalized and validated to ensure they cannot escape the package root. Any traversal attempt returning above the root causes immediate `Err`.
+  - Root symlinks pointing inside the package are validated and hashed without following into recursion.
+  - Symlink chains (`link1 -> link2 -> target`) and circular symlinks are safely handled without recursion or infinite loops.
 - **Unsupported Filesystem Objects:** FIFOs, sockets, block devices, and character devices are rejected with explicit errors.
 - **Strict Error Propagation:** Any `fs::read_dir`, `metadata`, `symlink_metadata`, or `fs::read` failure immediately aborts with an explicit `Err`.
 
@@ -181,19 +183,15 @@ A secondary review of commit `17f88c5` identified four further critical requirem
 - If Git resolution fails, commit resolution fails, path dependency is missing, or directory tree hashing fails, it returns an explicit `Err`.
 - Zero invented, metadata-only, or URL fallback hashes.
 
-#### 4. Strict TOML Parser & Schema Validation (`Lockfile::parse`)
-- **Standard TOML String Unescaping (`parse_toml_string`):** Correctly handles `\"`, `\\`, `\b`, `\f`, `\n`, `\r`, `\t`, `\uXXXX`, and `\UXXXXXXXX`. Rejects unescaped ASCII control characters and invalid escape sequences.
-- **Duplicate Key & Table Prevention:**
-  - Maintains `HashSet<String>` per `[[packages]]` entry; duplicate keys within an entry trigger a syntax error.
-  - Maintains `seen_package_keys` for `[package]`; duplicate keys or duplicate `[package]` sections trigger an error.
-  - Rejects duplicate root keys (`version`).
-- **Strict Schema Requirements:**
-  - Enforces `version = 1`.
-  - Requires valid 64-character hexadecimal checksums for all dependencies.
-  - Requires valid 40-character hexadecimal Git commit hashes for Git dependencies.
+#### 4. Official TOML Parser & Strict Typed Deserialization (`Lockfile::parse`)
+- Evaluated and integrated standard `toml` (v1.2.2+spec-1.1.0) and `serde` (v1.0.229 with derive).
+- **100% TOML Specification Compliance:** Handles all standard TOML constructs: multiline basic and literal strings (`"""..."""`, `'''...'''`), comments (`# ...`), inline comments, arbitrary table ordering (e.g. `[[packages]]` preceding `[package]`), trailing commas, and escaped unicode codepoints.
+- **Strict Schema Enforcement:** `#[serde(deny_unknown_fields)]` rejects any unexpected or malicious fields.
+- **Duplicate Prevention:** Standard `toml` rejects duplicate keys within tables, duplicate tables, and duplicate root keys; post-deserialization enforces uniqueness of package names across `[[packages]]`.
+- **Digest Validation:** Enforces exact 64-character lowercase hexadecimal SHA-256 digests and 40-character Git commit hashes.
 
 #### 5. Complete 7-Point Dependency Identity Verification
-`verify_locked_dependencies` now validates every facet of package identity:
+`verify_locked_dependencies` validates every facet of package identity:
 1. Manifest root `name` matches lockfile `[package].name`.
 2. Manifest root `version` matches lockfile `[package].version`.
 3. Detects **missing dependencies** (declared in manifest, absent in lockfile).
@@ -202,15 +200,22 @@ A secondary review of commit `17f88c5` identified four further critical requirem
 6. Dependency `source` URI matches resolved manifest source.
 7. Dependency `checksum` matches canonical tree SHA-256 hash (and Git `commit` matches recorded revision).
 
-#### 6. TOCTOU Mitigation & Trust Boundary Hardening
-- **Read-Only Snapshot Hardening (`protect_package_store_readonly`):** Following successful lockfile verification or new package installation (`syn install`), all files in `.syntra/packages` are set to `0o444` (read-only) and all directories to `0o555` (read+execute only).
-- **Documented Trust Boundary:** This prevents unprivileged local processes from mutating verified source files between verification time and compilation or execution time.
+#### 6. Compiler Consumption-Gate Enforcement (`verify_package_consumption`)
+- Enforced at the compiler entry point `load_program_or_exit`:
+  - Before the compiler loads any source files or builds an AST for `syn build`, `syn run`, `syn check`, `syn air`, `syn opt`, or `syn tune`, it automatically verifies lockfile integrity against current disk contents.
+  - If any dependency file on disk has been altered, injected, deleted, or retargeted between installation and compilation, the compiler **immediately aborts with exit code 1**.
+  - If a project manifest declares dependencies but no lockfile exists, compilation is refused until `syn install` is run.
+
+#### 7. TOCTOU Threat Model & Trust Boundary Analysis
+- **Package Store Hardening:** During `syn install`, directories in `.syntra/packages` are set to `0o555` (read+execute) and files to `0o444` (read-only).
+- **Consumption Verification:** Every compilation re-verifies the on-disk tree against the lockfile.
+- **Honest Security Demarcation:** In an unisolated host environment (shared UID execution without OS namespaces), userspace permission bits mitigate accidental or unprivileged in-place mutations, but cannot eliminate kernel-level race conditions against malicious processes running under the same UID during file reads. Complete execution isolation against host-level concurrent tampering is the explicit architectural boundary of Phase 2 (SECE Sandbox Isolation).
 
 ---
 
-## 6. Comprehensive Adversarial Test Suite (24 Tests)
+## 6. Comprehensive Adversarial Test Suite (28 Tests)
 
-The test suite in [`crates/cli/tests/test_package_integrity.rs`](file:///Users/Topman/Documents/Projects/aether/crates/cli/tests/test_package_integrity.rs) was expanded to 24 rigorous adversarial scenarios:
+The test suite in [`crates/cli/tests/test_package_integrity.rs`](file:///Users/Topman/Documents/Projects/aether/crates/cli/tests/test_package_integrity.rs) was expanded to 28 rigorous adversarial scenarios:
 
 | Test Name | Scenario Tested | Outcome |
 | :--- | :--- | :--- |
@@ -238,10 +243,14 @@ The test suite in [`crates/cli/tests/test_package_integrity.rs`](file:///Users/T
 | `test_lockfile_root_package_identity_mismatch_detected` | Lockfile `[package]` name/version mismatch detected | **PASSED** (Rejected) |
 | `test_dependency_version_and_source_mismatch_detected` | Dependency `version` and `source` URI tampering detected | **PASSED** (Rejected) |
 | `test_package_store_readonly_hardening_mitigates_toctou` | `.syntra/packages` hardened to `0o444`/`0o555` to block TOCTOU | **PASSED** (Verified) |
+| `test_toml_lockfile_full_spec_compliance_and_strict_schema` | Multiline strings, comments, table ordering, unknown field rejection | **PASSED** (Verified) |
+| `test_compiler_consumption_gates_tampered_dependency` | Compiler gates tampered packages before AST loading | **PASSED** (Rejected) |
+| `test_nested_exclusions_and_precompiled_binaries_included` | Nested `target/` and native `.dylib` hashed and verified | **PASSED** (Verified) |
+| `test_symlink_chains_and_root_symlinks` | Root symlinks, nested chains, circular symlinks handled safely | **PASSED** (Verified) |
 
 **Verification Command & Results:**
-- `cargo test -p syntra_cli --test test_package_integrity`: **24 passed; 0 failed; 0 ignored** in 0.26s.
-- `cargo test --workspace`: **111 passed; 0 failed; 0 ignored** in 12.8s.
+- `cargo test -p syntra_cli --test test_package_integrity`: **28 passed; 0 failed; 0 ignored** in 0.28s.
+- `cargo test --workspace`: **115 passed; 0 failed; 0 ignored** in 12.5s.
 - `cargo clippy --workspace --all-targets -- -D warnings`: **0 warnings**.
 - `cargo fmt --check`: **Clean formatting (0 diffs)**.
 
@@ -256,10 +265,10 @@ Evidence Logs:
 1. **Registry Distribution:** Currently, registry dependencies are verified after extraction into `.syntra/packages/<name>`. Future work will implement direct cryptographic signature verification over the `.synpkg` archive payload.
 2. **Cross-Platform File Modes:** Executable permission bit tracking (`0755` vs `0644`) is natively enforced on Unix/POSIX filesystems. Non-Unix filesystems (Windows NTFS/FAT32 without POSIX permissions) normalize file modes to standard non-executable entries.
 3. **Hardlink Handling:** Hardlinks are hashed as standard regular files with identical contents; hardlink cycle prevention is guaranteed by directory-only recursion.
-4. **Host Privilege Trust Boundary:** Read-only snapshot protection prevents unprivileged tampering. A root/administrator process on the host can bypass filesystem permission bits.
+4. **Host Privilege Trust Boundary:** Read-only snapshot protection prevents unprivileged tampering. A root/administrator process or same-UID concurrent process on an unisolated host can manipulate filesystem states during a microsecond file-read race window. True isolation against concurrent host processes requires kernel namespace sandboxing (Phase 2).
 
 ---
 
 ## 8. Final Phase 1 Recommendation
 
-Phase 1 has now been comprehensively corrected, hardened, and verified with 24 adversarial tests addressing all peer-review critique points. All fail-open fallbacks, broad exclusions, parser loopholes, and traversal vulnerabilities have been eliminated. **Phase 1 is complete and ready for independent review.** Do not proceed to Phase 2 without separate authorization.
+Phase 1 has now been comprehensively corrected, hardened, and verified with 28 adversarial tests addressing all peer-review critique points. The official `toml` parser has been integrated, compiler consumption has been gated, and the trust boundary has been rigorously established. **Phase 1 is complete and ready for final independent review.** Do not proceed to Phase 2 without separate authorization.

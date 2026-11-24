@@ -246,6 +246,19 @@ enum Commands {
 
 fn load_program_or_exit(file: &PathBuf) -> (syntra_syntax::ast::Program, String) {
     let filename = file.display().to_string();
+
+    // Verify package integrity at compiler consumption time before loading AST
+    if let Err(mismatches) = package::verify_package_consumption(file) {
+        eprintln!(
+            "❌ Security Error: Dependency verification failed at compiler consumption time:\n"
+        );
+        for m in mismatches {
+            eprintln!("   • {m}");
+        }
+        eprintln!("\nRefusing to compile or execute tampered dependencies. Run 'syn install' or investigate tampering.");
+        exit(1);
+    }
+
     let mut loader = syntra_frontend::ModuleLoader::new();
     match loader.load_program(file) {
         Ok(prog) => {
