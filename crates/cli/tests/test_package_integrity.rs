@@ -1250,3 +1250,183 @@ fn test_symlink_chains_and_root_symlinks() {
 
     let _ = fs::remove_dir_all(&tmp);
 }
+
+#[test]
+fn test_debugger_cli_and_dap_gated_by_package_verification() {
+    let tmp = std::env::temp_dir().join(format!("syntra_dbg_gate_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+    fs::create_dir_all(tmp.join("src")).unwrap();
+
+    let manifest_content = r#"
+[package]
+name = "debug_gate_app"
+version = "0.1.0"
+
+[dependencies]
+helper = { path = "deps/helper", version = "1.0.0" }
+"#;
+    fs::write(tmp.join("syntra.toml"), manifest_content).unwrap();
+
+    let main_src = "import helper;\nfunc main(): void {}\n";
+    let main_file = tmp.join("src").join("main.syn");
+    fs::write(&main_file, main_src).unwrap();
+
+    // Setup helper dependency in deps directory
+    let dep_dir = tmp.join("deps").join("helper");
+    fs::create_dir_all(dep_dir.join("src")).unwrap();
+    let dep_lib = dep_dir.join("src").join("lib.syn");
+    fs::write(&dep_lib, "func helper_val(): int { return 42; }\n").unwrap();
+
+    // Generate valid lockfile
+    let manifest = syntra_frontend::PackageManifest::parse(manifest_content);
+    let (lock_content, _) = syntra_cli::package::generate_lock_content(&tmp, &manifest).unwrap();
+    syntra_cli::package::write_lockfile_atomic(&tmp, "Package.lock", &lock_content, true).unwrap();
+
+    // 1. Clean tree: verification succeeds at debugger entry
+    let verify_clean = syntra_cli::package::verify_package_consumption(&main_file);
+    assert!(
+        verify_clean.is_ok(),
+        "Clean dependency tree must pass verification before debugging: {verify_clean:?}"
+    );
+
+    // 2. Tamper with dependency content
+    fs::write(
+        &dep_lib,
+        "func helper_val(): int { return 666; /* injected */ }\n",
+    )
+    .unwrap();
+
+    // 3. Debugger CLI must refuse to debug tampered dependency
+    let dbg_res = syntra_cli::debug::run_cli_debugger(main_file.to_str().unwrap(), vec![]);
+    assert!(
+        dbg_res.is_err(),
+        "Debugger must refuse to debug when dependencies are tampered"
+    );
+    let err_str = dbg_res.unwrap_err();
+    assert!(
+        err_str.contains("Dependency verification failed at debugger consumption time"),
+        "Error message must indicate consumption-time verification failure: {err_str}"
+    );
+    assert!(
+        err_str.contains("helper"),
+        "Error message must identify the tampered dependency: {err_str}"
+    );
+
+    // 4. DAP verification check also rejects tampered dependency
+    let dap_verify = syntra_cli::package::verify_package_consumption(&main_file);
+    assert!(
+        dap_verify.is_err(),
+        "DAP verification gate must reject tampered dependency"
+    );
+
+    let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+fn test_atomic_lockfile_replacement_and_recovery() {
+    let tmp = std::env::temp_dir().join(format!("syntra_atomic_lock_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+    fs::create_dir_all(&tmp).unwrap();
+
+    let target_lock = tmp.join("Package.lock");
+
+    // 1. Initial atomic write
+    let initial_content = "version = 1\n[package]\nname = \"initial\"\nversion = \"0.1.0\"\n";
+    syntra_cli::package::atomic_write_file(&target_lock, initial_content).unwrap();
+    assert_eq!(
+        fs::read_to_string(&target_lock).unwrap(),
+        initial_content,
+        "Lockfile content must match after initial atomic write"
+    );
+
+    // Verify no temporary files linger
+    let tmp_files: Vec<_> = fs::read_dir(&tmp)
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .map(|e| e.file_name().to_string_lossy().to_string())
+        .filter(|n| n.starts_with(".Package.lock.tmp."))
+        .collect();
+    assert!(
+        tmp_files.is_empty(),
+        "No temporary atomic files should remain after successful write: {tmp_files:?}"
+    );
+
+    // 2. Overwrite atomically with updated content
+    let updated_content = "version = 1\n[package]\nname = \"updated\"\nversion = \"0.2.0\"\n";
+    syntra_cli::package::atomic_write_file(&target_lock, updated_content).unwrap();
+    assert_eq!(
+        fs::read_to_string(&target_lock).unwrap(),
+        updated_content,
+        "Lockfile content must match after atomic replacement"
+    );
+
+    // 3. Dual write_lockfile_atomic (Package.lock and syntra.lock)
+    let dual_content = "version = 1\n[package]\nname = \"dual\"\nversion = \"0.3.0\"\n";
+    syntra_cli::package::write_lockfile_atomic(&tmp, "Package.lock", dual_content, true).unwrap();
+    assert_eq!(
+        fs::read_to_string(tmp.join("Package.lock")).unwrap(),
+        dual_content,
+        "Package.lock must be updated atomically"
+    );
+    assert_eq!(
+        fs::read_to_string(tmp.join("syntra.lock")).unwrap(),
+        dual_content,
+        "syntra.lock must be updated atomically"
+    );
+
+    let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+fn test_canonical_tree_hashing_length_prefixed_framing() {
+    let tmp = std::env::temp_dir().join(format!("syntra_framing_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+    fs::create_dir_all(tmp.join("src")).unwrap();
+
+    // 1. Distinct paths with similar byte sequences produce distinct hashes
+    fs::write(tmp.join("src").join("a.syn"), "content1").unwrap();
+    fs::write(tmp.join("src").join("b.syn"), "content2").unwrap();
+
+    let hash_baseline = syntra_cli::package::hash_directory_tree_sha256(&tmp).unwrap();
+    assert_eq!(
+        hash_baseline.len(),
+        64,
+        "Tree hash must be valid 64-char hex SHA-256"
+    );
+
+    // 2. Symlink with valid target hashes deterministically with length prefix
+    #[cfg(unix)]
+    {
+        let sym_path = tmp.join("src").join("link_a.syn");
+        std::os::unix::fs::symlink(Path::new("a.syn"), &sym_path).unwrap();
+        let hash_with_sym = syntra_cli::package::hash_directory_tree_sha256(&tmp).unwrap();
+        assert_ne!(
+            hash_baseline, hash_with_sym,
+            "Adding symlink must alter tree hash"
+        );
+    }
+
+    // 3. Symlink target containing raw newline is strictly rejected
+    #[cfg(unix)]
+    {
+        let bad_sym_target = Path::new("a.syn\nmode:0755\ntype:file\n");
+        let sym_file = tmp.join("src").join("bad_sym.syn");
+        let val_res = syntra_cli::package::validate_and_normalize_symlink_target(
+            &tmp,
+            &sym_file,
+            bad_sym_target,
+        );
+        assert!(
+            val_res.is_err(),
+            "Symlink target containing embedded newline MUST be rejected"
+        );
+        assert!(
+            val_res
+                .unwrap_err()
+                .contains("Invalid newline or control character"),
+            "Error must specify invalid newline/control character"
+        );
+    }
+
+    let _ = fs::remove_dir_all(&tmp);
+}

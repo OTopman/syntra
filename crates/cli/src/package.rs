@@ -2,6 +2,7 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
 use std::fs;
+use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
@@ -140,6 +141,12 @@ pub fn validate_and_normalize_symlink_target(
         .to_str()
         .ok_or_else(|| "Non-UTF8 symlink target".to_string())?
         .replace('\\', "/");
+    if target_str.contains('\n') || target_str.contains('\r') || target_str.contains('\0') {
+        return Err(format!(
+            "Invalid newline or control character in symlink target '{}'",
+            target.display()
+        ));
+    }
     Ok(target_str)
 }
 
@@ -181,6 +188,12 @@ fn collect_canonical_entries(
                     let s = c.to_str().ok_or_else(|| {
                         format!("Non-UTF8 path component in '{}'", path.display())
                     })?;
+                    if s.contains('\n') || s.contains('\r') || s.contains('\0') {
+                        return Err(format!(
+                            "Invalid newline or control character in path component '{}'",
+                            path.display()
+                        ));
+                    }
                     components.push(s);
                 }
                 std::path::Component::ParentDir => {
@@ -279,7 +292,9 @@ pub fn hash_directory_tree_sha256(dir: &Path) -> Result<String, String> {
     for entry in entries {
         hasher.update(b"ENTRY\n");
 
-        hasher.update(b"path:");
+        hasher.update(b"path_len:");
+        hasher.update(entry.rel_path.len().to_string().as_bytes());
+        hasher.update(b"\npath:");
         hasher.update(entry.rel_path.as_bytes());
         hasher.update(b"\n");
 
@@ -293,7 +308,9 @@ pub fn hash_directory_tree_sha256(dir: &Path) -> Result<String, String> {
         if entry.is_symlink {
             hasher.update(b"type:symlink\n");
             let target = entry.symlink_target.as_deref().unwrap_or("");
-            hasher.update(b"target:");
+            hasher.update(b"target_len:");
+            hasher.update(target.len().to_string().as_bytes());
+            hasher.update(b"\ntarget:");
             hasher.update(target.as_bytes());
             hasher.update(b"\n");
         } else {
@@ -365,6 +382,60 @@ pub fn protect_package_store_readonly(dir: &Path) -> Result<(), String> {
         let _ = fs::set_permissions(dir, fs::Permissions::from_mode(0o555));
     }
 
+    Ok(())
+}
+
+/// Atomically writes content to a file using temporary file creation and atomic rename.
+/// Flushes and syncs file contents to disk before atomic replacement, preventing partial
+/// writes or corruption during process termination or concurrent inspection.
+pub fn atomic_write_file(target_path: &Path, content: &str) -> Result<(), io::Error> {
+    let parent = target_path.parent().unwrap_or_else(|| Path::new("."));
+    fs::create_dir_all(parent)?;
+
+    let file_name = target_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("file");
+
+    let tmp_name = format!(
+        ".{file_name}.tmp.{}.{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0)
+    );
+    let tmp_path = parent.join(tmp_name);
+
+    {
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&tmp_path)?;
+        file.write_all(content.as_bytes())?;
+        file.sync_all()?;
+    }
+
+    if let Err(e) = fs::rename(&tmp_path, target_path) {
+        let _ = fs::remove_file(&tmp_path);
+        return Err(e);
+    }
+
+    Ok(())
+}
+
+/// Atomically writes the primary lockfile and companion backward-compatibility syntra.lock.
+pub fn write_lockfile_atomic(
+    manifest_dir: &Path,
+    primary_lock: &str,
+    content: &str,
+    is_syn: bool,
+) -> Result<(), io::Error> {
+    let lock_path = manifest_dir.join(primary_lock);
+    atomic_write_file(&lock_path, content)?;
+    if is_syn {
+        let _ = atomic_write_file(&manifest_dir.join("syntra.lock"), content);
+    }
     Ok(())
 }
 
@@ -994,12 +1065,9 @@ pub fn lock_dependencies(check: bool) {
             }
         };
 
-        if let Err(e) = fs::write(&lock_path, &lock_content) {
-            eprintln!("❌ Failed to write {primary_lock}: {e}");
+        if let Err(e) = write_lockfile_atomic(manifest_dir, primary_lock, &lock_content, is_syn) {
+            eprintln!("❌ Failed to write {primary_lock} atomically: {e}");
             exit(1);
-        }
-        if is_syn {
-            let _ = fs::write(manifest_dir.join("syntra.lock"), &lock_content);
         }
         println!(
             "🔒 Successfully locked {} dependenc{} into {}.",
@@ -1052,8 +1120,8 @@ pub fn pack_project(out: Option<PathBuf>, vendor: bool) {
                 exit(1);
             }
         };
-        if let Err(e) = fs::write(&lock_path, &lock_content) {
-            eprintln!("❌ Failed to write lockfile before packaging: {e}");
+        if let Err(e) = write_lockfile_atomic(manifest_dir, primary_lock, &lock_content, is_syn) {
+            eprintln!("❌ Failed to write lockfile atomically before packaging: {e}");
             exit(1);
         }
     }

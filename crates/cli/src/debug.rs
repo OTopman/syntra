@@ -18,8 +18,18 @@ pub fn run_cli_debugger(file_path: &str, args: Vec<String>) -> Result<(), String
     println!("Type 'help' or 'h' for a list of debugger commands.");
     println!("===============================================================");
 
-    let mut loader = syntra_frontend::loader::ModuleLoader::new();
     let path = Path::new(file_path);
+    if let Err(mismatches) = crate::package::verify_package_consumption(path) {
+        let mut err =
+            String::from("Dependency verification failed at debugger consumption time:\n");
+        for m in mismatches {
+            err.push_str(&format!("   • {m}\n"));
+        }
+        err.push_str("\nRefusing to debug tampered dependencies. Run 'syn install' or investigate tampering.");
+        return Err(err);
+    }
+
+    let mut loader = syntra_frontend::loader::ModuleLoader::new();
     let program = loader
         .load_program(path)
         .map_err(|diags| format!("Failed to load program: {diags:?}"))?;
@@ -459,6 +469,19 @@ pub fn run_dap_server() {
             }
             "launch" => {
                 let program_path = args.get("program").and_then(|v| v.as_str()).unwrap_or("");
+                let path = Path::new(program_path);
+
+                if let Err(mismatches) = crate::package::verify_package_consumption(path) {
+                    eprintln!(
+                        "❌ Security Error: Dependency verification failed during DAP launch:"
+                    );
+                    for m in &mismatches {
+                        eprintln!("   • {m}");
+                    }
+                    send_dap_response(&mut writer, &mut seq, req_seq, command, false, None);
+                    continue;
+                }
+
                 let mut cmd_args = Vec::new();
                 if let Some(arr) = args.get("args").and_then(|v| v.as_array()) {
                     for a in arr {
@@ -469,7 +492,6 @@ pub fn run_dap_server() {
                 }
 
                 let mut loader = syntra_frontend::loader::ModuleLoader::new();
-                let path = Path::new(program_path);
                 if let Ok(prog) = loader.load_program(path) {
                     for (p, src) in &loader.sources {
                         sources_cache.insert(p.display().to_string(), src.clone());

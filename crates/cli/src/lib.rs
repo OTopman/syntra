@@ -1264,13 +1264,11 @@ fn install_dependencies() {
                     exit(1);
                 }
             };
-        if let Err(e) = fs::write(&lock_path, &lock_content) {
-            eprintln!("❌ Failed to write {primary_lock}: {e}");
+        if let Err(e) =
+            package::write_lockfile_atomic(manifest_dir, primary_lock, &lock_content, is_syn)
+        {
+            eprintln!("❌ Failed to write {primary_lock} atomically: {e}");
             exit(1);
-        }
-        // Also write syntra.lock for backward compatibility if Package.lock was written
-        if is_syn {
-            let _ = fs::write(manifest_dir.join("syntra.lock"), &lock_content);
         }
 
         println!(
