@@ -85,5 +85,5 @@ ehthumbs.db
 
 benchmarks/
 audit_output/
-remediation_output/
+# remediation_output/
 
